@@ -17,7 +17,7 @@ class GameDriver():
         init_values = screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
-        self.cards          = init_values['cards'] + ['', '', '', '']
+        self.cards          = init_values['cards'] + ['', '', '', '', '']
         self.button         = init_values['button']
         self.player_name    = init_values['player_name']
         self.steal_position = self.button == 0 or self.button == 1
