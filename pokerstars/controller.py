@@ -1,8 +1,8 @@
-from pokerstars.CONFIG import fold_position
-from pokerstars.CONFIG import call_position
-from pokerstars.CONFIG import raise_position
-from pokerstars.CONFIG import label_position
-from pokerstars.CONFIG import window_close, sitout_confirm, join_game
+from pokerstars.config import fold_position
+from pokerstars.config import call_position
+from pokerstars.config import raise_position
+from pokerstars.config import label_position
+from pokerstars.config import window_close, sitout_confirm, join_game
 import pymouse
 import pyscreenshot
 import pykeyboard

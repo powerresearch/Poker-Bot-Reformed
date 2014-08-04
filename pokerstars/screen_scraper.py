@@ -16,10 +16,11 @@ def merge(group, x, y, xx, yy):
         group[tmpx][tmpy][0][0] = xx
         group[tmpx][tmpy][0][1] = yy
     if x == xx and y == yy:
-        return
+        return group
     for pair in group[x][y][1:]:
         group[xx][yy].append(pair)
-    group[x][y] = [[xx, yy]]#}}}
+    group[x][y] = [[xx, yy]]
+    return group#}}}
 
 def is_same_figure_stack(l1, l2):
     c1, c2, f1, f2 = 0, 0, 0, 0#{{{
@@ -89,32 +90,41 @@ class ScreenScraper():
     def get_init_values(self):
         result = {}#{{{
         stack = ['', '', '', '', '', '']
-        game_number = ''
+        game_number = []
         cards = ['', '']
-        button = ''
-        player_name = ['', '', '', '', '', '']
-        while not game_number and button:
+        button = []
+        player_name = [u'deoxy1909', '', '', '', '', '']
+        while not (game_number and button):
             self.update()
-            im = self.im
             game_number = self.get_game_number()
             button = self.get_button()
+        fail = 0
         while not (stack[0] and stack[1] and stack[2] and stack[3]\
                 and stack[4] and stack[5]):
-            self.update()
-            im = self.im
             for i in xrange(6):
                 stack[i] = self.get_stack(i)
+            if fail:
+                self.update()
+            fail = 1
+        fail = 0
+        while not (cards[0] and cards[1]):
+            cards[0] = self.get_card(0)
+            cards[1] = self.get_card(1)
+            if fail:
+                self.update()
+            fail = 1
+        fail = 0
         while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
                 and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
                 and type(player_name[5]) == unicode):
-            self.update()
-            im = self.im
             for i in xrange(6):
                 if type(player_name[i]) == unicode:
                     continue
                 else:
                     player_name[i] = self.get_name(i)
-
+            if fail:
+                self.update()
+            fail = 1
         result['stack'] = stack 
         result['game_number'] = game_number 
         result['cards'] = cards 
@@ -160,17 +170,17 @@ class ScreenScraper():
         for x in xrange(card_width):
             for y in xrange(card_height):
                 if pixels[x][y] == 1 and pixels[x-1][y] == 1:
-                    merge(group, x, y, x-1, y)
+                    group = merge(group, x, y, x-1, y)
                 if pixels[x][y] == 1 and pixels[x+1][y] == 1:
-                    merge(group, x, y, x+1, y)
+                    group = merge(group, x, y, x+1, y)
                 if pixels[x][y] == 1 and pixels[x][y-1] == 1:
-                    merge(group, x, y, x, y-1)
+                    group = merge(group, x, y, x, y-1)
                 if pixels[x][y] == 1 and pixels[x][y+1] == 1:
-                    merge(group, x, y, x, y+1)
+                    group = merge(group, x, y, x, y+1)
         for y in xrange(card_height):
             for x in xrange(card_width):
                 if len(group[x][y]) > 20:
-                    norm(group[x][y])
+                    group[x][y] = norm(group[x][y])
                     over_width = 0
                     for pair in group[x][y][1:]:
                         if pair[0] > 15 or pair[1] > 25:
@@ -218,7 +228,7 @@ class ScreenScraper():
         im = self.im#{{{
         if number == 'search':
             for i in xrange(6):
-                if self.shining(im, number=i):
+                if self.shining(number=i):
                     return i
             return []
         for y in xrange(50):
@@ -294,8 +304,8 @@ class ScreenScraper():
                         #fail += 1
                         pass
         if fail or not stack:
-            stack = ''
-            return stack
+            self.update()
+            return self.get_stack(number)
         stack.replace('i', 'l')
         if 'l' in stack:
             stack = 0

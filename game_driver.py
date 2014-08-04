@@ -14,7 +14,7 @@ class GameDriver():
 
     def __init__(self):
         self.screen_scraper = ScreenScraper()#{{{
-        init_values = screen_scraper.get_init_values()
+        init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
         self.cards          = init_values['cards'] + ['', '', '', '', '']
@@ -23,67 +23,91 @@ class GameDriver():
         self.steal_position = self.button == 0 or self.button == 1
         self.active         = [1, 1, 1, 1, 1, 1]
         self.stats_handler  = StatsHandler()
-        self.data_manager   = DataManager(player_names)
+        self.data_manager   = DataManager(self.player_name)
         self.decision_maker = DecisionMaker()
         self.pot            = 0
         self.last_better    = -1
-        self.all_limper     = -1#}}}
+        self.all_limper     = -1
+        self.stage          = 0
+        self.bet_round      = 1
+        self.people_play    = 1#}}}
 
     @classmethod
     def count_game(cls):
         try:#{{{
             cls.game_count += 1
-        else:
+        except:
             cls.game_count = 1#}}}
 
     def game_stream(self):
-        next_game = pre_flop(self)#{{{
+        self.__init__()
+        print 'Stack:', self.stack
+        print 'Game Number:', self.game_number
+        print 'Button:', self.button
+        print 'Cards:', self.cards
+        print
+        print
+        next_game = self.preflop()#{{{
+        self.stage = 1 
         if next_game:
             return self.game_number
-        for stage in xrange(1, 4):
-            next_game = post_flop(self, stage)
+        for self.stage in xrange(1, 4):
+            next_game = self.post_flop()
             if next_game:
                 return self.game_number#}}}
+    
+    def handle_preflop_action(self, action):
+        if action[0] == 'new game':#{{{
+            print 'new game'
+            self.game_number = action[1]
+            return 'new game'
+        if action[0] == 'new stage':
+            print 'new stage'
+            self.cards = action[1]
+            return 'new stage'
+        if action[0] == 'my move':
+            self.decision_maker.make_decision(self)
+            return []
+        actor, value = action
+        if value == 'fold':
+            print actor, 'fold'
+            self.active[actor] = 0
+            return []
+        if value == 'check':
+            print actor, 'check'
+            return []
+        print actor, value
+        self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
+                self.people_play, self.last_better)
+        self.pot += value
+        self.pot = round(self.pot, 2)
+        self.stack[actor] -= value
+        self.stack[actor] = round(self.stack[actor], 2)
+        if self.stack[actor] == 0:
+            self.active[actor] = 0.5
+        if round(value+self.betting[actor], 2) > max(self.betting):
+            self.last_better = actor
+            self.bet_round += 1
+        self.betting[actor] += value
+        self.betting[actor] = round(self.betting[actor], 2)
+        return []#}}}
 
-    def pre_flop(self):
-        to_act = (button+3) % 6#{{{
-        betting = [0, 0, 0, 0, 0, 0]
-        betting[(button+1)%6] = SB
-        betting[(button+1)%6] = BB
-        bet_round = 1
-        people_play = 1
-        last_mover = (button+2) % 6
-        move_catcher = MoveCatcher(to_act, self.stack, self.game_number)#}}}
-        
-        while True:
-            actions = move_catcher.get_action()#{{{
+    def preflop(self):
+        to_act = (self.button+3) % 6#{{{
+        self.betting = [0, 0, 0, 0, 0, 0]
+        self.betting[(self.button+1)%6] = SB
+        self.betting[(self.button+1)%6] = BB
+        self.people_play = 1
+        self.last_mover = (self.button+2) % 6
+        move_catcher = MoveCatcher(to_act, self.betting, self.active,\
+                self.stack, self.cards, self.game_number)#}}}
+        while True:#{{{
+            actions = move_catcher.get_action()
             for action in actions:
-                if action[0] == 'new game':
-                    return True
-                if action[0] == 'new stage':
-                    return False
-                if action[0] == 'my move':
-                    decision_maker.make_decision(self)
-                    break
-                actor, value = action
-                if value == 'fold':
-                    self.active[actor] = 0
-                    continue
-                if value == self.stack[actor]:
-                    self.active[actor] = 0.5
-                self.stats_handler.pre_flop_update(action, betting, bet_round, last_better)
-                self.pot += value
-                self.stack[actor] -= value
-                if value+betting[actor] > max(betting):
-                    self.last_better = actor
-                    last_mover = (actor-1) % 6
-                    while True:
-                        if active[last_mover] != 1:
-                            last_mover = (last_mover-1) % 6
-                        else:
-                            break
-                betting[actor] += value#}}}
-
-
+                indicator = self.handle_preflop_action(action)
+                if indicator:
+                    return indicator
+            to_act = move_catcher.to_act#}}}
+            
     def post_flop(self, stage):
         pass
