@@ -55,11 +55,14 @@ class MoveCatcher():
         actions = list()
         for i in xrange(6):
             player = (self.to_act+i) % 6
-            if self.active[i] < 1:
+            if self.active[player] < 1:
                 continue
-            elif self.betting[i] < max(self.betting):
+            if self.screen_scraper.has_fold(player):
+                actions.append([player, 'fold'])
+            elif self.betting[player] < max(self.betting):
                 actions.append([player, \
                         max(self.betting)-self.betting[player]])
+                self.betting[player] = max(self.betting)
             else:
                 continue
         return actions#}}}
@@ -83,6 +86,7 @@ class MoveCatcher():
                 if self.stack[player] == 0:
                     self.active[player] = 0.5
                 self.betting[player] += self.old_stack[player] - self.stack[player]
+                self.betting[player] = round(self.betting[player], 2)
                 actions.append([player, self.old_stack[player]-self.stack[player]])
             else:
                 actions.append([player, 'check'])
@@ -100,7 +104,7 @@ class MoveCatcher():
             actions.append(['new game', next_game_result])
         if next_stage_result:
             if not self.all_even():
-                self.make_even()
+                actions += self.make_even()
             actions.append(['new stage', next_stage_result])
         if self.screen_scraper.shining(0):
             actions.append(['my move', 0])
