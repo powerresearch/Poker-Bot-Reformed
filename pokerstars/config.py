@@ -1,5 +1,9 @@
 import json
 
+# Path
+hhpath = '/Users/zw/Library/Application Support/PokerStars/HandHistory/'
+
+
 # Position
 game_number_x = 46
 game_number_y = 72

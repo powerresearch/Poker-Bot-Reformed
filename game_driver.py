@@ -23,7 +23,8 @@ class GameDriver():
         self.steal_position = self.button == 0 or self.button == 1
         self.active         = [1, 1, 1, 1, 1, 1]
         self.stats_handler  = StatsHandler()
-        self.data_manager   = DataManager(self.player_name)
+        self.data_manager   = DataManager()
+        self.data_manager.load_data(self.player_name)
         self.decision_maker = DecisionMaker()
         self.pot            = 0
         self.last_better    = -1
@@ -45,8 +46,10 @@ class GameDriver():
         print 'Game Number:', self.game_number
         print 'Button:', self.button
         print 'Cards:', self.cards
+        print 'Names:', self.player_name
         print
         print#}}}
+        print self.data_manager.get_item(2, u'BSA')
         indicator = self.preflop()#{{{
         self.stage = 1 
         if indicator == 'new game':

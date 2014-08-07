@@ -122,7 +122,7 @@ class ScreenScraper():
         fail = 0
         while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
                 and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
-                and type(player_name[5]) == unicode):
+                and type(player_name[5]) == unicode and type(player_name[2]) == unicode):
             for i in xrange(6):
                 if type(player_name[i]) == unicode:
                     continue

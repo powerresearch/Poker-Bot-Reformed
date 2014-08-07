@@ -1,0 +1,35 @@
+dict
+
+--general--
+name                        NAME
+hands                       HANDS
+win at showdown             WAS
+win without showdown        WWS
+
+--preflop--
+vpip                        VPIP
+pfr                         PFR
+blind steal atempt          BSA
+fold to blind steal         FBS
+3bet                        3B
+fold to 3bet                F3B
+4bet                        4B
+fold to 4bet                F4B
+
+--flop--
+cb                          FLCB
+fcb                         FLFCB
+donk                        FLDK
+fdonk                       FLFDK
+bet when no one bet         BWNOB
+fold to button better       FBWNOB
+raise                       FLR
+check raise                 FLCR
+
+--turn--
+cb                          TUCB    /   RVCB
+fcb                         TUFCB   /   RVFCB
+donk                        TUDK    /   RVDK
+fdonk                       TUFDK   /   RVFDK
+raise                       TUR     /   RVR
+check raise                 TUCR    /   RVCR
