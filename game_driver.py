@@ -2,7 +2,7 @@
 
 import json
 import re
-from const import *
+from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
 from pokerstars.controller import Controller
@@ -25,7 +25,7 @@ class GameDriver():
         self.stats_handler  = StatsHandler()
         self.data_manager   = DataManager()
         self.data_manager.load_data(self.player_name)
-        self.decision_maker = DecisionMaker()
+        self.decision_maker = DecisionMaker(self)
         self.pot            = 0
         self.last_better    = -1
         self.all_limper     = -1
@@ -49,7 +49,6 @@ class GameDriver():
         print 'Names:', self.player_name
         print
         print#}}}
-        print self.data_manager.get_item(2, u'BSA')
         indicator = self.preflop()#{{{
         self.stage = 1 
         if indicator == 'new game':
@@ -70,6 +69,7 @@ class GameDriver():
             self.cards = action[1]
             return 'new stage'
         if action[0] == 'my move':
+            print 'making decision'
             self.decision_maker.make_decision(self)
             return []
         actor, value = action
@@ -126,6 +126,9 @@ class GameDriver():
         if round(value+self.betting[actor], 2) > max(self.betting):
             self.last_better = actor
             self.bet_round += 1
+            self.people_play = 1
+        else:
+            self.people_play += 1
         return []#}}}
 
     def preflop(self):
@@ -140,6 +143,7 @@ class GameDriver():
         while True:#{{{
             actions = move_catcher.get_action()
             for action in actions:
+                print action
                 print self.betting
                 indicator = self.handle_preflop_action(action)
                 if indicator:
@@ -157,6 +161,7 @@ class GameDriver():
         while True:#{{{
             actions = move_catcher.get_action()
             for action in actions:
+                print action
                 print self.betting
                 indicator = self.handle_postflop_action(action)
                 if indicator:

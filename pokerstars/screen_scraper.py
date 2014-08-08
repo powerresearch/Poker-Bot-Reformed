@@ -95,12 +95,12 @@ class ScreenScraper():
         button = []
         player_name = [u'deoxy1909', '', '', '', '', '']
         fail = 0
-        while not (game_number and button):
+        while not (game_number and button in range(6)):
             game_number = self.get_game_number()
             button = self.get_button()
             if fail == 1:
                 self.update()
-                #print 'stucking at getting game number and button', game_number, button
+                print 'stucking at getting game number and button', game_number, button
             fail = 1
         fail = 0
         while not (stack[0] and stack[1] and stack[2] and stack[3]\
@@ -109,7 +109,7 @@ class ScreenScraper():
                 stack[i] = self.get_stack(i)
             if fail:
                 self.update()
-                #print 'stucking at getting stack'
+                print 'stucking at getting stack'
             fail = 1
         fail = 0
         while not (cards[0] and cards[1]):
@@ -117,7 +117,7 @@ class ScreenScraper():
             cards[1] = self.get_card(1)
             if fail:
                 self.update()
-                #print 'stucking at getting cards'
+                print 'stucking at getting cards'
             fail = 1
         fail = 0
         while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
@@ -130,7 +130,7 @@ class ScreenScraper():
                     player_name[i] = self.get_name(i)
             if fail:
                 self.update()
-                #print 'stucking at getting names'
+                print 'stucking at getting names'
             fail = 1
         result['stack'] = stack 
         result['game_number'] = game_number 

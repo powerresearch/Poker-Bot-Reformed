@@ -3,6 +3,7 @@ from pokerstars.config import call_position
 from pokerstars.config import raise_position
 from pokerstars.config import label_position
 from pokerstars.config import window_close, sitout_confirm, join_game
+from pokerstars.config import BB, SB
 import pymouse
 import pyscreenshot
 import pykeyboard

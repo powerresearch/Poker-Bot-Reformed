@@ -69,12 +69,13 @@ class DataManager():
                     line = line.split(' (')
                     player[i] = ' ('.join(line[:-1])
                     seat[' ('.join(line[:-1])] = i
-                    try:
-                        with open('database/data/player '+player[i].replace('/', '')+'.json') as f:
-                            player_data[player[i]] = json.load(f)
-                    except:
-                        player_data[player[i]] = self.player_data_init()
-                        player_data[player[i]]['NAME'] = player[i]
+                    if not player[i] in player_data:
+                        try:
+                            with open('database/data/player '+player[i].replace('/', '')+'.json') as f:
+                                player_data[player[i]] = json.load(f)
+                        except:
+                            player_data[player[i]] = self.player_data_init()
+                            player_data[player[i]]['NAME'] = player[i]
                     player_data[player[i]]['HANDS'] += 1
                 lines = lines[10:]
                 game_over = 0
@@ -520,6 +521,8 @@ class DataManager():
                             winner.append(p)
                             continue
         for name in player_data:
+            player_data[name]['pfr'] = 1.0 * player_data[name]['PFR'] / player_data[name]['HANDS']
+            player_data[name]['vpip'] = 1.0 * player_data[name]['VPIP'] / player_data[name]['HANDS']
             with open('database/data/player '+name.replace('/', '')+'.json', 'w') as f:
                 json.dump(player_data[name], f)
         with open('database/file_parsed.json', 'w') as f:
