@@ -41,8 +41,7 @@ class GameDriver():
             cls.game_count = 1#}}}
 
     def game_stream(self):
-        self.__init__()#{{{
-        print 'Stack:', self.stack
+        print 'Stack:', self.stack#{{{
         print 'Game Number:', self.game_number
         print 'Button:', self.button
         print 'Cards:', self.cards
