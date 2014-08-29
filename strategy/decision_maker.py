@@ -3,14 +3,15 @@ import time
 from pokerstars.config import BB
 from pokerstars.controller import Controller
 from strategy.config import preflop_move
-from strategy.config import prob_factor
 from pokerstars.controller import Controller
-
+from public import how_much_can_beat
+from public import how_many_outs
 
 class DecisionMaker():
     def __init__(self, game_driver):
         self.data_manager = game_driver.data_manager#{{{
         self.controller = Controller()
+        self.game_driver = game_driver
         self.stats_handler = game_driver.stats_handler#}}}
 
     def get_preflop_move(self):
@@ -39,12 +40,37 @@ class DecisionMaker():
         self.pot = game_driver.pot#}}}
 
     def make_decision(self, game_driver):
-        self.update(game_driver)
+        self.update(game_driver)#{{{
         if game_driver.stage == 0:
             self.preflop_strategy()
+        else:
+            self.postflop_strategy()#}}}
+
+    def postflop_strategy(self):
+        gd = self.game_driver#{{{
+        stats = self.stats_handler.stats
+        beat_chance = 1
+        for i in xrange(1, 6):
+            if gd.active[i]:
+                beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
+        my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+        if max(self.betting) == 0:
+            if beat_chance > 0.6:
+                self.controller.rais(self.pot*0.75)
+            else:
+                self.controller.fold()
+        else:
+            to_call = max(self.betting) - self.betting[0]
+            ratio = to_call / (self.pot+to_call)
+            if beat_chance > 0.75:
+                self.controller.rais(self.pot*0.8)
+            elif beat_chance+0.02*my_outs > 1.5*ratio:
+                self.controller.call()
+            else:
+                self.controller.fold()#}}}
 
     def preflop_strategy(self):
-        my_move = self.get_preflop_move()
+        my_move = self.get_preflop_move()#{{{
         betting = self.betting
         people_bet = self.bet_round
         button = self.button 
@@ -224,3 +250,4 @@ class DecisionMaker():
             self.controller.rais(max(betting)*(people_play+2))#{{{
             print 'My Move Is 4'
             return#}}}
+#}}}

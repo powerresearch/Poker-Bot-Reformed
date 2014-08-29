@@ -9,8 +9,10 @@ class DataManager():
         with open('database/data/default_data.json') as f:#{{{
             self.default_data = json.load(f)#}}}
 
-    def load_data(self, player_name):
-        self.player_data = list()#{{{
+    def load_data(self, player_name, button):
+        vpip_factor = [1.2, 1, 0.9, 0.8, 1, 1.1]#{{{
+        pfr_factor = [1.3, 1.6, 1, 0.5, 0.6, 1]
+        self.player_data = list()
         for i in xrange(6):
             if player_name[i] != u'd':
                 try:
@@ -25,11 +27,17 @@ class DataManager():
                 else:
                     self.player_data.append(self.default_data)
             else:
-                self.player_data.append(self.default_data)#}}}
+                self.player_data.append(self.default_data)
+        for position in xrange(6):
+            self.player_data[(button+position)%6][u'vpip'] *= vpip_factor[position]
+            self.player_data[(button+position)%6][u'pfr'] *= pfr_factor[position]#}}}
 
     def get_item(self, seat, item):
         if type(self.player_data[seat][item]) in [float, int]:#{{{
-            return self.player_data[seat][item]
+            if self.player_data[seat][u'HANDS'] < 15:
+                return self.default_data[item]
+            else:
+                return self.player_data[seat][item]
         elif self.player_data[seat][item][1] < 10:
             return 1.0 * self.default_data[item][0] / self.default_data[item][1]
         else:
