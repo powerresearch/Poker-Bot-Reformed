@@ -81,63 +81,67 @@ def norm(l):
     return l#}}}
 
 class ScreenScraper():
-    def __init__(self):
+    def __init__(self, source='ps'):
         self.im = pyscreenshot.grab()
+        self.source = source
 
     def update(self):
         self.im = pyscreenshot.grab()
 
-    def get_init_values(self):
+    def get_init_values(self, source='ps'):
         result = {}#{{{
         stack = ['', '', '', '', '', '']
         game_number = []
         cards = ['', '']
         button = []
-        player_name = [u'deoxy1909', '', '', '', '', '']
-        fail = 0
-        while not (game_number and button in range(6)):
-            game_number = self.get_game_number()
-            button = self.get_button()
-            if fail == 1:
-                self.update()
+        player_name = [u'deoxy1909', '', '', '', '', '']#}}}
+        if source == 'ps':
+            fail = 0#{{{
+            while not (game_number and button in range(6)):
+                game_number = self.get_game_number()
+                button = self.get_button()
+                if fail == 1:
+                    self.update()
 #               print 'stucking at getting game number and button', game_number, button
-            fail = 1
-        fail = 0
-        while not (stack[0] and stack[1] and stack[2] and stack[3]\
-                and stack[4] and stack[5]):
-            for i in xrange(6):
-                stack[i] = self.get_stack(i)
-            if fail:
-                self.update()
+                fail = 1
+            fail = 0
+            while not (stack[0] and stack[1] and stack[2] and stack[3]\
+                    and stack[4] and stack[5]):
+                for i in xrange(6):
+                    stack[i] = self.get_stack(i)
+                if fail:
+                    self.update()
 #               print 'stucking at getting stack'
-            fail = 1
-        fail = 0
-        while not (cards[0] and cards[1]):
-            cards[0] = self.get_card(0)
-            cards[1] = self.get_card(1)
-            if fail:
-                self.update()
+                fail = 1
+            fail = 0
+            while not (cards[0] and cards[1]):
+                cards[0] = self.get_card(0)
+                cards[1] = self.get_card(1)
+                if fail:
+                    self.update()
 #               print 'stucking at getting cards'
-            fail = 1
-        fail = 0
-        while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
-                and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
-                and type(player_name[5]) == unicode and type(player_name[2]) == unicode):
-            for i in xrange(6):
-                if type(player_name[i]) == unicode:
-                    continue
-                else:
-                    player_name[i] = self.get_name(i)
-            if fail:
-                self.update()
+                fail = 1
+            fail = 0
+            while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
+                    and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
+                    and type(player_name[5]) == unicode and type(player_name[2]) == unicode):
+                for i in xrange(6):
+                    if type(player_name[i]) == unicode:
+                        continue
+                    else:
+                        player_name[i] = self.get_name(i)
+                if fail:
+                    self.update()
 #               print 'stucking at getting names'
-            fail = 1
-        result['stack'] = stack 
-        result['game_number'] = game_number 
-        result['cards'] = cards 
-        result['button'] = button
-        result['player_name'] = player_name
-        return result#}}}
+                fail = 1
+            result['stack'] = stack 
+            result['game_number'] = game_number 
+            result['cards'] = cards 
+            result['button'] = button
+            result['player_name'] = player_name#}}}
+        elif source == 'file':
+            pass
+        return result
 
     def get_game_number(self):
         im = self.im#{{{
@@ -414,15 +418,3 @@ class ScreenScraper():
                         return (xy[number][0]+x+19, xy[number][1]+y)
         print 'fail to get anchor!!!'
         return []#}}}
-
-    def test_run(self):
-        self.update()
-        print 'Button: ', self.get_button()
-        print 'Number: ', self.get_game_number()
-        print 'Cards: ', self.get_card(0), self.get_card(1)
-        for i in xrange(6):
-            print self.get_stack(i),
-        print 
-        for i in xrange(6):
-            print self.get_name(i),
-        print

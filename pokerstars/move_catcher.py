@@ -2,14 +2,15 @@ from pokerstars.screen_scraper import ScreenScraper
 
 class MoveCatcher():
     def __init__(self, to_act, betting, \
-            active, old_stack, cards, game_number):
+            active, old_stack, cards, game_number, source='ps'):
         self.to_act         = to_act#{{{
         self.old_stack      = old_stack
         self.game_number    = game_number
         self.cards          = cards  
         self.active         = active
         self.betting        = betting
-        self.screen_scraper = ScreenScraper()#}}}
+        self.source         = source
+        self.screen_scraper = ScreenScraper(source)#}}}
     
     def next_stage(self):
         if self.cards[6]:#{{{
@@ -94,21 +95,24 @@ class MoveCatcher():
         return actions#}}}
 
     def get_action(self):
-        actions = list()#{{{
-        self.screen_scraper.update()
-        self.stack = [self.screen_scraper.get_stack(i) for i in xrange(6)]
-        actions += self.round_search()
-        next_game_result = self.next_game()
-        next_stage_result = self.next_stage()
-        if next_game_result:
-            actions.append(['new game', next_game_result])
-        if next_stage_result:
-            if not self.all_even():
-                actions += self.make_even()
-            actions.append(['new stage', next_stage_result])
-        if self.screen_scraper.shining(0):
-            actions.append(['my move', 0])
-        for action in actions:
-            if type(action[1]) == float:
-                action[1] = round(action[1], 2)
-        return actions#}}}
+        if self.source == 'ps':
+            actions = list()#{{{
+            self.screen_scraper.update()
+            self.stack = [self.screen_scraper.get_stack(i) for i in xrange(6)]
+            actions += self.round_search()
+            next_game_result = self.next_game()
+            next_stage_result = self.next_stage()
+            if next_game_result:
+                actions.append(['new game', next_game_result])
+            if next_stage_result:
+                if not self.all_even():
+                    actions += self.make_even()
+                actions.append(['new stage', next_stage_result])
+            if self.screen_scraper.shining(0):
+                actions.append(['my move', 0])
+            for action in actions:
+                if type(action[1]) == float:
+                    action[1] = round(action[1], 2)#}}}
+        elif self.source == 'file':
+            pass
+        return actions
