@@ -1,13 +1,25 @@
 from game_driver import GameDriver
 from pokerstars.get_name_figure import get_name_figure
+import sys
 import time
+import re
 
-while True:
-    print '\n\n\nStarting New Game'
-    time.sleep(1)
-    game_driver = GameDriver()
-    game_driver.game_stream()
-    game_driver.count_game()
-    if game_driver.game_count % 10 == 0:
-        get_name_figure()
-        game_driver.data_manager.update()
+if sys.argv[1] == 'ps':
+    while True:
+        print '\n\n\nStarting New Game'
+        time.sleep(1)
+        game_driver = GameDriver('ps')
+        game_driver.game_stream()
+        game_driver.count_game()
+        if game_driver.game_count % 10 == 0:
+            get_name_figure()
+            game_driver.data_manager.update()
+else:
+    with open('test_file.txt') as f:
+        test_file = f.read()
+    games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
+    for game in games:
+        print game
+        print '\n\n\nStarting New Game'
+        game_driver = GameDriver(game)
+        game_driver.game_stream()

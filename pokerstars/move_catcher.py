@@ -1,16 +1,22 @@
 from pokerstars.screen_scraper import ScreenScraper
+from public import map_card_string_to_tuple
+import re
 
 class MoveCatcher():
-    def __init__(self, to_act, betting, \
-            active, old_stack, cards, game_number, source='ps'):
+    def __init__(self, to_act, game_driver): 
         self.to_act         = to_act#{{{
-        self.old_stack      = old_stack
-        self.game_number    = game_number
-        self.cards          = cards  
-        self.active         = active
-        self.betting        = betting
-        self.source         = source
-        self.screen_scraper = ScreenScraper(source)#}}}
+        self.game_driver    = game_driver
+        self.old_stack      = game_driver.stack
+        self.game_number    = game_driver.game_number
+        self.cards          = game_driver.cards  
+        self.active         = game_driver.active
+        self.betting        = game_driver.betting
+        if game_driver.source == 'ps': 
+            self.source = 'ps'
+        else:
+            self.source = game_driver.source.splitlines()[12:]
+            self.seat = game_driver.seat
+        self.screen_scraper = ScreenScraper(game_driver.source)#}}}
     
     def next_stage(self):
         if self.cards[6]:#{{{
@@ -95,6 +101,7 @@ class MoveCatcher():
         return actions#}}}
 
     def get_action(self):
+        self.betting = self.game_driver.betting
         if self.source == 'ps':
             actions = list()#{{{
             self.screen_scraper.update()
@@ -113,6 +120,52 @@ class MoveCatcher():
             for action in actions:
                 if type(action[1]) == float:
                     action[1] = round(action[1], 2)#}}}
-        elif self.source == 'file':
-            pass
+        else:
+            instr = self.source[0]#{{{
+            cards = self.cards
+            self.source = self.source[1:]
+            if ':' in instr:
+                player = self.seat[instr.split(':')[0]]
+#               if player == 0:
+#                   return [['my move', 0]]
+                action_str = instr.split(': ')[1].strip()
+                action_str = re.sub(' and is all-in', '', action_str)
+                if action_str == 'folds':
+                    actions = [[player, 'fold']]
+                if action_str == 'checks':
+                    actions = [[player, 'check']]
+                if action_str.startswith('bets'):
+                    actions = [[player, float(action_str.split('$')[1])]]
+                    self.betting[player] += float(action_str.split('$')[1])
+                if action_str.startswith('calls'):
+                    actions = [[player, float(action_str.split('$')[1])]]
+                    self.betting[player] += float(action_str.split('$')[1])
+                if action_str.startswith('raises'):
+                    amount = re.findall(r'raises \$(.*?) to', action_str)[0]
+                    actions = [[player, max(self.betting) + float(amount)\
+                            - self.betting[player]]]
+                    self.betting[player] = max(self.betting) + float(amount)
+                if type(actions[0][1]) == float:
+                    actions[0][1] = round(actions[0][1], 2)
+                self.betting[player] = round(self.betting[player], 2)
+                return actions
+            else:
+                if instr.startswith('Uncalled bet'):
+                    return [['new game', 1]]
+                if instr.startswith('*** SHOW DOWN ***'):
+                    return [['new game', 1]]
+                if instr.startswith('*** FLOP ***'):
+                    cards234 = re.findall('\[(.*?)\]', instr)[0]
+                    cards[2] = map_card_string_to_tuple(cards234[:2])
+                    cards[3] = map_card_string_to_tuple(cards234[3:5])
+                    cards[4] = map_card_string_to_tuple(cards234[6:])
+                    return [['new stage', cards]]
+                if instr.startswith('*** TURN ***'):
+                    cards5 = re.findall('\[(.{2})\]', instr)[0]
+                    cards[5] = map_card_string_to_tuple(cards5)
+                    return [['new stage', cards]]
+                if instr.startswith('*** RIVER ***'):
+                    cards6 = re.findall('\[(.{2})\]', instr)[0]
+                    cards[6] = map_card_string_to_tuple(cards6)
+                    return [['new stage', cards]]#}}}
         return actions

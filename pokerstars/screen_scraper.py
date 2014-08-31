@@ -1,7 +1,9 @@
 import pyscreenshot
+import re
 from collections import defaultdict
 from PIL import Image
 from pokerstars.config import *
+from public import map_card_string_to_tuple
 
 def tree():
     return defaultdict(tree)
@@ -82,20 +84,21 @@ def norm(l):
 
 class ScreenScraper():
     def __init__(self, source='ps'):
-        self.im = pyscreenshot.grab()
+        if source == 'ps':
+            self.im = pyscreenshot.grab()
         self.source = source
 
     def update(self):
         self.im = pyscreenshot.grab()
 
-    def get_init_values(self, source='ps'):
+    def get_init_values(self):
         result = {}#{{{
         stack = ['', '', '', '', '', '']
         game_number = []
         cards = ['', '']
         button = []
         player_name = [u'deoxy1909', '', '', '', '', '']#}}}
-        if source == 'ps':
+        if self.source == 'ps':
             fail = 0#{{{
             while not (game_number and button in range(6)):
                 game_number = self.get_game_number()
@@ -139,8 +142,39 @@ class ScreenScraper():
             result['cards'] = cards 
             result['button'] = button
             result['player_name'] = player_name#}}}
-        elif source == 'file':
-            pass
+        else:
+            lines = self.source.splitlines()#{{{
+            hero_name = re.findall(r'Dealt to (.*) \[', self.source)[0]
+            game_number = re.findall(r'[0-9]+', lines[0])[0]
+            player = [0, 0, 0, 0, 0, 0]
+            seat = {}
+            tmp_seat = {}
+            tmp_stack = [0, 0, 0, 0, 0, 0]
+            tmp_player = ['', '', '', '', '', '']
+            for i in xrange(6):
+                line = lines[2+i]
+                line = line[8:]
+                line = line[:-10]
+                line = line.split(' (')
+                tmp_stack[i] = float(line[-1][1:])#re.findall(r'\($([0-9\.]*) ', line[-1])[0]
+                tmp_player[i] = ' ('.join(line[:-1])
+                tmp_seat[' ('.join(line[:-1])] = i
+            hero_seat = tmp_seat[hero_name]
+            button = (0-hero_seat) % 6
+            for i in xrange(6):
+                stack[(i-hero_seat)%6] = tmp_stack[i]
+                player[(i-hero_seat)%6] = tmp_player[i]
+            for name in tmp_seat:
+                seat[name] = (tmp_seat[name]-hero_seat) % 6
+            card01 = re.findall('Dealt to .+? \[(.+?)]', self.source)[0]
+            cards[0] = map_card_string_to_tuple(card01[:2])
+            cards[1] = map_card_string_to_tuple(card01[3:])
+            result['cards'] = cards
+            result['game_number'] = game_number
+            result['stack'] = stack
+            result['player_name'] = player
+            result['seat'] = seat
+            result['button'] = button#}}}
         return result
 
     def get_game_number(self):

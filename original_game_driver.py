@@ -17,7 +17,7 @@ from strategy.decision_maker import DecisionMaker
 class GameDriver():
 
     def __init__(self):
-        self.screen_scraper = ScreenScraper(source='file')#{{{
+        self.screen_scraper = ScreenScraper()#{{{
         init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
@@ -169,7 +169,7 @@ class GameDriver():
         self.people_play = 1
         self.last_mover = (self.button+2) % 6
         move_catcher = MoveCatcher(to_act, self.betting, self.active,\
-                self.stack, self.cards, self.game_number, source='file')#}}}
+                self.stack, self.cards, self.game_number)#}}}
         while True:#{{{
             actions = move_catcher.get_action()
             for action in actions:
@@ -190,7 +190,7 @@ class GameDriver():
         while self.last_mover != 1:
             self.last_mover = (self.last_mover-1) % 6
         move_catcher = MoveCatcher(to_act, self.betting, self.active,\
-                self.stack, self.cards, self.game_number, source='file')#}}}
+                self.stack, self.cards, self.game_number)#}}}
         while True:#{{{
             actions = move_catcher.get_action()
             for action in actions:

@@ -55,91 +55,92 @@ def max(obj):
         return result#}}}
 
 def find_out(list_of_cards):
-    cards = list()#{{{
-    original_number = defaultdict(int)
-    color = defaultdict(int)
-    for card in list_of_cards:
-        original_number[card[0]] += 1
-        color[card[1]] += 1
-        cards.append(card[0])
-    number = deepcopy(original_number)
-    for key in number:
-        result = [0, 0]
-        if number[key] == 4:
-            result[0] = key
-            number[key] -= 4
-            result[1] = max(number)
-            return [7] + result + [0, 0, 0]
-    number = deepcopy(original_number)
-    for key in number:
-        result = [0, 0]
-        if number[key] == 3:
-            result[0] = key
-            number[key] -= 3
-            for key2 in number:
-                if number[key2] >= 2:
-                    if key2 > result[1]:
-                        result[1] = key2 
-            if result[1] > 0:
+    try:
+        cards = list()#{{{
+        original_number = defaultdict(int)
+        color = defaultdict(int)
+        for card in list_of_cards:
+            original_number[card[0]] += 1
+            color[card[1]] += 1
+            cards.append(card[0])
+        number = deepcopy(original_number)
+        for key in number:
+            result = [0, 0]
+            if number[key] == 4:
+                result[0] = key
+                number[key] -= 4
+                result[1] = max(number)
+                return [7] + result + [0, 0, 0]
+        number = deepcopy(original_number)
+        for key in number:
+            result = [0, 0]
+            if number[key] == 3:
+                result[0] = key
+                number[key] -= 3
+                for key2 in number:
+                    if number[key2] >= 2:
+                        if key2 > result[1]:
+                            result[1] = key2 
+                if result[1] > 0:
 #                if cards[0] == key and cards[1] == key:
-                return [6] + result + [0, 0, 0]
+                    return [6] + result + [0, 0, 0]
 #                if key in cards[:2]:
 #                    return [3] + result
 #                if key2 in cards[:2]:
 #                    return [2] + result
 #                return [0] + result
-    number = deepcopy(original_number)
-    for i in xrange(1, 5):
-        if color[i] >= 5:
-            result = [5]
-            for card in sorted(list_of_cards, key=lambda x:x[0], reverse=True):
-                if card[1] == i:
-                    result.append(card[0])
-                    if len(result) == 6:
-                        return result
-    number = deepcopy(original_number)
-    result = straight(number)
-    for i in xrange(11):
-        if result[i] == -1:
-            return [4, i, 0, 0, 0, 0]
-    number = deepcopy(original_number)
-    for key in number:
-        if number[key] == 3:
-            number[key] -= 3
-            kicker1 = max(number)
-            number[kicker1] -= 1
-            kicker2 = max(number)
+        number = deepcopy(original_number)
+        for i in xrange(1, 5):
+            if color[i] >= 5:
+                result = [5]
+                for card in sorted(list_of_cards, key=lambda x:x[0], reverse=True):
+                    if card[1] == i:
+                        result.append(card[0])
+                        if len(result) == 6:
+                            return result
+        number = deepcopy(original_number)
+        result = straight(number)
+        for i in xrange(11):
+            if result[i] == -1:
+                return [4, i, 0, 0, 0, 0]
+        number = deepcopy(original_number)
+        for key in number:
+            if number[key] == 3:
+                number[key] -= 3
+                kicker1 = max(number)
+                number[kicker1] -= 1
+                kicker2 = max(number)
 #            if key in cards[:2]:
 #                return [3, key, kicker1, kicker2, 0, 0]
 #            else:
-            return [3, key, kicker1, kicker2, 0, 0]
-    number = deepcopy(original_number)
-    pair1, pair2 = 0, 0
-    for key in number:
-        if number[key] == 2:
-            if key > pair2:
-                pair2 = key
-                if pair2 > pair1:
-                    pair2, pair1 = pair1, pair2
-    if pair2 > 0:
-        number[pair1] -= 2
-        number[pair2] -= 2
-        kicker = max(number)
+                return [3, key, kicker1, kicker2, 0, 0]
+        number = deepcopy(original_number)
+        pair1, pair2 = 0, 0
+        for key in number:
+            if number[key] == 2:
+                if key > pair2:
+                    pair2 = key
+                    if pair2 > pair1:
+                        pair2, pair1 = pair1, pair2
+        if pair2 > 0:
+            number[pair1] -= 2
+            number[pair2] -= 2
+            kicker = max(number)
 #        if pair1 in cards[:2] and pair2 in cards[:2]:
 #            return [2, pair1, pair2, kicker, 0, 0]
 #        if pair1 in cards[:2] or pair2 in cards[:2]:
 #            return [1, pair1, pair2, kicker, 0, 0]
-        return [2, pair1, pair2, kicker, 0, 0]
-    number = deepcopy(original_number)
-    for key in number:
-        if number[key] == 2:
-            number[key] -= 2
-            pair = key
-            kicker1 = max(number)
-            number[kicker1] -= 1
-            kicker2 = max(number)
-            number[kicker2] -= 1
-            kicker3 = max(number)
+            return [2, pair1, pair2, kicker, 0, 0]
+        number = deepcopy(original_number)
+        for key in number:
+            if number[key] == 2:
+                number[key] -= 2
+                pair = key
+                kicker1 = max(number)
+                number[kicker1] -= 1
+                kicker2 = max(number)
+                number[kicker2] -= 1
+                kicker3 = max(number)
 #            if pair > max(cards[2:]):
 #                return [1.5, pair, kicker1, kicker2, kicker3, 0]
 #            if not pair in cards[:2]:
@@ -152,21 +153,24 @@ def find_out(list_of_cards):
 #                return [1, pair, kicker1, kicker2, kicker3, 0]
 #            if pair < max(cards[2:]):
 #                return [1, pair, kicker1, kicker2, kicker3, 0]
-            return [1, pair, kicker1, kicker2, kicker3, 0]
-    number = deepcopy(original_number)
-    h1 = max(number)
-    number[h1] -= 1
-    h2 = max(number)
-    number[h2] -= 1
-    h3 = max(number)
-    number[h3] -= 1
-    h4 = max(number)
-    number[h4] -= 1
-    h5 = max(number)
+                return [1, pair, kicker1, kicker2, kicker3, 0]
+        number = deepcopy(original_number)
+        h1 = max(number)
+        number[h1] -= 1
+        h2 = max(number)
+        number[h2] -= 1
+        h3 = max(number)
+        number[h3] -= 1
+        h4 = max(number)
+        number[h4] -= 1
+        h5 = max(number)
 #    if max(cards[:2]) > 11:
 #        return [0.5, h1, h2, h3, h4, h5]
 #    else:
-    return [0, h1, h2, h3, h4, h5]#}}}
+        return [0, h1, h2, h3, h4, h5]#}}}
+    except:
+#       print list_of_cards
+        pass
 
 def straight(ddict):
     result = [0,0,0,0,0,0,0,0,0,0,0]#{{{
@@ -346,3 +350,12 @@ def most_probable(stats, n=100):
                     all_combo.append([prob, (num1, col1), (num2, col2)])
     sorted_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
     return sorted_combo[:n]#}}}
+
+def map_card_string_to_tuple(card):
+    result = [0, 0]#{{{
+    color_map = {'s':1, 'h':2, 'c':3, 'd':4}
+    number_map = {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8,\
+            '9':9, 'T':10, 'J':11, 'Q':12, 'K':13, 'A':14}
+    result[1] = color_map[card[-1]]
+    result[0] = number_map[card[:-1]]
+    return result#}}}

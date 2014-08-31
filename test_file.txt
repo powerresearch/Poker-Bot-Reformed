@@ -1,0 +1,44 @@
+File: HH20140311 Halley #6 - $0.01-$0.02 - USD No Limit Hold'em.txt
+PokerStars Zoom Hand #113097633050:  Hold'em No Limit ($0.01/$0.02) - 2014/03/11 6:50:36 ET
+Table 'Halley' 6-max Seat #1 is the button
+Seat 1: MaeStr0zaj ($6.29 in chips) 
+Seat 2: gleb7771 ($1.49 in chips) 
+Seat 3: Lele184 ($2 in chips) 
+Seat 4: DaveRaise201 ($2 in chips) 
+Seat 5: asafderg ($3.79 in chips) 
+Seat 6: MikeJ525 ($2.04 in chips) 
+gleb7771: posts small blind $0.01
+Lele184: posts big blind $0.02
+*** HOLE CARDS ***
+Dealt to MikeJ525 [Kh Js]
+DaveRaise201: folds 
+asafderg: folds 
+MikeJ525: raises $0.04 to $0.06
+MaeStr0zaj: calls $0.06
+gleb7771: calls $0.05
+Lele184: calls $0.04
+*** FLOP *** [Ah Th Qc]
+gleb7771: bets $0.22
+Lele184: calls $0.22
+MikeJ525: raises $0.88 to $1.10
+MaeStr0zaj: folds 
+gleb7771: raises $0.33 to $1.43 and is all-in
+Lele184: raises $0.51 to $1.94 and is all-in
+MikeJ525: calls $0.84
+*** TURN *** [Ah Th Qc] [9d]
+*** RIVER *** [Ah Th Qc 9d] [7d]
+*** SHOW DOWN ***
+Lele184: shows [3h 4h] (high card Ace)
+MikeJ525: shows [Kh Js] (a straight, Ten to Ace)
+MikeJ525 collected $0.99 from side pot
+gleb7771: shows [Kd Ad] (a pair of Aces)
+MikeJ525 collected $4.37 from main pot
+*** SUMMARY ***
+Total pot $5.55 Main pot $4.37. Side pot $0.99. | Rake $0.19 
+Board [Ah Th Qc 9d 7d]
+Seat 1: MaeStr0zaj (button) folded on the Flop
+Seat 2: gleb7771 (small blind) showed [Kd Ad] and lost with a pair of Aces
+Seat 3: Lele184 (big blind) showed [3h 4h] and lost with high card Ace
+Seat 4: DaveRaise201 folded before Flop (didn't bet)
+Seat 5: asafderg folded before Flop (didn't bet)
+Seat 6: MikeJ525 showed [Kh Js] and won ($5.36) with a straight, Ten to Ace
