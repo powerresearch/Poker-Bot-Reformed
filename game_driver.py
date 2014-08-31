@@ -106,6 +106,11 @@ class GameDriver():
             print 'Player '+str(actor)+': Raise --> '+str(value)+'  \t <-- '+str(self.betting)
         else:
             print 'Player '+str(actor)+': Call'+' '*12+'\t <-- '+str(self.betting)
+        if is_only_max(self.betting, actor):
+            self.last_better = actor
+            self.bet_round += 1
+        else:
+            self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
                 self.people_play, self.last_better)
         self.pot += value
@@ -114,11 +119,6 @@ class GameDriver():
         self.stack[actor] = round(self.stack[actor], 2)
         if self.stack[actor] == 0:
             self.active[actor] = 0.5
-        if is_only_max(self.betting, actor):
-            self.last_better = actor
-            self.bet_round += 1
-        else:
-            self.people_play += 1
         return []#}}}
 
     def handle_postflop_action(self, action):
@@ -152,8 +152,8 @@ class GameDriver():
             self.stack[actor] = round(self.stack[actor], 2)
             if self.stack[actor] == 0:
                 self.active[actor] = 0.5
-            if round(value+self.betting[actor], 2) > max(self.betting):
-                if self.pot == 0: 
+            if is_only_max(self.betting, actor):
+                if max(self.betting) == sum(self.betting): 
                     if self.last_better == actor:
                         self.postflop_status[actor] = 'cb'
                     else:
@@ -217,6 +217,8 @@ class GameDriver():
                 self.can_beat_table[stage] ,self.outs[stage] =\
                         get_can_beat_table(self.power_rank[self.stage],\
                         self.stats_handler.stats, self.last_better)
+                with open('can_beat_table.json', 'w') as f:
+                    json.dump(self.can_beat_table[stage], f)
 #               print action
 #               print self.betting
 #               print self.stack

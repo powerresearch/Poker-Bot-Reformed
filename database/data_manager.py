@@ -33,7 +33,11 @@ class DataManager():
             self.player_data[(button+position)%6][u'pfr'] *= pfr_factor[position]#}}}
 
     def get_item(self, seat, item):
-        if type(self.player_data[seat][item]) in [float, int]:#{{{
+        if type(seat) != int:#{{{
+            s = seat
+            seat = item
+            item = s
+        if type(self.player_data[seat][item]) in [float, int]:
             if self.player_data[seat][u'HANDS'] < 15:
                 return self.default_data[item]
             else:
@@ -41,7 +45,7 @@ class DataManager():
         elif self.player_data[seat][item][1] < 10:
             return 1.0 * self.default_data[item][0] / self.default_data[item][1]
         else:
-            return 1.0 * self.player_data[seat][item][0] / self.default_data[item][1]#}}}
+            return 1.0 * self.player_data[seat][item][0] / self.player_data[seat][item][1]#}}}
 
     def update(self):
         with open('database/file_parsed.json') as f:#{{{

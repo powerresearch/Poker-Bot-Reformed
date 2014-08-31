@@ -84,9 +84,10 @@ class DecisionMaker():
             raw_input('---press any key---')
             for i in xrange(1, 6):
                 if self.game_driver.active[i]:
-                    sorted_combo = most_probable(stats[i], 50)
+                    sorted_combo = most_probable(stats[i], 200)
                     for combo in sorted_combo:
                         print combo
+                    print 'Player', i
                     raw_input('---press any key---')
             print#}}}
 

@@ -1,5 +1,7 @@
 import json
 import copy
+from public import most_probable
+from public import has_same
 
 with open('stats/prob_factor_close.json') as f:
     prob_factor_close = json.load(f)
@@ -50,7 +52,7 @@ class StatsHandler():
             else:
                 top_n = self.data_manager.get_item(player, u'4B')
                 para = 'close'
-        small_table = self.get_preflop_prob(top_n, para)
+        small_table = self.get_preflop_prob(top_n*100, para)
         self.stats[player] = self.trans_prob(small_table)
         return self.stats#}}}
     
@@ -64,13 +66,14 @@ class StatsHandler():
             prob = 1
         return prob#}}}
 
-    def postflop_update(self, actor, postflop_status, cards, stage):
+    def postflop_update(self, actor, postflop_status_list, cards, stage):
         if not self.power_rank[stage]:#{{{
             self.power_rank[stage] = self.game_driver.power_rank[stage]
         if not self.can_beat_table[stage]:
             self.can_beat_table[stage], self.outs[stage] = \
                     self.game_driver.can_beat_table[stage], \
                     self.game_driver.outs[stage] 
+        postflop_status = postflop_status_list[actor]
         if postflop_status == 'check':#{{{
             for num1 in xrange(2, 15):
                 for col1 in xrange(1, 5):
@@ -78,9 +81,16 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
-                            check_prob = self.data_manager.get_item(STAGE[stage]+u'CK', actor)
+                            if self.game_driver.last_better == actor:
+                                cb_prob = self.data_manager.get_item(STAGE[stage]+u'CB', actor)
+                                check_prob = 1-cb_prob
+                            else:
+                                dk_prob = self.data_manager.get_item(STAGE[stage]+u'DK', actor)
+                                check_prob = 1-dk_prob
                             vertex_l = 0
                             vertex_r = check_prob*0.75
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
@@ -93,10 +103,17 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             cb_prob = self.data_manager.get_item(STAGE[stage]+u'CB', actor)
-                            check_prob = self.data_manager.get_item(STAGE[stage]+u'CK', actor)
+                            if self.game_driver.last_better == actor:
+                                cb_prob = self.data_manager.get_item(STAGE[stage]+u'CB', actor)
+                                check_prob = 1-cb_prob
+                            else:
+                                dk_prob = self.data_manager.get_item(STAGE[stage]+u'DK', actor)
+                                check_prob = 1-dk_prob
                             vertex_l = check_prob*1.5
                             vertex_r = cb_prob*0.8
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
@@ -109,10 +126,17 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             dk_prob = self.data_manager.get_item(STAGE[stage]+u'DK', actor)
-                            check_prob = self.data_manager.get_item(STAGE[stage]+u'CK', actor)
+                            if self.game_driver.last_better == actor:
+                                cb_prob = self.data_manager.get_item(STAGE[stage]+u'CB', actor)
+                                check_prob = 1-cb_prob
+                            else:
+                                dk_prob = self.data_manager.get_item(STAGE[stage]+u'DK', actor)
+                                check_prob = 1-dk_prob
                             vertex_l = check_prob*1.5
                             vertex_r = dk_prob*0.8
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
@@ -124,8 +148,10 @@ class StatsHandler():
                     for num2 in xrange(2, 15):
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
-                            small_cardk = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            small_card = min([num1, col1], [num2, col2])
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             cb_prob = self.data_manager.get_item(STAGE[stage]+u'CB', actor)
                             cr_prob = self.data_manager.get_item(STAGE[stage]+u'CR', actor)
@@ -140,8 +166,10 @@ class StatsHandler():
                     for num2 in xrange(2, 15):
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
-                            small_cardk = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            small_card = min([num1, col1], [num2, col2])
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             cb_prob = self.data_manager.get_item(STAGE[stage]+u'CB', actor)
                             raise_prob = self.data_manager.get_item(STAGE[stage]+u'R', actor)
@@ -156,8 +184,10 @@ class StatsHandler():
                     for num2 in xrange(2, 15):
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
-                            small_cardk = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            small_card = min([num1, col1], [num2, col2])
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             fold_prob = 1 - (self.data_manager.get_item(STAGE[stage]+u'FCB', actor)\
                                     +self.data_manager.get_item(STAGE[stage]+u'FDK', actor)) / 2.0
@@ -173,8 +203,10 @@ class StatsHandler():
                     for num2 in xrange(2, 15):
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
-                            small_cardk = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            small_card = min([num1, col1], [num2, col2])
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             fold_prob = 1 - self.data_manager.get_item(STAGE[stage]+u'FR', actor)
                             vertex_l = fold_prob
@@ -188,8 +220,10 @@ class StatsHandler():
                     for num2 in xrange(2, 15):
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
-                            small_cardk = min([num1, col1], [num2, col2])
-                            can_beat = self.can_beat_table[small_card[0]][small_card[1]]\
+                            small_card = min([num1, col1], [num2, col2])
+                            if has_same([big_card, small_card]+cards):
+                                continue
+                            can_beat = self.can_beat_table[stage][small_card[0]][small_card[1]]\
                                     [big_card[0]][big_card[1]] 
                             fold_prob = 1 - (self.data_manager.get_item(STAGE[stage]+u'FCB', actor)\
                                     +self.data_manager.get_item(STAGE[stage]+u'FDK', actor)) / 2.0
