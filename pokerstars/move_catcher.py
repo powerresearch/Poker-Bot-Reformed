@@ -126,8 +126,6 @@ class MoveCatcher():
             self.source = self.source[1:]
             if ':' in instr:
                 player = self.seat[instr.split(':')[0]]
-#               if player == 0:
-#                   return [['my move', 0]]
                 action_str = instr.split(': ')[1].strip()
                 action_str = re.sub(' and is all-in', '', action_str)
                 if action_str == 'folds':
@@ -148,6 +146,8 @@ class MoveCatcher():
                 if type(actions[0][1]) == float:
                     actions[0][1] = round(actions[0][1], 2)
                 self.betting[player] = round(self.betting[player], 2)
+                if player == 0:
+                    actions = [['my move', 0]] + actions
                 return actions
             else:
                 if instr.startswith('Uncalled bet'):

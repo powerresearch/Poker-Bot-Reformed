@@ -346,6 +346,8 @@ def most_probable(stats, n=100):
         for col1 in stats[num1]:
             for num2 in stats[num1][col1]:
                 for col2 in stats[num1][col1][num2]:
+                    if [num1, col1] < [num2, col2]:
+                        continue
                     prob = stats[num1][col1][num2][col2]
                     all_combo.append([prob, (num1, col1), (num2, col2)])
     sorted_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)

@@ -57,7 +57,7 @@ class GameDriver():
         print 'Stack:', self.stack#{{{
         print 'Game Number:', self.game_number
         print 'Button:', self.button
-        print 'Cards:', self.cards
+        print 'Cards:', self.cards[:2]
         print 'Names:', self.player_name
         print#}}}
         indicator = self.preflop()#{{{
@@ -69,7 +69,12 @@ class GameDriver():
             with open('stats_snapshot.json', 'w') as f:
                 json.dump(self.stats_handler.stats, f)
             print '*** '+stages[self.stage]+' ***'
-            print 'Cards: ', [c for c in self.cards if c]
+            if self.stage == 1:
+                print 'Cards: ', self.cards[2:5]
+            elif self.stage == 2:
+                print 'Cards: ', self.cards[2:5], self.cards[5]
+            elif self.stage == 3:
+                print 'Cards: ', self.cards[2:5], self.cards[5], self.cards[6]
             indicator = self.post_flop(self.stage)
             if indicator == 'new game':
                 return self.game_number#}}}
