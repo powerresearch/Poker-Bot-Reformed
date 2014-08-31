@@ -74,6 +74,7 @@ class StatsHandler():
                     self.game_driver.can_beat_table[stage], \
                     self.game_driver.outs[stage] 
         postflop_status = postflop_status_list[actor]
+        print postflop_status
         if postflop_status == 'check':#{{{
             for num1 in xrange(2, 15):
                 for col1 in xrange(1, 5):

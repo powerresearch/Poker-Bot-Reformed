@@ -217,8 +217,6 @@ class GameDriver():
                 self.can_beat_table[stage] ,self.outs[stage] =\
                         get_can_beat_table(self.power_rank[self.stage],\
                         self.stats_handler.stats, self.last_better)
-                with open('can_beat_table.json', 'w') as f:
-                    json.dump(self.can_beat_table[stage], f)
 #               print action
 #               print self.betting
 #               print self.stack

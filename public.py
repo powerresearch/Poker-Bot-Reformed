@@ -197,7 +197,10 @@ def straight(ddict):
         result[1] = lack[0]
     return result#}}}
 
-def has_same(cards):
+def has_same(original_cards):
+    cards = original_cards
+    while not cards[-1]:
+        cards = cards[:-1]
     for i in xrange(len(cards)):#{{{
         for j in xrange(len(cards)):
             if i == j: 
