@@ -94,6 +94,7 @@ class StatsHandler():
                             vertex_l = 0
                             vertex_r = check_prob*0.75
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
         if postflop_status == 'cb':#{{{
@@ -117,6 +118,7 @@ class StatsHandler():
                             vertex_l = check_prob*1.5
                             vertex_r = cb_prob*0.8
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
         if postflop_status == 'dk':#{{{
@@ -140,6 +142,7 @@ class StatsHandler():
                             vertex_l = check_prob*1.5
                             vertex_r = dk_prob*0.8
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
         if postflop_status == 'cr':#{{{
@@ -158,6 +161,7 @@ class StatsHandler():
                             vertex_l = cb_prob*1.2
                             vertex_r = 1
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
         if postflop_status == 'raise':#{{{
@@ -176,6 +180,7 @@ class StatsHandler():
                             vertex_l = cb_prob*1.2
                             vertex_r = 1
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob
                                     #}}}
@@ -196,6 +201,7 @@ class StatsHandler():
                             vertex_l = fold_prob * 1.2
                             vertex_r = (1-raise_prob) * 0.8
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
         if postflop_status in ['callraise', 'callcr', 'checkcallraise', 'checkcallcr']:#{{{
@@ -213,6 +219,7 @@ class StatsHandler():
                             vertex_l = fold_prob
                             vertex_r = 1
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
         if postflop_status in ['checkcallcb', 'checkcalldk']:#{{{
@@ -232,6 +239,7 @@ class StatsHandler():
                             vertex_l = fold_prob * 1.2
                             vertex_r = 1 - raise_prob
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
+                            print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \
                                     self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
 #}}}
@@ -259,6 +267,22 @@ class StatsHandler():
 
     @staticmethod
     def get_preflop_prob(top_n, arg):
+        n1 = top_n * 0.6#{{{
+        n2 = top_n
+        n3 = top_n * 1.4
+        print n1,n2,n3
+        prob1 = StatsHandler.get_preflop_prob_pointy(n1, arg)
+        prob2 = StatsHandler.get_preflop_prob_pointy(n2, arg)
+        prob3 = StatsHandler.get_preflop_prob_pointy(n3, arg)
+        prob = {}
+        for c1 in prob1:
+            prob[c1] = {}
+            for c2 in prob1:
+                prob[c1][c2] = max([prob1[c1][c2], prob2[c1][c2], prob3[c1][c2]]) 
+        return prob#}}}
+
+    @staticmethod
+    def get_preflop_prob_pointy(top_n, arg):
         if arg == 'open':#{{{
             prob_factor = prob_factor_open
         else:
@@ -266,9 +290,9 @@ class StatsHandler():
         cut_points = [0.5, 1, 2, 3, 5, 10, 15, 20, 25, 100]
         coef = [0] * len(cut_points)
         for point_index in xrange(len(cut_points)-1, -1, -1):
-            coef[point_index] = 1.0 / (20+pow(abs(cut_points[point_index]-top_n), 2))
-            if cut_points[point_index] < top_n:
-                break
+            coef[point_index] = 1.0 / (50+pow(abs(cut_points[point_index]-top_n), 2))
+#           if cut_points[point_index] < top_n:
+#               break
         prob = {}
         for c1 in xrange(2, 15): 
             prob[c1] = {}
@@ -284,7 +308,7 @@ class StatsHandler():
                     max_prob = prob[c1][c2]
         for c1 in xrange(2, 15):
             for c2 in xrange(2, 15):
-                prob[c1][c2] /= max_prob
+                prob[c1][c2] = prob[c1][c2] / max_prob
         return prob#}}}
     
     @staticmethod
