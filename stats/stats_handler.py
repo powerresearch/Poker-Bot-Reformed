@@ -74,7 +74,6 @@ class StatsHandler():
                     self.game_driver.can_beat_table[stage], \
                     self.game_driver.outs[stage] 
         postflop_status = postflop_status_list[actor]
-        print postflop_status
         if postflop_status == 'check':#{{{
             for num1 in xrange(2, 15):
                 for col1 in xrange(1, 5):
@@ -178,7 +177,8 @@ class StatsHandler():
                             vertex_r = 1
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r)
                             self.stats[actor][num1][col1][num2][col2] = \
-                                    self.stats_stable[actor][num1][col1][num2][col2] * prob#}}}
+                                    self.stats_stable[actor][num1][col1][num2][col2] * prob
+                                    #}}}
         if postflop_status in ['callcb', 'calldk']:#{{{
             for num1 in xrange(2, 15):
                 for col1 in xrange(1, 5):

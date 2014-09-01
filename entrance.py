@@ -1,5 +1,6 @@
 from game_driver import GameDriver
 from pokerstars.get_name_figure import get_name_figure
+from public import del_stdout_line
 import sys
 import time
 import re
@@ -19,7 +20,11 @@ else:
         test_file = f.read()
     games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
     for game in games:
-        print game
-        print '\n\n\nStarting New Game'
+#       print game
+#       del_stdout_line(len(game.splitlines())+1)
+        print '####################\n\n\n\n\n'
+        print '####################'
+        print 'Starting New Game'
         game_driver = GameDriver(game)
         game_driver.game_stream()
+        raw_input('---ENDING GAME---')

@@ -354,7 +354,7 @@ def most_probable(stats, n=100):
                     prob = stats[num1][col1][num2][col2]
                     all_combo.append([prob, (num1, col1), (num2, col2)])
     sorted_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
-    return sorted_combo[:n]#}}}
+    return print_stats(sorted_combo, n)#}}}
 
 def map_card_string_to_tuple(card):
     result = [0, 0]#{{{
@@ -364,3 +364,41 @@ def map_card_string_to_tuple(card):
     result[1] = color_map[card[-1]]
     result[0] = number_map[card[:-1]]
     return result#}}}
+
+def print_stats(sorted_combo, n):
+    appeared = tree()#{{{
+    filtered_combo = list()
+    for combo in sorted_combo:
+        mi = min([combo[1][0], combo[2][0]])
+        ma = max([combo[1][0], combo[2][0]])
+        if combo[1][1] == combo[2][1]:
+            c1 = mi
+            c2 = ma
+        else:
+            c1 = ma
+            c2 = mi
+        if appeared[c1][c2]:
+            continue
+        else:
+            filtered_combo.append((round(combo[0], 2), c1, c2))
+            appeared[c1][c2] = 1
+    return filtered_combo[:n]#}}}
+
+def del_stdout_line(n):
+    for i in xrange(n):#{{{
+        CURSOR_UP_ONE = '\x1b[1A'
+        ERASE_LINE = '\x1b[2K'
+        print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)#}}}
+
+def show_stats(stats, i):
+    sorted_combo = most_probable(stats[i], 169)#{{{
+    count = 0
+    for combo in sorted_combo:
+        count += 1
+        print combo,'     \t',
+        if count % 5 == 0:
+            print
+    print 'Player', i
+    raw_input('---press any key---')
+    del_stdout_line(36)
+    print#}}}

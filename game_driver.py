@@ -6,6 +6,7 @@ import time
 from public import is_only_max
 from public import get_power_rank
 from public import get_can_beat_table
+from public import show_stats
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
@@ -113,6 +114,7 @@ class GameDriver():
             self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
                 self.people_play, self.last_better)
+        show_stats(self.stats_handler.stats, actor)
         self.pot += value
         self.pot = round(self.pot, 2)
         self.stack[actor] -= value
@@ -178,6 +180,7 @@ class GameDriver():
             self.pot = round(self.pot, 2)
         self.stats_handler.postflop_update(actor, self.postflop_status,\
                 self.cards, self.stage)
+        show_stats(self.stats_handler.stats, actor)
         return []#}}}
 
     def preflop(self):

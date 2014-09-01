@@ -8,6 +8,8 @@ from public import how_much_can_beat
 from public import how_many_outs
 from public import most_probable
 from public import find_out
+from public import del_stdout_line
+from public import show_stats
 
 class DecisionMaker():
     def __init__(self, game_driver):
@@ -82,14 +84,8 @@ class DecisionMaker():
             print 'My Win Chance: ', beat_chance
             print 'My Outs', my_outs
             raw_input('---press any key---')
-            for i in xrange(1, 6):
-                if self.game_driver.active[i]:
-                    sorted_combo = most_probable(stats[i], 200)
-                    for combo in sorted_combo:
-                        print combo
-                    print 'Player', i
-                    raw_input('---press any key---')
-            print#}}}
+            del_stdout_line(1)
+            #}}}
 
     def preflop_strategy(self):
         my_move = self.get_preflop_move()#{{{
