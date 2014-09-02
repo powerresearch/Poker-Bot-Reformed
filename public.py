@@ -198,10 +198,10 @@ def straight(ddict):
     return result#}}}
 
 def has_same(original_cards):
-    cards = original_cards
+    cards = original_cards#{{{
     while not cards[-1]:
         cards = cards[:-1]
-    for i in xrange(len(cards)):#{{{
+    for i in xrange(len(cards)):
         for j in xrange(len(cards)):
             if i == j: 
                 continue
@@ -330,17 +330,32 @@ def get_power_rank(cards):
     power_rank = sorted(power_rank, key=lambda x:x[2])
     return power_rank#}}}
 
-def get_can_beat_table(power_rank, stats, opponent):
-    can_beat_table = tree()#{{{
+def get_can_beat_table(power_rank, stats, opponent, active):
+    no = 0#{{{
+    for item in active:
+        if item:
+            no += 1
+    no -= 1
+    can_beat_table = tree()
     outs_table = tree()
     prob = 0
     for c1, c2, fo, outs in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] = prob
-        prob += stats[opponent][c1[0]][c1[1]][c2[0]][c2[1]]
+        try:
+            prob += stats[opponent][c1[0]][c1[1]][c2[0]][c2[1]]
+        except:
+            print stats[opponent]
+            raise Exception
     for c1, c2, fo, outs in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] /= prob
         outs_table[c1[0]][c1[1]][c2[0]][c2[1]] = outs
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] += outs*0.03*(1-can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]])
+    for n1 in xrange(2, 15):
+        for c1 in xrange(1, 5):
+            for n2 in xrange(2, 15):
+                for c2 in xrange(1, 5):
+                    if can_beat_table[n1][c1][n2][c2]:
+                        can_beat_table[n1][c1][n2][c2] = pow(can_beat_table[n1][c1][n2][c2], no)
     return can_beat_table, outs_table#}}}
 
 def most_probable(stats, n=100):
@@ -378,10 +393,13 @@ def print_stats(sorted_combo, n):
             c1 = ma
             c2 = mi
         if appeared[c1][c2]:
-            continue
+            appeared[c1][c2] = max([appeared[c1][c2], round(combo[0], 2)])
         else:
-            filtered_combo.append((round(combo[0], 2), c1, c2))
-            appeared[c1][c2] = 1
+            appeared[c1][c2] = round(combo[0], 2) 
+    for c1 in appeared:
+        for c2 in appeared[c1]:
+            filtered_combo.append((appeared[c1][c2], c1, c2))
+    filtered_combo = sorted(filtered_combo, key=lambda x:x[0], reverse=True)
     return filtered_combo[:n]#}}}
 
 def del_stdout_line(n):
@@ -400,5 +418,5 @@ def show_stats(stats, i):
             print
     print 'Player', i
     raw_input('---press any key---')
-    del_stdout_line(36)
+    del_stdout_line(35)
     print#}}}

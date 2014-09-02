@@ -140,8 +140,8 @@ class ScreenScraper():
             result['stack'] = stack 
             result['game_number'] = game_number 
             result['cards'] = cards 
-            result['button'] = button
-            result['player_name'] = player_name#}}}
+            result['player_name'] = player_name
+            result['button'] = button#}}}
         else:
             lines = self.source.splitlines()#{{{
             hero_name = re.findall(r'Dealt to (.*) \[', self.source)[0]

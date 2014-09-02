@@ -20,7 +20,7 @@ else:
         test_file = f.read()
     games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
     for game in games:
-#       print game
+        print game
 #       del_stdout_line(len(game.splitlines())+1)
         print '####################\n\n\n\n\n'
         print '####################'

@@ -25,8 +25,9 @@ class GameDriver():
         self.game_number    = init_values['game_number']
         self.cards          = init_values['cards'] + ['', '', '', '', '']
         self.button         = init_values['button']
-        self.player_name    = init_values['player_name']
-        if game_record != 'ps':
+        self.controller     = Controller(self)
+        self.player_name = init_values['player_name']
+        if self.source != 'ps':
             self.seat       = init_values['seat']
         self.steal_position = self.button == 0 or self.button == 1
         self.active         = [1, 1, 1, 1, 1, 1]
@@ -60,6 +61,12 @@ class GameDriver():
         print 'Button:', self.button
         print 'Cards:', self.cards[:2]
         print 'Names:', self.player_name
+        if self.stack[0] > 3 and self.decision_maker.get_preflop_move(self.cards) == 0:
+            self.controller.sit_out()
+            return self.game_number
+        if self.source == 'ps' and self.decision_maker.get_preflop_move(self.cards) == 0 and self.button != 4:
+            self.controller.fold()
+            return self.game_number
         print#}}}
         indicator = self.preflop()#{{{
         stages = ['PREFLOP', 'FLOP', 'TURN', 'RIVER']
@@ -104,7 +111,7 @@ class GameDriver():
             return []
 #       self.betting[actor] = round(self.betting[actor]+value, 2)
         if is_only_max(self.betting, actor):
-            print 'Player '+str(actor)+': Raise --> '+str(value)+'  \t <-- '+str(self.betting)
+            print 'Player '+str(actor)+': Raise --> '+str(self.betting[actor])+'  \t <-- '+str(self.betting)
         else:
             print 'Player '+str(actor)+': Call'+' '*12+'\t <-- '+str(self.betting)
         if is_only_max(self.betting, actor):
@@ -114,7 +121,8 @@ class GameDriver():
             self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
                 self.people_play, self.last_better)
-        show_stats(self.stats_handler.stats, actor)
+        if self.source != 'ps':
+            show_stats(self.stats_handler.stats, actor)
         self.pot += value
         self.pot = round(self.pot, 2)
         self.stack[actor] -= value
@@ -147,7 +155,7 @@ class GameDriver():
         else:
 #           self.betting[actor] = round(self.betting[actor]+value, 2)
             if is_only_max(self.betting, actor):
-                print 'Player '+str(actor)+': Raise --> '+str(value)+'  \t <-- '+str(self.betting)
+                print 'Player '+str(actor)+': Raise --> '+str(self.betting[actor])+'  \t <-- '+str(self.betting)
             else:
                 print 'Player '+str(actor)+': Call'+' '*12+'\t <-- '+str(self.betting)
             self.stack[actor] -= value
@@ -180,7 +188,10 @@ class GameDriver():
             self.pot = round(self.pot, 2)
         self.stats_handler.postflop_update(actor, self.postflop_status,\
                 self.cards, self.stage)
-        show_stats(self.stats_handler.stats, actor)
+        self.can_beat_table[self.stage] = get_can_beat_table(self.power_rank[self.stage],\
+                self.stats_handler.stats, self.last_better, self.active)
+        if self.source != 'ps':
+            show_stats(self.stats_handler.stats, actor)
         return []#}}}
 
     def preflop(self):
@@ -219,7 +230,7 @@ class GameDriver():
             for action in actions:
                 self.can_beat_table[stage] ,self.outs[stage] =\
                         get_can_beat_table(self.power_rank[self.stage],\
-                        self.stats_handler.stats, self.last_better)
+                        self.stats_handler.stats, self.last_better, self.active)
 #               print action
 #               print self.betting
 #               print self.stack

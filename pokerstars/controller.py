@@ -12,8 +12,9 @@ import time
 import json
 
 class Controller():
-    def __init__(self):
+    def __init__(self, game_driver):
         self.m = pymouse.PyMouse()
+        self.game_driver = game_driver
 
     def sit_out(self):
         m = self.m#{{{
@@ -85,6 +86,8 @@ class Controller():
         if time.time() - last_control < 1.5:
             return
         amount = round(amount/BB)*BB
+        if amount / self.game_driver.stack[0] > 0.6:
+            amount = int(self.game_driver.stack[0]) + 1
         m = pymouse.PyMouse()
         k = pykeyboard.PyKeyboard()
         lxp = label_position[0]

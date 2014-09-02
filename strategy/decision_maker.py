@@ -9,18 +9,17 @@ from public import how_many_outs
 from public import most_probable
 from public import find_out
 from public import del_stdout_line
-from public import show_stats
 
 class DecisionMaker():
     def __init__(self, game_driver):
         self.data_manager = game_driver.data_manager#{{{
-        self.controller = Controller()
+        self.controller = Controller(game_driver)
         self.game_driver = game_driver
         self.stats_handler = game_driver.stats_handler#}}}
 
-    def get_preflop_move(self):
-        cards = self.cards#{{{
-        big_card = max(cards[0][0], cards[1][0])
+    @staticmethod
+    def get_preflop_move(cards):
+        big_card = max(cards[0][0], cards[1][0])#{{{
         small_card = min(cards[0][0], cards[1][0])
         if cards[0][1] == cards[1][1]:
             suited = 1
@@ -59,17 +58,21 @@ class DecisionMaker():
                 if gd.active[i]:
                     beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            print
+            print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
+            print 'My Win Chance: ', beat_chance
+            print 'My Outs', my_outs
             if max(self.betting) == 0:
                 if beat_chance > 0.6:
                     self.controller.rais(self.pot*0.75)
                 else:
-                    self.controller.fold()
+                    self.controller.call()#check
             else:
                 to_call = max(self.betting) - self.betting[0]
                 ratio = to_call / (self.pot+to_call)
-                if beat_chance > 0.75:
+                if beat_chance > 0.85:
                     self.controller.rais(self.pot*0.8)
-                elif beat_chance+0.02*my_outs > 1.5*ratio:
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
@@ -83,12 +86,28 @@ class DecisionMaker():
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'My Outs', my_outs
-            raw_input('---press any key---')
-            del_stdout_line(1)
+            print 'My Decision: ', 
+            if max(self.betting) == 0:
+                if beat_chance > 0.6:
+                    print 'Bet', round(self.pot*0.75, 2)
+                else:
+                    print 'Check'
+            else:
+                to_call = max(self.betting) - self.betting[0]
+                ratio = to_call / (self.pot+to_call)
+                if beat_chance > 0.85:
+                    print 'Raise', round(self.pot*0.8, 2)
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio:
+                    print 'Call'
+                else:
+                    print 'Fold'
+            if self.game_driver.source != 'ps':
+                raw_input('---press any key---')
+                del_stdout_line(1)
             #}}}
 
     def preflop_strategy(self):
-        my_move = self.get_preflop_move()#{{{
+        my_move = self.get_preflop_move(self.cards)#{{{
         betting = self.betting
         people_bet = self.bet_round
         button = self.button 
@@ -175,6 +194,9 @@ class DecisionMaker():
                     return
                 if betting[0] == max(betting):
                     self.controller.fold()
+                    return
+                if people_bet == 2 and my_move == 1 and max(betting)-betting[0] <= 0.08:
+                    self.controller.call()
                     return
                 else:
                     self.controller.fold()
