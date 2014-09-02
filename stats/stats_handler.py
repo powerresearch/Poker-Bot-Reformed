@@ -267,9 +267,9 @@ class StatsHandler():
 
     @staticmethod
     def get_preflop_prob(top_n, arg):
-        n1 = top_n * 0.6#{{{
+        n1 = top_n * 0.75#{{{
         n2 = top_n
-        n3 = top_n * 1.4
+        n3 = top_n * 1.25
         print n1,n2,n3
         prob1 = StatsHandler.get_preflop_prob_pointy(n1, arg)
         prob2 = StatsHandler.get_preflop_prob_pointy(n2, arg)
@@ -279,7 +279,11 @@ class StatsHandler():
             prob[c1] = {}
             for c2 in prob1:
                 prob[c1][c2] = max([prob1[c1][c2], prob2[c1][c2], prob3[c1][c2]]) 
-        return prob#}}}
+        if arg == 'open':
+            for c1 in prob:
+                for c2 in prob[c1]:
+                    prob[c1][c2] = 0.2 + prob[c1][c2] * 0.8
+        return prob2#}}}
 
     @staticmethod
     def get_preflop_prob_pointy(top_n, arg):
@@ -287,10 +291,11 @@ class StatsHandler():
             prob_factor = prob_factor_open
         else:
             prob_factor = prob_factor_close
-        cut_points = [0.5, 1, 2, 3, 5, 10, 15, 20, 25, 100]
+        cut_points = [0.5, 1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 45, 50, 100]
         coef = [0] * len(cut_points)
         for point_index in xrange(len(cut_points)-1, -1, -1):
-            coef[point_index] = 1.0 / (50+pow(abs(cut_points[point_index]-top_n), 2))
+            print abs(cut_points[point_index]-top_n)
+            coef[point_index] = 1.0 / (200+pow(abs(cut_points[point_index]-top_n), 2))
 #           if cut_points[point_index] < top_n:
 #               break
         prob = {}
@@ -299,6 +304,8 @@ class StatsHandler():
             for c2 in xrange(2, 15):
                 s = 0
                 for (c, p) in zip(coef, cut_points):
+                    if c1 == c2 and c1 == 13:
+                        print c1, c2, p, prob_factor[unicode(p)][u'13'][u'13']
                     s += c * prob_factor[unicode(p)][unicode(c1)][unicode(c2)]
                 prob[c1][c2] = s
         max_prob = 0
