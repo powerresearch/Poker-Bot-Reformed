@@ -20,12 +20,15 @@ class GameDriver():
     def __init__(self, game_record='ps'):
         self.screen_scraper = ScreenScraper(source=game_record)#{{{
         self.source         = game_record
+        self.controller     = Controller(self)
         init_values = self.screen_scraper.get_init_values()
+        if init_values == 'get back':
+            self.controller.get_back()
+            init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
         self.cards          = init_values['cards'] + ['', '', '', '', '']
         self.button         = init_values['button']
-        self.controller     = Controller(self)
         self.player_name = init_values['player_name']
         if self.source != 'ps':
             self.seat       = init_values['seat']

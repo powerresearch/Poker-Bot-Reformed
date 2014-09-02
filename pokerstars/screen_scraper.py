@@ -103,10 +103,12 @@ class ScreenScraper():
             while not (game_number and button in range(6)):
                 game_number = self.get_game_number()
                 button = self.get_button()
-                if fail == 1:
+                if fail:
                     self.update()
 #               print 'stucking at getting game number and button', game_number, button
-                fail = 1
+                fail += 1
+                if fail > 200:
+                    return 'get back'
             fail = 0
             while not (stack[0] and stack[1] and stack[2] and stack[3]\
                     and stack[4] and stack[5]):

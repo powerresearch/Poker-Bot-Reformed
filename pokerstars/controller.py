@@ -108,3 +108,7 @@ class Controller():
             last_control = time.time()
             f.write(json.dumps(last_control))
         m.click(xp, yp)#}}}
+
+    def get_back(self):
+        back_position = [raise_position[0], raise_position[1]-20]
+        self.m.click(*back_position)
