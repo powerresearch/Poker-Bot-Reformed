@@ -70,7 +70,7 @@ card_height = 40
 
 window_close = (15.5, 35.5)
 sitout_confirm = (366.5, 345)
-join_game = (900, 660)
+join_game = (840, 730)
 
 with open('pokerstars/hand_figure.json') as f:
     hand_figure = json.load(f)

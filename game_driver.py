@@ -18,11 +18,11 @@ from strategy.decision_maker import DecisionMaker
 class GameDriver():
 
     def __init__(self, game_record='ps'):
-        self.screen_scraper = ScreenScraper(source=game_record)#{{{
+        self.screen_scraper = ScreenScraper(game_driver=self, source=game_record)#{{{
         self.source         = game_record
         self.controller     = Controller(self)
         init_values = self.screen_scraper.get_init_values()
-        if init_values == 'get back':
+        while init_values == 'get back':
             self.controller.get_back()
             init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 

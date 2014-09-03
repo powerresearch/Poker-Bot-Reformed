@@ -22,7 +22,8 @@ class Controller():
         time.sleep(0.5)
         m.click(sitout_confirm[0], sitout_confirm[1], 1)
         time.sleep(3)
-        m.click(join_game[0], join_game[1], 1)#}}}
+        m.click(round(join_game[0]+100*(random.random()-0.5)),\
+                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
 
     def fold(self):
         m = self.m#{{{

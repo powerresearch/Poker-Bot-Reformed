@@ -420,3 +420,11 @@ def show_stats(stats, i):
     raw_input('---press any key---')
     del_stdout_line(35)
     print#}}}
+
+def move_last(active, button):
+    i = 1#{{{
+    while i <= button:
+        if active[i] > 0:
+            return 0 
+        i += 1
+    return 1#}}}

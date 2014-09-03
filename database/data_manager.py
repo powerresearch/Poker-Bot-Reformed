@@ -14,7 +14,7 @@ class DataManager():
         pfr_factor = [1.3, 1.6, 1, 0.5, 0.6, 1]
         self.player_data = list()
         for i in xrange(6):
-            if player_name[i] != u'd':
+            if player_name[i] != u'd' and type(player_name[i]) == unicode:
                 try:
                     with open('database/data/player '+player_name[i].replace('/', '')+'.json') as f:
                         single_data = json.load(f)

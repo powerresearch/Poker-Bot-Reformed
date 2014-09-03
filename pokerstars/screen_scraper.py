@@ -83,13 +83,30 @@ def norm(l):
     return l#}}}
 
 class ScreenScraper():
-    def __init__(self, source='ps'):
+    def __init__(self, game_driver, source='ps'):
         if source == 'ps':
             self.im = pyscreenshot.grab()
         self.source = source
+        self.game_driver = game_driver
+        self.got_names = 'to start'
 
     def update(self):
-        self.im = pyscreenshot.grab()
+        self.im = pyscreenshot.grab()#{{{
+        done_count = 0
+        if self.got_names == 'in process':
+            for i in xrange(6):
+                if type(self.game_driver.player_name[i]) == unicode:
+                    done_count += 1
+                    continue
+                else:
+                    new_name = self.get_name(i)
+                    if type(new_name) == unicode:
+                        self.game_driver.player_name[i] = new_name 
+                        print 'Name Updated:', i, unicode(self.game_driver.player_name[i])
+            self.game_driver.data_manager.load_data(self.game_driver.player_name,\
+                    self.game_driver.button)
+            if done_count == 6:
+                self.got_names = 'done'#}}}
 
     def get_init_values(self):
         result = {}#{{{
@@ -107,6 +124,8 @@ class ScreenScraper():
                     self.update()
 #               print 'stucking at getting game number and button', game_number, button
                 fail += 1
+                if fail > 5:
+                    print fail
                 if fail > 200:
                     return 'get back'
             fail = 0
@@ -127,18 +146,19 @@ class ScreenScraper():
 #               print 'stucking at getting cards'
                 fail = 1
             fail = 0
-            while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
-                    and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
-                    and type(player_name[5]) == unicode and type(player_name[2]) == unicode):
-                for i in xrange(6):
-                    if type(player_name[i]) == unicode:
-                        continue
-                    else:
-                        player_name[i] = self.get_name(i)
-                if fail:
-                    self.update()
-#               print 'stucking at getting names'
-                fail = 1
+#            while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
+#                    and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
+#                    and type(player_name[5]) == unicode and type(player_name[2]) == unicode):
+            for i in xrange(6):
+                if type(player_name[i]) == unicode:
+                    continue
+                else:
+                    player_name[i] = self.get_name(i)
+            self.got_names = 'in process'
+#            if fail:
+#                self.update()
+#                print 'stucking at getting names'
+#            fail = 1
             result['stack'] = stack 
             result['game_number'] = game_number 
             result['cards'] = cards 

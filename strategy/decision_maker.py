@@ -4,11 +4,7 @@ from pokerstars.config import BB
 from pokerstars.controller import Controller
 from strategy.config import preflop_move
 from pokerstars.controller import Controller
-from public import how_much_can_beat
-from public import how_many_outs
-from public import most_probable
-from public import find_out
-from public import del_stdout_line
+from public import * 
 
 class DecisionMaker():
     def __init__(self, game_driver):
@@ -19,8 +15,8 @@ class DecisionMaker():
 
     @staticmethod
     def get_preflop_move(cards):
-        big_card = max(cards[0][0], cards[1][0])#{{{
-        small_card = min(cards[0][0], cards[1][0])
+        big_card = max([cards[0][0], cards[1][0]])#{{{
+        small_card = min([cards[0][0], cards[1][0]])
         if cards[0][1] == cards[1][1]:
             suited = 1
         else:
@@ -63,7 +59,9 @@ class DecisionMaker():
             print 'My Win Chance: ', beat_chance
             print 'My Outs', my_outs
             if max(self.betting) == 0:
-                if beat_chance > 0.6:
+                if beat_chance > 0.6\
+                        - move_last(self.game_driver.active, self.game_driver.button)*0.1\
+                        + self.game_driver.stage*0.1:
                     self.controller.rais(self.pot*0.75)
                 else:
                     self.controller.call()#check
@@ -72,7 +70,9 @@ class DecisionMaker():
                 ratio = to_call / (self.pot+to_call)
                 if beat_chance > 0.85:
                     self.controller.rais(self.pot*0.8)
-                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio:
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
+                        or beat_chance > 0.6\
+                        or my_outs*0.02*(3-self.stage) > 1.5*ratio:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
@@ -88,7 +88,9 @@ class DecisionMaker():
             print 'My Outs', my_outs
             print 'My Decision: ', 
             if max(self.betting) == 0:
-                if beat_chance > 0.6:
+                if beat_chance > 0.6\
+                        - move_last(self.game_driver.active, self.game_driver.button)*0.1\
+                        + self.game_driver.stage*0.1:
                     print 'Bet', round(self.pot*0.75, 2)
                 else:
                     print 'Check'
@@ -97,7 +99,9 @@ class DecisionMaker():
                 ratio = to_call / (self.pot+to_call)
                 if beat_chance > 0.85:
                     print 'Raise', round(self.pot*0.8, 2)
-                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio:
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
+                        or beat_chance > 0.6\
+                        or my_outs*0.02*(3-self.stage) > 1.5*ratio:
                     print 'Call'
                 else:
                     print 'Fold'

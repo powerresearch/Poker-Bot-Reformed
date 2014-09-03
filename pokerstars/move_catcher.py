@@ -16,7 +16,7 @@ class MoveCatcher():
         else:
             self.source = game_driver.source.splitlines()[12:]
             self.seat = game_driver.seat
-        self.screen_scraper = ScreenScraper(game_driver.source)#}}}
+        self.screen_scraper = game_driver.screen_scraper#}}}
     
     def next_stage(self):
         if self.cards[6]:#{{{
@@ -92,9 +92,13 @@ class MoveCatcher():
             elif self.stack[player] != self.old_stack[player]:
                 if self.stack[player] == 0:
                     self.active[player] = 0.5
-                self.betting[player] += self.old_stack[player] - self.stack[player]
-                self.betting[player] = round(self.betting[player], 2)
-                actions.append([player, self.old_stack[player]-self.stack[player]])
+                if self.stack[player] == 'sitting out':
+                    self.active[player] = 0
+                    actions.append([player, 'fold'])
+                else:
+                    self.betting[player] += self.old_stack[player] - self.stack[player]
+                    self.betting[player] = round(self.betting[player], 2)
+                    actions.append([player, self.old_stack[player]-self.stack[player]])
             else:
                 actions.append([player, 'check'])
         self.to_act = player
