@@ -12,7 +12,8 @@ if sys.argv[1] == 'ps':
         game_driver = GameDriver('ps')
         game_driver.game_stream()
         game_driver.count_game()
-        if game_driver.game_count % 10 == 0:
+        print 'Game Counting:', game_driver.game_count
+        if game_driver.game_count % 20 == 0:
             get_name_figure()
             game_driver.data_manager.update()
 else:
