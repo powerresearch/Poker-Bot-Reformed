@@ -157,7 +157,7 @@ class DecisionMaker():
                         if betting[i] == max(betting):
                             if dm.get_item(i, 'pfr') > 0.5:
                                 self.controller.rais(max(betting)*3)
-                                print i, player_data[i]['pfr']
+                                print i, dm.get_item(i, 'pfr') 
                                 return
                 if people_bet == 3:
                     fold_chance = 1.0
