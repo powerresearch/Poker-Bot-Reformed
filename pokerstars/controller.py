@@ -15,6 +15,7 @@ class Controller():
     def __init__(self, game_driver):
         self.m = pymouse.PyMouse()
         self.game_driver = game_driver
+        self.folded = 0
 
     def sit_out(self):
         m = self.m#{{{
@@ -26,6 +27,11 @@ class Controller():
                 round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
 
     def fold(self):
+        if self.folded:
+            return
+        self.folded = 1
+        print '-----FOLDING-----'
+        time.sleep(0.5)
         m = self.m#{{{
         with open('pokerstars/last_control.json') as f:
             last_control = json.load(f)
@@ -51,6 +57,7 @@ class Controller():
             f.write(json.dumps(last_control))#}}}
 
     def call(self):
+        print '-----CALLING-----'
         def all_in():#{{{
             im = pyscreenshot.grab()
             for i in xrange(-20, 20):
@@ -61,6 +68,7 @@ class Controller():
                     if color[0] > max(color[1:]) + 20:
                         return 0
             return 1
+        time.sleep(0.5)
         with open('pokerstars/last_control.json') as f:
             last_control = json.load(f)
         if time.time() - last_control < 1.5:
@@ -81,13 +89,15 @@ class Controller():
             f.write(json.dumps(last_control))#}}}
 
     def rais(self, amount):
+        print '-----RAISING-----'
         m = self.m#{{{ 
+        time.sleep(0.5)
         with open('pokerstars/last_control.json') as f:
             last_control = json.load(f)
         if time.time() - last_control < 1.5:
             return
         amount = round(amount/BB)*BB
-        if amount / self.game_driver.stack[0] > 0.6:
+        if self.game_driver.stack[0] == 0 or amount / self.game_driver.stack[0] > 0.6:
             amount = int(self.game_driver.stack[0]) + 1
         m = pymouse.PyMouse()
         k = pykeyboard.PyKeyboard()

@@ -6,13 +6,16 @@ import time
 import re
 
 if sys.argv[1] == 'ps':
+    game_number = 0
+    last_game_number = 1
     while True:
-        print '\n\n\nStarting New Game'
-        time.sleep(1)
         game_driver = GameDriver('ps')
-        game_driver.game_stream()
-        game_driver.count_game()
-        print 'Game Counting:', game_driver.game_count
+        if game_number != last_game_number:
+            game_driver.count_game()
+            print '\n\n\nStarting New Game'
+            print 'Game Counting:', int(game_driver.game_count)
+        last_game_number = game_number
+        game_number = game_driver.game_stream(last_game_number)
         if game_driver.game_count % 20 == 0:
             get_name_figure()
             game_driver.data_manager.update()

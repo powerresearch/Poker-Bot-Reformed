@@ -45,10 +45,9 @@ def get_name_figure():
         for tup in names_to_figure:
             try:
                 names[tup[2].strip('\n')] = game_record[tup[0].strip('#')]['player'][int(tup[1])]
-                print 'Got name:' + game_record[tup[0].strip('#')]['player'][int(tup[1])]
             except:
-                print 'failing', tup[0]
-                f.write(','.join(tup))
+                if tup[0].strip():
+                    f.write(','.join(tup))
 
     with open('pokerstars/names.json', 'w') as f:
         f.write(json.dumps(names))

@@ -2,7 +2,8 @@ import json
 import time
 from pokerstars.config import BB
 from pokerstars.controller import Controller
-from strategy.config import preflop_move
+from strategy.config import preflop_move_ep
+from strategy.config import preflop_move_lp
 from pokerstars.controller import Controller
 from public import * 
 
@@ -11,20 +12,26 @@ class DecisionMaker():
         self.data_manager = game_driver.data_manager#{{{
         self.controller = Controller(game_driver)
         self.game_driver = game_driver
+        self.button = game_driver.button
         self.stats_handler = game_driver.stats_handler#}}}
 
-    @staticmethod
-    def get_preflop_move(cards):
+    def get_preflop_move(self, cards):
         big_card = max([cards[0][0], cards[1][0]])#{{{
         small_card = min([cards[0][0], cards[1][0]])
         if cards[0][1] == cards[1][1]:
             suited = 1
         else:
             suited = 0
-        if suited:
-            my_move = preflop_move[small_card][big_card]
+        if self.button == 0 or self.button == 1:
+            if suited:
+                my_move = preflop_move_lp[small_card][big_card]
+            else:
+                my_move = preflop_move_lp[big_card][small_card]
         else:
-            my_move = preflop_move[big_card][small_card]
+            if suited:
+                my_move = preflop_move_ep[small_card][big_card]
+            else:
+                my_move = preflop_move_ep[big_card][small_card]
         return my_move#}}}
 
     def update(self, game_driver):
@@ -55,14 +62,15 @@ class DecisionMaker():
                     beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             print
+            print 'Pot: ', self.game_driver.pot
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'My Outs', my_outs
-            if max(self.betting) == 0:
+            if max(self.betting) < self.pot * 0.3:
                 if beat_chance > 0.6\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.1\
                         + self.game_driver.stage*0.1:
-                    self.controller.rais(self.pot*0.8)
+                    self.controller.rais(self.pot*0.6+max(self.betting))
                 else:
                     self.controller.call()#check
             else:
@@ -199,9 +207,12 @@ class DecisionMaker():
                     self.controller.rais(BB*(2+people_play))
                     return
                 if betting[0] == max(betting):
-                    self.controller.fold()
+                    self.controller.call()
                     return
                 if people_bet == 2 and my_move == 1 and max(betting)-betting[0] <= 0.08:
+                    self.controller.call()
+                    return
+                if people_bet == 1 and button == 4:
                     self.controller.call()
                     return
                 else:
@@ -368,6 +379,12 @@ class DecisionMaker():
         people_bet = self.bet_round
         button = self.button 
         people_play = self.people_play
+        if betting[0] == max(betting):
+            if is_only_max(betting, 0):
+                people_bet -= 1
+                people_play = 1
+            else:
+                people_play -= 1
         dm = self.data_manager
         if self.game_driver.source == 'ps':
             if my_move == 0 or my_move == 1:

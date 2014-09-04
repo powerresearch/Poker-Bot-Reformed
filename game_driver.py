@@ -16,6 +16,7 @@ from stats.stats_handler import StatsHandler
 from strategy.decision_maker import DecisionMaker
 
 class GameDriver():
+    
 
     def __init__(self, game_record='ps'):
         self.screen_scraper = ScreenScraper(game_driver=self, source=game_record)#{{{
@@ -39,13 +40,13 @@ class GameDriver():
         self.stats_handler  = StatsHandler(self)
         self.decision_maker = DecisionMaker(self)
         self.betting        = [0, 0, 0, 0, 0, 0]
-        self.move_catcher   = MoveCatcher(0, self)
         self.pot            = SB+BB 
         self.last_better    = -1
         self.all_limper     = -1
         self.stage          = 0
         self.bet_round      = 1
         self.people_play    = 1
+        self.move_catcher   = MoveCatcher(0, self)
         self.postflop_status = ['', '', '', '', '', '']
         self.power_rank     = [0, 0, 0, 0]
         self.can_beat_table = [0, 0, 0, 0]
@@ -54,11 +55,13 @@ class GameDriver():
     @classmethod
     def count_game(cls):
         try:#{{{
-            cls.game_count += 1
+            cls.game_count += 1 
         except:
             cls.game_count = 1#}}}
 
-    def game_stream(self):
+    def game_stream(self, last_game):
+        if self.game_number == last_game:
+            return last_game
         print 'Stack:', self.stack#{{{
         print 'Game Number:', self.game_number
         print 'Button:', self.button
@@ -94,7 +97,6 @@ class GameDriver():
     def handle_preflop_action(self, action):
         if action[0] == 'new game':#{{{
 #           print 'new game'
-            self.game_number = action[1]
             return 'new game'
         if action[0] == 'new stage':
 #           print 'new stage'
@@ -103,7 +105,7 @@ class GameDriver():
         if action[0] == 'my move':
 #           print 'making decision'
             self.decision_maker.make_decision(self)
-#           time.sleep(1)
+            time.sleep(0.5)
             return []
         actor, value = action
         if value == 'fold':
@@ -121,6 +123,7 @@ class GameDriver():
         if is_only_max(self.betting, actor):
             self.last_better = actor
             self.bet_round += 1
+            self.people_play = 1
         else:
             self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
@@ -138,7 +141,6 @@ class GameDriver():
     def handle_postflop_action(self, action):
         if action[0] == 'new game':#{{{
 #           print 'new game'
-            self.game_number = action[1]
             return 'new game'
         if action[0] == 'new stage':
 #           print 'new stage'
@@ -146,6 +148,7 @@ class GameDriver():
             return 'new stage'
         if action[0] == 'my move':
             self.decision_maker.make_decision(self)
+            time.sleep(0.5)
             return []
         actor, value = action
         if value == 'fold':
@@ -168,7 +171,9 @@ class GameDriver():
                 self.active[actor] = 0.5
             if is_only_max(self.betting, actor):
                 if max(self.betting) == sum(self.betting): 
-                    if self.last_better == actor:
+                    if max(self.betting) < self.pot*0.3:
+                        self.postflop_status[actor] = 'check'
+                    elif self.last_better == actor:
                         self.postflop_status[actor] = 'cb'
                     else:
                         self.postflop_status[actor] = 'dk'
@@ -211,7 +216,11 @@ class GameDriver():
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:
-                    self.decision_maker.fast_fold(self)
+                    if action[0] == 'new game':
+                        return 'new game' 
+                for action in actions:
+                    if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
+                        self.decision_maker.fast_fold(self)
                     indicator = self.handle_preflop_action(action)
                     if indicator:
                         return indicator
@@ -251,7 +260,11 @@ class GameDriver():
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:
-                    self.decision_maker.fast_fold(self)
+                    if action[0] == 'new game':
+                        return 'new game' 
+                for action in actions:
+                    if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
+                        self.decision_maker.fast_fold(self)
                     self.can_beat_table[stage] ,self.outs[stage] =\
                             get_can_beat_table(self.power_rank[self.stage],\
                             self.stats_handler.stats, self.last_better, self.active)

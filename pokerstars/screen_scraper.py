@@ -124,8 +124,6 @@ class ScreenScraper():
                     self.update()
 #               print 'stucking at getting game number and button', game_number, button
                 fail += 1
-                if fail > 5:
-                    print fail
                 if fail > 200:
                     return 'get back'
             fail = 0

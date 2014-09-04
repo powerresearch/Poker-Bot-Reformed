@@ -1,6 +1,9 @@
 from pokerstars.screen_scraper import ScreenScraper
 from public import map_card_string_to_tuple
 import re
+import time
+import json
+import copy
 
 class MoveCatcher():
     def __init__(self, to_act, game_driver): 
@@ -11,6 +14,8 @@ class MoveCatcher():
         self.cards          = game_driver.cards  
         self.active         = game_driver.active
         self.betting        = game_driver.betting
+        self.old_betting    = copy.deepcopy(game_driver.betting)
+        self.old_stage      = copy.deepcopy(game_driver.stage)
         if game_driver.source == 'ps': 
             self.source = 'ps'
         else:
@@ -100,7 +105,10 @@ class MoveCatcher():
                     self.betting[player] = round(self.betting[player], 2)
                     actions.append([player, self.old_stack[player]-self.stack[player]])
             else:
-                actions.append([player, 'check'])
+                if self.betting[player] != max(self.betting):
+                    actions.append([player, 'fold'])
+                else:
+                    actions.append([player, 'check'])
         self.to_act = player
         return actions#}}}
 
@@ -110,17 +118,23 @@ class MoveCatcher():
             actions = list()#{{{
             self.screen_scraper.update()
             self.stack = [self.screen_scraper.get_stack(i) for i in xrange(6)]
-            actions += self.round_search()
             next_game_result = self.next_game()
-            next_stage_result = self.next_stage()
             if next_game_result:
-                actions.append(['new game', next_game_result])
+                actions = [['new game', next_game_result]]
+            actions += self.round_search()
+            next_stage_result = self.next_stage()
             if next_stage_result:
                 if not self.all_even():
                     actions += self.make_even()
                 actions.append(['new stage', next_stage_result])
             if self.screen_scraper.shining(0):
-                actions.append(['my move', 0])
+                print self.old_betting, self.betting
+                print self.old_stage, self.game_driver.stage
+                if self.old_betting[1:] != self.betting[1:]\
+                        or self.game_driver.stage != self.old_stage:
+                    actions.append(['my move', 0])
+                    self.old_betting = copy.deepcopy(self.betting)
+                    self.old_stage = copy.deepcopy(self.game_driver.stage)
             for action in actions:
                 if type(action[1]) == float:
                     action[1] = round(action[1], 2)#}}}

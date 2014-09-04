@@ -291,7 +291,6 @@ class StatsHandler():
 
     @staticmethod
     def get_preflop_prob(top_n, arg):
-        print top_n, arg
         if arg == 'close':#{{{
             n1 = top_n * 0.85
             n2 = top_n
