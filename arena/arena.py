@@ -12,7 +12,8 @@ class Arena():
     @staticmethod
     def draw_cards():
         DRAW CARDS FOR ALL PERMUTATION
-        YIELD [HC1,HC2,PC1,PC2,PC3]
+        ALSO GIVE POSITION
+        YIELD [HC1,HC2,PC1,PC2,PC3], [POS1, POS2, POS3, POS4, POS5, POS6]
     
     def battle(self):
         PROVIDE RULES AND DRIVER

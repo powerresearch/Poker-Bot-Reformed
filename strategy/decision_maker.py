@@ -83,6 +83,7 @@ class DecisionMaker():
                     beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             print
+            print 'Pot: ', self.game_driver.pot
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'My Outs', my_outs
@@ -97,6 +98,7 @@ class DecisionMaker():
             else:
                 to_call = max(self.betting) - self.betting[0]
                 ratio = to_call / (self.pot+to_call)
+                print 'Ratio: ', ratio,
                 if beat_chance > 0.85:
                     print 'Raise', round(self.pot*0.6+max(self.betting), 2)
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
@@ -292,5 +294,208 @@ class DecisionMaker():
             if my_move == 4:
                 self.controller.rais(max(betting)*(people_play+2))#{{{
                 print 'My Move Is 4'
+                return#}}}
+#}}}
+
+    def fast_fold(self, game_driver):
+        self.update(game_driver)#{{{
+        if game_driver.stage == 0:
+            self.fast_fold_preflop()
+        else:
+            self.fast_fold_postflop()#}}}
+
+    def fast_fold_postflop(self):
+        gd = self.game_driver
+        stats = self.stats_handler.stats
+        if self.game_driver.source == 'ps':#{{{
+            beat_chance = 1
+            for i in xrange(1, 6):
+                if gd.active[i]:
+                    beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            if max(self.betting) == 0:
+                pass
+            else:
+                to_call = max(self.betting) - self.betting[0]
+                ratio = to_call / (self.pot+to_call)
+                if beat_chance > 0.85:
+                    pass
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
+                        or beat_chance > 0.6\
+                        or my_outs*0.02*(3-self.stage) > 1.5*ratio:
+                            pass
+                else:
+                    self.controller.fold()#}}}
+        else:#{{{
+            beat_chance = 1
+            for i in xrange(1, 6):
+                if gd.active[i]:
+                    beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            print
+            print 'Pot: ', self.game_driver.pot
+            print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
+            print 'My Win Chance: ', beat_chance
+            print 'My Outs', my_outs
+            print 'My Decision: ', 
+            if max(self.betting) == 0:
+                if beat_chance > 0.6\
+                        - move_last(self.game_driver.active, self.game_driver.button)*0.1\
+                        + self.game_driver.stage*0.1:
+                    print 'Bet', round(self.pot*0.8, 2)
+                else:
+                    print 'Check'
+            else:
+                to_call = max(self.betting) - self.betting[0]
+                ratio = to_call / (self.pot+to_call)
+                print 'Ratio: ', ratio,
+                if beat_chance > 0.85:
+                    print 'Raise', round(self.pot*0.6+max(self.betting), 2)
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
+                        or beat_chance > 0.6\
+                        or my_outs*0.02*(3-self.stage) > 1.5*ratio:
+                    print 'Call'
+                else:
+                    print 'Fold'
+            if self.game_driver.source != 'ps':
+                raw_input('---press any key---')
+                del_stdout_line(1)
+            #}}}
+
+    def fast_fold_preflop(self):
+        my_move = self.get_preflop_move(self.cards)#{{{
+        betting = self.betting
+        people_bet = self.bet_round
+        button = self.button 
+        people_play = self.people_play
+        dm = self.data_manager
+        if self.game_driver.source == 'ps':
+            if my_move == 0 or my_move == 1:
+                if (button == 0 or button == 1) and people_bet == 1 and people_play == 1:#{{{
+                    fold_chance = 1.0
+                    fold_chance *= dm.get_item((button+1)%6, u'SFBS')
+                    fold_chance *= dm.get_item((button+2)%6, u'BFBS') 
+                    if fold_chance > 0.7:
+                        return
+                if button == 5 and people_bet == 1 and people_play == 1:
+                    fold_chance = 1.0
+                    fold_chance *= dm.get_item((button+2)%6, u'BFBS')
+                    if fold_chance > 0.7:
+                        return 
+                if people_bet == 2 and people_play == 1 and button >= 4:
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            better = i
+                    if better == button:
+                        if dm.get_item(better, u'BSA') > 0.7:
+                            return
+                if people_bet == 2:
+                    fold_chance = 1.0
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F3B')
+                    if fold_chance > 0.7:
+                        return
+                if people_bet == 2 and people_play == 1:
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            if dm.get_item(i, 'pfr') > 0.5:
+                                return
+                if people_bet == 3:
+                    fold_chance = 1.0
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F4B') 
+                    if fold_chance > 0.7:
+                        return 
+                if people_bet == 1 and people_play == 1 and button == 1:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    fold_chance *= (1-dm.get_item(2, 'vpip'))
+                    fold_chance *= (1-dm.get_item(3, 'vpip'))
+                    if fold_chance > 0.8:
+                        return
+                if people_bet == 1 and people_play == 1 and button == 0:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    fold_chance *= (1-dm.get_item(2, 'vpip'))
+                    if fold_chance > 0.8:
+                        return
+                if people_bet == 1 and people_play == 1 and button == 5:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    if fold_chance > 0.9:
+                        return
+                if people_bet == 1 and my_move == 1:
+                    return
+                if betting[0] == max(betting):
+                    self.controller.fold()
+                    return
+                if people_bet == 2 and my_move == 1 and max(betting)-betting[0] <= 0.08:
+                    return
+                else:
+                    self.controller.fold()
+                    return#}}}
+            if my_move == 2:
+                if people_bet == 1:#{{{
+                    return
+                if people_bet == 2: 
+                    fold_chance = 1.0
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F3B')
+                    if fold_chance > 0.7:
+                        return
+                if people_bet == 2 and people_play == 1 and button >= 4:
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            better = i
+                    if better == button:
+                        if dm.get_item(better, u'BSA') > 0.7:
+                            return 
+                if people_bet == 2 and people_play == 1:
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            if dm.get_item(i, 'pfr') > 0.5:
+                                return 
+                if people_bet == 3:
+                    fold_chance = 1.0
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F4B') 
+                    if fold_chance > 0.7:
+                        return 
+                if people_bet == 2:
+                    return 
+                if betting[0] == max(betting):
+                    self.controller.fold()
+                    return
+                else:
+                    self.controller.fold()
+                    return#}}}
+            if my_move == 3:
+                if people_bet == 1:#{{{
+                    return
+                if people_bet == 2:
+                    return
+                if people_bet == 2:
+                    fold_chance = 1.0
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F3B') 
+                    if fold_chance > 0.7:
+                        return
+                if people_bet == 3:
+                    fold_chance = 1.0
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F4B')
+                    if fold_chance > 0.8:
+                        return 
+                if people_bet == 2:
+                    return
+                self.controller.fold()
+                return#}}}
+            if my_move == 4:
                 return#}}}
 #}}}

@@ -149,9 +149,10 @@ class MoveCatcher():
                     self.betting[player] = max(self.betting) + float(amount)
                 if type(actions[0][1]) == float:
                     actions[0][1] = round(actions[0][1], 2)
-                self.betting[player] = round(self.betting[player], 2)
                 if player == 0:
                     actions = [['my move', 0]] + actions
+                else:
+                    self.betting[player] = round(self.betting[player], 2)
                 return actions
             else:
                 if instr.startswith('Uncalled bet'):

@@ -40,7 +40,7 @@ class GameDriver():
         self.decision_maker = DecisionMaker(self)
         self.betting        = [0, 0, 0, 0, 0, 0]
         self.move_catcher   = MoveCatcher(0, self)
-        self.pot            = 0
+        self.pot            = SB+BB 
         self.last_better    = -1
         self.all_limper     = -1
         self.stage          = 0
@@ -80,6 +80,7 @@ class GameDriver():
             with open('stats_snapshot.json', 'w') as f:
                 json.dump(self.stats_handler.stats, f)
             print '*** '+stages[self.stage]+' ***'
+            print 'Pot: ', self.pot
             if self.stage == 1:
                 print 'Cards: ', self.cards[2:5]
             elif self.stage == 2:
@@ -206,16 +207,34 @@ class GameDriver():
         self.last_mover = (self.button+2) % 6
         self.move_catcher.to_act = to_act
 #       move_catcher = MoveCatcher(to_act, self)#}}}
-        while True:#{{{
+        while True:
             actions = self.move_catcher.get_action()
-            for action in actions:
-#               print action
-#               print self.betting
-#               print self.stack
-                indicator = self.handle_preflop_action(action)
-                if indicator:
-                    return indicator
-            to_act = self.move_catcher.to_act#}}}
+            if self.source == 'ps':#{{{
+                for action in actions:
+                    self.decision_maker.fast_fold(self)
+                    indicator = self.handle_preflop_action(action)
+                    if indicator:
+                        return indicator
+                to_act = self.move_catcher.to_act#}}}
+            else:#{{{
+                if len(actions) == 1:
+                    action = actions[0]
+                    indicator = self.handle_preflop_action(action)
+                    if indicator:
+                        return indicator
+                else:
+                    action = actions[1]
+                    if type(action[1]) == float:
+                        self.betting[0] -= action[1]
+                        self.betting[0] = round(self.betting[0], 2)
+                    action = actions[0]
+                    indicator = self.handle_preflop_action(action)
+                    action = actions[1]
+                    self.handle_preflop_action(action)
+                    if type(action[1]) == float:
+                        self.betting[0] += action[1]
+                        self.betting[0] = round(self.betting[0], 2)
+                to_act = self.move_catcher.to_act#}}}
             
     def post_flop(self, stage):
         self.postflop_status = ['', '', '', '', '', '']#{{{
@@ -228,16 +247,40 @@ class GameDriver():
             self.last_mover = (self.last_mover-1) % 6
         self.move_catcher.to_act = to_act
 #       move_catcher = MoveCatcher(to_act, self)#}}}
-        while True:#{{{
+        while True:
             actions = self.move_catcher.get_action()
-            for action in actions:
-                self.can_beat_table[stage] ,self.outs[stage] =\
-                        get_can_beat_table(self.power_rank[self.stage],\
-                        self.stats_handler.stats, self.last_better, self.active)
-#               print action
-#               print self.betting
-#               print self.stack
-                indicator = self.handle_postflop_action(action)
-                if indicator:
-                    return indicator
-            to_act = self.move_catcher.to_act#}}}
+            if self.source == 'ps':#{{{
+                for action in actions:
+                    self.decision_maker.fast_fold(self)
+                    self.can_beat_table[stage] ,self.outs[stage] =\
+                            get_can_beat_table(self.power_rank[self.stage],\
+                            self.stats_handler.stats, self.last_better, self.active)
+                    indicator = self.handle_postflop_action(action)
+                    if indicator:
+                        return indicator
+                to_act = self.move_catcher.to_act#}}}
+            else:#{{{
+                if len(actions) == 1:
+                    action = actions[0]
+                    self.can_beat_table[stage] ,self.outs[stage] =\
+                            get_can_beat_table(self.power_rank[self.stage],\
+                            self.stats_handler.stats, self.last_better, self.active)
+                    indicator = self.handle_postflop_action(action)
+                    if indicator:
+                        return indicator
+                else:
+                    self.can_beat_table[stage] ,self.outs[stage] =\
+                            get_can_beat_table(self.power_rank[self.stage],\
+                            self.stats_handler.stats, self.last_better, self.active)
+                    action = actions[1]
+                    if type(action[1]) == float:
+                        self.betting[0] -= action[1]
+                        self.betting[0] = round(self.betting[0], 2)
+                    action = actions[0]
+                    indicator = self.handle_postflop_action(action)
+                    action = actions[1]
+                    self.handle_preflop_action(action)
+                    if type(action[1]) == float:
+                        self.betting[0] += action[1]
+                        self.betting[0] = round(self.betting[0], 2)
+                to_act = self.move_catcher.to_act#}}}

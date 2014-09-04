@@ -17,7 +17,7 @@ if sys.argv[1] == 'ps':
             get_name_figure()
             game_driver.data_manager.update()
 else:
-    with open('test_file.txt') as f:
+    with open(sys.argv[1]) as f:
         test_file = f.read()
     games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
     for game in games:
