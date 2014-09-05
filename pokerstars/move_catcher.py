@@ -139,12 +139,20 @@ class MoveCatcher():
                 if type(action[1]) == float:
                     action[1] = round(action[1], 2)#}}}
         else:
-            instr = self.source[0]#{{{
+            while 'has timed out' in self.source[0]\
+                    or 'from pot' in self.source[0]\
+                    or 'said, "' in self.source[0]\
+                    or 'show hand' in self.source[0]\
+                    or 'is disconnect' in self.source[0]\
+                    or 'is connect' in self.source[0]:#{{{
+                self.source = self.source[1:]
+            instr = self.source[0]
             cards = self.cards
             self.source = self.source[1:]
             if ':' in instr:
-                player = self.seat[instr.split(':')[0]]
-                action_str = instr.split(': ')[1].strip()
+                name = ':'.join(instr.split(':')[:-1])
+                player = self.seat[name]
+                action_str = instr.split(': ')[-1].strip()
                 action_str = re.sub(' and is all-in', '', action_str)
                 if action_str == 'folds':
                     actions = [[player, 'fold']]
@@ -171,6 +179,10 @@ class MoveCatcher():
             else:
                 if instr.startswith('Uncalled bet'):
                     return [['new game', 1]]
+                if '*** FIRST' in instr or '*** SECOND' in instr:
+                    return [['new game', 1]]
+                if '*** SUMMARY ***' in instr:
+                    return [['new game', 1]]
                 if instr.startswith('*** SHOW DOWN ***'):
                     return [['new game', 1]]
                 if instr.startswith('*** FLOP ***'):
@@ -187,4 +199,8 @@ class MoveCatcher():
                     cards6 = re.findall('\[(.{2})\]', instr)[0]
                     cards[6] = map_card_string_to_tuple(cards6)
                     return [['new stage', cards]]#}}}
-        return actions
+        try:
+            return actions
+        except:
+            print instr
+            raise Exception

@@ -1,4 +1,5 @@
 from game_driver import GameDriver
+from make_data import GameDriver as make_data
 from pokerstars.get_name_figure import get_name_figure
 from public import del_stdout_line
 import sys
@@ -19,6 +20,18 @@ if sys.argv[1] == 'ps':
         if game_driver.game_count % 20 == 0:
             get_name_figure()
             game_driver.data_manager.update()
+elif sys.argv[1].startswith('makedata'):
+    c = 0
+    with open(sys.argv[1][8:]) as f:
+        test_file = f.read()
+    games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
+    games.reverse()
+    for game in games:
+        c += 1
+        if c % 20 == 0:
+            print c, '/', len(games)
+        game_driver = make_data(game)
+        game_driver.game_stream(-1)
 else:
     with open(sys.argv[1]) as f:
         test_file = f.read()
@@ -30,5 +43,5 @@ else:
         print '####################'
         print 'Starting New Game'
         game_driver = GameDriver(game)
-        game_driver.game_stream()
+        game_driver.game_stream(-1)
         raw_input('---ENDING GAME---')

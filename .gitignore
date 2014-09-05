@@ -2,6 +2,7 @@
 player*
 stats_snapshot.json
 HH*.txt
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

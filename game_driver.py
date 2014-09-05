@@ -16,7 +16,6 @@ from stats.stats_handler import StatsHandler
 from strategy.decision_maker import DecisionMaker
 
 class GameDriver():
-    
 
     def __init__(self, game_record='ps'):
         self.screen_scraper = ScreenScraper(game_driver=self, source=game_record)#{{{
