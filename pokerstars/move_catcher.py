@@ -149,7 +149,7 @@ class MoveCatcher():
             instr = self.source[0]
             cards = self.cards
             self.source = self.source[1:]
-            if ':' in instr:
+            if ': ' in instr:
                 name = ':'.join(instr.split(':')[:-1])
                 player = self.seat[name]
                 action_str = instr.split(': ')[-1].strip()
