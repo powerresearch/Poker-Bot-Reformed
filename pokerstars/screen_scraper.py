@@ -164,7 +164,6 @@ class ScreenScraper():
             result['button'] = button#}}}
         else:
             lines = self.source.splitlines()#{{{
-            hero_name = re.findall(r'Dealt to (.*) \[', self.source)[0]
             game_number = re.findall(r'[0-9]+', lines[0])[0]
             player = [0, 0, 0, 0, 0, 0]
             seat = {}
@@ -179,6 +178,10 @@ class ScreenScraper():
                 tmp_stack[i] = float(line[-1][1:])#re.findall(r'\($([0-9\.]*) ', line[-1])[0]
                 tmp_player[i] = ' ('.join(line[:-1])
                 tmp_seat[' ('.join(line[:-1])] = i
+            try:
+                hero_name = re.findall(r'Dealt to (.*) \[', self.source)[0]
+            except:
+                hero_name = tmp_player[0]
             hero_seat = tmp_seat[hero_name]
             button = (0-hero_seat) % 6
             for i in xrange(6):
@@ -186,9 +189,13 @@ class ScreenScraper():
                 player[(i-hero_seat)%6] = tmp_player[i]
             for name in tmp_seat:
                 seat[name] = (tmp_seat[name]-hero_seat) % 6
-            card01 = re.findall('Dealt to .+? \[(.+?)]', self.source)[0]
-            cards[0] = map_card_string_to_tuple(card01[:2])
-            cards[1] = map_card_string_to_tuple(card01[3:])
+            try:
+                card01 = re.findall('Dealt to .+? \[(.+?)]', self.source)[0]
+                cards[0] = map_card_string_to_tuple(card01[:2])
+                cards[1] = map_card_string_to_tuple(card01[3:])
+            except:
+                cards[0] = [2,1]
+                cards[1] = [2,2]
             result['cards'] = cards
             result['game_number'] = game_number
             result['stack'] = stack
