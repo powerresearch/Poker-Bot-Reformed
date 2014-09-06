@@ -4,16 +4,9 @@ import json
 import re
 import time
 from public import is_only_max
-from public import get_power_rank
-from public import get_can_beat_table
-from public import show_stats
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
-from pokerstars.controller import Controller
-from database.data_manager import DataManager
-from stats.stats_handler import StatsHandler
-from strategy.decision_maker import DecisionMaker
 
 class GameDriver():
     
@@ -30,11 +23,7 @@ class GameDriver():
         self.Y              = -1
         self.X              = list()
         self.source         = game_record
-        self.controller     = Controller(self)
         init_values = self.screen_scraper.get_init_values()
-        while init_values == 'get back':
-            self.controller.get_back()
-            init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
         self.cards          = init_values['cards'] + ['', '', '', '', '']
@@ -44,10 +33,10 @@ class GameDriver():
             self.seat       = init_values['seat']
         self.steal_position = self.button == 0 or self.button == 1
         self.active         = [1, 1, 1, 1, 1, 1]
-        self.data_manager   = DataManager()
-        self.data_manager.load_data(self.player_name, self.button)
-        self.stats_handler  = StatsHandler(self)
-        self.decision_maker = DecisionMaker(self)
+#        self.data_manager   = DataManager()
+#        self.data_manager.load_data(self.player_name, self.button)
+#       self.stats_handler  = StatsHandler(self)
+#       self.decision_maker = DecisionMaker(self)
         self.betting        = [0, 0, 0, 0, 0, 0]
         self.pot            = SB+BB 
         self.last_better    = -1
@@ -180,7 +169,10 @@ class GameDriver():
                     self.rel_pos = [0]
                 else:
                     self.rel_pos = [1]
-                self.pf_bet_round[self.bet_round-1] = 1
+                if self.bet_round > 5:
+                    self.pf_bet_round[4] = 1
+                else:
+                    self.pf_bet_round[self.bet_round-1] = 1
                 if self.last_better == actor:
                     self.is_last_better = [1]
                 else:
