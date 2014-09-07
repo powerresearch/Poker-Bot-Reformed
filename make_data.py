@@ -10,9 +10,9 @@ from pokerstars.move_catcher import MoveCatcher
 
 class GameDriver():
     
-
-    def __init__(self, game_record='ps'):
+    def __init__(self, game_record, save_as):
         self.screen_scraper = ScreenScraper(game_driver=self, source=game_record)#{{{
+        self.save_as        = save_as
         self.flop_better    = 0
         self.digit          = [0]*13*3
         self.color          = [0]*4*3
@@ -83,7 +83,7 @@ class GameDriver():
             indicator = self.post_flop(self.stage)
             self.X = self.position+self.rel_pos+self.digit+self.color+self.pf_bet_round+self.is_last_better
             if sum(self.X):
-                with open('data.txt', 'a') as f:
+                with open('learning/'+self.save_as+'.txt', 'a') as f:
                     for feature in self.X:
                         f.write(str(feature)+',')
                     f.write(str(self.Y)+'\n')
@@ -143,14 +143,8 @@ class GameDriver():
             return []
         actor, value = action
         if value == 'fold':
-            print 'someone fold'
-            print self.flop_better,
-            print self.stage,
-            print self.betting,
             if self.flop_better == 1:
-                print 'Y = 1'
                 self.Y = 1
-            print '\n\n\n'
             self.active[actor] = 0
             return []
         if value == 'check':
@@ -319,7 +313,7 @@ class GameDriver():
                     action = actions[0]
                     indicator = self.handle_postflop_action(action)
                     action = actions[1]
-                    self.handle_preflop_action(action)
+                    self.handle_postflop_action(action)
                     if type(action[1]) == float:
                         self.betting[0] += action[1]
                         self.betting[0] = round(self.betting[0], 2)

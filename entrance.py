@@ -22,15 +22,15 @@ if sys.argv[1] == 'ps':
             game_driver.data_manager.update()
 elif sys.argv[1].startswith('makedata'):
     c = 0
-    with open(sys.argv[1][8:]) as f:
+    with open('learning/'+sys.argv[1][8:]) as f:
         test_file = f.read()
     games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
     games.reverse()
     for game in games:
         c += 1
-        if c % 20 == 0:
+        if c % 100 == 0:
             print c, '/', len(games)
-        game_driver = make_data(game)
+        game_driver = make_data(game, sys.argv[2])
         game_driver.game_stream(-1)
 else:
     with open(sys.argv[1]) as f:
