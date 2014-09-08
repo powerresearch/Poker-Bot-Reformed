@@ -1,8 +1,10 @@
 from game_driver import GameDriver
 from make_data import GameDriver as make_data
 from pokerstars.get_name_figure import get_name_figure
+from pokerstars.controller import Controller
 from public import del_stdout_line
 import sys
+import os
 import time
 import re
 import random
@@ -15,7 +17,9 @@ if sys.argv[1] == 'ps':
     rest_length = random.random() * 1800
     while True:
         if time.time() - starting_time > session_length:
-            time.sleep(rest_length)
+            print 'Rest for a while', rest_length
+            c = Controller()
+            c.rest(rest_length)
             starting_time = time.time()
             session_length = random.random() * 18000
             rest_length = random.random() * 1800
@@ -29,18 +33,23 @@ if sys.argv[1] == 'ps':
         if game_driver.game_count % 20 == 0:
             get_name_figure()
             game_driver.data_manager.update()
-elif sys.argv[1].startswith('makedata'):
+elif sys.argv[1] == 'makedata':
     c = 0
-    with open('learning/'+sys.argv[1][8:]) as f:
-        test_file = f.read()
-    games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
-    games.reverse()
-    for game in games:
-        c += 1
-        if c % 100 == 0:
-            print c, '/', len(games)
-        game_driver = make_data(game, sys.argv[2])
-        game_driver.game_stream(-1)
+    for file_name in os.listdir('pokerdata'):
+        with open('pokerdata/'+file_name) as f:
+            test_file = f.read()
+            if '9-max Seat' in test_file:
+                continue
+        test_file = test_file.replace('\xe2\x82\xac', '$')
+        games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
+        for game in games:
+            if not 'Seat 6' in game:
+                continue
+            c += 1
+            if c % 100 == 0:
+                print c, '/', len(games)
+            game_driver = make_data(game, sys.argv[2])
+            game_driver.game_stream(-1)
 else:
     with open(sys.argv[1]) as f:
         test_file = f.read()

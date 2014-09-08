@@ -28,6 +28,17 @@ class Controller():
         m.click(round(join_game[0]+100*(random.random()-0.5)),\
                 round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
 
+    def rest(self, rest_time):
+        m = self.m#{{{
+        m.click(window_close[0], window_close[1], 1)
+        time.sleep(0.5)
+        m.click(sitout_confirm[0], sitout_confirm[1], 1)
+        time.sleep(rest_time)
+        m.click(round(entry_position[0]+200*(random.random()-0.5)),\
+                round(entry_position[1]+10*(random.random()-0.5)), 1)
+        m.click(round(join_game[0]+100*(random.random()-0.5)),\
+                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
+
     def fold(self):
         if self.folded:
             return
@@ -59,6 +70,8 @@ class Controller():
             f.write(json.dumps(last_control))#}}}
 
     def call(self):
+        if self.folded:
+            return
         print '-----CALLING-----'
         def all_in():#{{{
             im = pyscreenshot.grab()
@@ -91,6 +104,8 @@ class Controller():
             f.write(json.dumps(last_control))#}}}
 
     def rais(self, amount):
+        if self.folded:
+            return
         print '-----RAISING-----'
         m = self.m#{{{ 
         time.sleep(0.5)

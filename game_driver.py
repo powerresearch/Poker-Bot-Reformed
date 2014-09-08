@@ -152,8 +152,15 @@ class GameDriver():
             self.cards = action[1]
             return 'new stage'
         if action[0] == 'my move':
-            self.decision_maker.make_decision(self)
-            time.sleep(0.5)
+            if self.stage == 3:
+                a = self.betting[0]
+                not_even = 0
+                for i in xrange(6):
+                    if self.active[i] == 1 and self.betting[i] != a:
+                        not_even = 1
+            if self.stage != 3 or not_even or a == 0:
+                self.decision_maker.make_decision(self)
+                time.sleep(0.5)
             return []
         actor, value = action
         if value == 'fold':
@@ -226,10 +233,10 @@ class GameDriver():
                 for action in actions:
                     if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
                         if self.button == 0 and\
-                                (type(self.player_names[1]) != unicode\
-                                or type(self.player_names[2]) != unicode):
+                                (type(self.player_name[1]) != unicode\
+                                or type(self.player_name[2]) != unicode):
                             pass
-                        if self.button == 4 and\
+                        elif self.button == 4 and\
                                 (self.data_manager.get_item(4, u'BSA') > 0.7):
                             pass
                         else:

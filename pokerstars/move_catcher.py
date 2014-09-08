@@ -143,6 +143,8 @@ class MoveCatcher():
                     or 'from pot' in self.source[0]\
                     or 'said, "' in self.source[0]\
                     or 'show hand' in self.source[0]\
+                    or 'posts big blind' in self.source[0]\
+                    or 'posts small blind' in self.source[0]\
                     or 'is disconnect' in self.source[0]\
                     or 'is connect' in self.source[0]:#{{{
                 self.source = self.source[1:]
@@ -169,8 +171,12 @@ class MoveCatcher():
                     actions = [[player, max(self.betting) + float(amount)\
                             - self.betting[player]]]
                     self.betting[player] = max(self.betting) + float(amount)
-                if type(actions[0][1]) == float:
-                    actions[0][1] = round(actions[0][1], 2)
+                try:
+                    if type(actions[0][1]) == float:
+                        actions[0][1] = round(actions[0][1], 2)
+                except:
+                    print instr
+                    raise Exception
                 if player == 0:
                     actions = [['my move', 0]] + actions
                 else:

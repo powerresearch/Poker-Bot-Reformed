@@ -6,6 +6,9 @@ HH*.txt
 X.json
 Y.json
 
+# Pokerdata
+pokerdata/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

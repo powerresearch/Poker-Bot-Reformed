@@ -80,7 +80,7 @@ class DecisionMaker():
                     self.controller.rais(self.pot*0.6+max(self.betting))
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
-                        or my_outs*0.02*(3-self.stage) > 1.5*ratio:
+                        or my_outs*0.02*(3-self.stage) > ratio:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
