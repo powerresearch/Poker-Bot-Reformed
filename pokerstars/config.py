@@ -11,6 +11,8 @@ SB = 0.01
 game_number_x = 46
 game_number_y = 72
 
+entry_position = (300, 503)
+
 label_position = (600, 520)
 
 fold_position = (450, 560)

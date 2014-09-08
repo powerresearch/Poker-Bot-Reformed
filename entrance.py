@@ -5,11 +5,20 @@ from public import del_stdout_line
 import sys
 import time
 import re
+import random
 
 if sys.argv[1] == 'ps':
     game_number = 0
     last_game_number = 1
+    starting_time = time.time()
+    session_length = random.random() * 18000
+    rest_length = random.random() * 1800
     while True:
+        if time.time() - starting_time > session_length:
+            time.sleep(rest_length)
+            starting_time = time.time()
+            session_length = random.random() * 18000
+            rest_length = random.random() * 1800
         game_driver = GameDriver('ps')
         if game_number != last_game_number:
             game_driver.count_game()

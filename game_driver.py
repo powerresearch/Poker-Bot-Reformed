@@ -66,6 +66,12 @@ class GameDriver():
         print 'Button:', self.button
         print 'Cards:', self.cards[:2]
         print 'Names:', self.player_name
+        for i in xrange(1, 6):
+            if type(self.player_name[i]) == unicode:
+                print '%s, Hands: %d, PFR: %0.2f, F3B: %0.2f, BSA: %0.2f' %\
+                        (self.player_name[i], self.data_manager.get_item(i, u'HANDS'),\
+                        self.data_manager.get_item(i, u'pfr'), self.data_manager.get_item(i, u'F3B'),\
+                        self.data_manager.get_item(i, u'BSA'))
         if self.stack[0] > 3 and self.decision_maker.get_preflop_move(self.cards) == 0:
             self.controller.sit_out()
             return self.game_number
@@ -219,7 +225,15 @@ class GameDriver():
                         return 'new game' 
                 for action in actions:
                     if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
-                        self.decision_maker.fast_fold(self)
+                        if self.button == 0 and\
+                                (type(self.player_names[1]) != unicode\
+                                or type(self.player_names[2]) != unicode):
+                            pass
+                        if self.button == 4 and\
+                                (self.data_manager.get_item(4, u'BSA') > 0.7):
+                            pass
+                        else:
+                            self.decision_maker.fast_fold(self)
                     indicator = self.handle_preflop_action(action)
                     if indicator:
                         return indicator

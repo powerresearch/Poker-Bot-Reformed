@@ -59,7 +59,7 @@ class DecisionMaker():
             beat_chance = 1
             for i in xrange(1, 6):
                 if gd.active[i]:
-                    beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
+                    beat_chance = min([how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i), beat_chance])
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             print
             print 'Pot: ', self.game_driver.pot
@@ -221,7 +221,6 @@ class DecisionMaker():
             if my_move == 2:
                 if people_bet == 1:#{{{
                     self.controller.rais(BB*(people_play+2))
-                    print 'My Move Is 2'
                     return
                 if people_bet == 2: 
                     fold_chance = 1.0
@@ -271,11 +270,9 @@ class DecisionMaker():
             if my_move == 3:
                 if people_bet == 1:#{{{
                     self.controller.rais((people_play+2)*BB)
-                    print 'My Move Is 3'
                     return
                 if people_bet == 2:
                     self.controller.rais(max(betting)*(1.8+people_play*0.8)+2*BB)
-                    print 'My Move Is 3'
                     return
                 if people_bet == 2:
                     fold_chance = 1.0
@@ -304,7 +301,6 @@ class DecisionMaker():
                 return#}}}
             if my_move == 4:
                 self.controller.rais(max(betting)*(people_play+2))#{{{
-                print 'My Move Is 4'
                 return#}}}
 #}}}
 

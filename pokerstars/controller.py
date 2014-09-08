@@ -2,7 +2,7 @@ from pokerstars.config import fold_position
 from pokerstars.config import call_position
 from pokerstars.config import raise_position
 from pokerstars.config import label_position
-from pokerstars.config import window_close, sitout_confirm, join_game
+from pokerstars.config import window_close, sitout_confirm, join_game, entry_position
 from pokerstars.config import BB, SB
 import pymouse
 import pyscreenshot
@@ -23,6 +23,8 @@ class Controller():
         time.sleep(0.5)
         m.click(sitout_confirm[0], sitout_confirm[1], 1)
         time.sleep(3)
+        m.click(round(entry_position[0]+200*(random.random()-0.5)),\
+                round(entry_position[1]+10*(random.random()-0.5)), 1)
         m.click(round(join_game[0]+100*(random.random()-0.5)),\
                 round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
 
