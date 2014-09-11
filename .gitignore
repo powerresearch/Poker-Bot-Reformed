@@ -1,4 +1,6 @@
 .*
+pokerstars/last_control.json
+pokerstars/names_to_figure.txt
 player*
 stats_snapshot.json
 HH*.txt

@@ -103,6 +103,11 @@ class DecisionMaker():
                     self.controller.fold()#}}}
         else:#{{{
             beat_chance = 1
+            range_fight_result = 1
+            for i in xrange(1, 6):
+                if gd.active[i]:
+                    beat_chance = min([how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i), beat_chance])
+                    range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
             for i in xrange(1, 6):
                 if gd.active[i]:
                     beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
@@ -111,6 +116,7 @@ class DecisionMaker():
             print 'Pot: ', self.game_driver.pot
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
+            print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
             print 'My Decision: ', 
             if max(self.betting) == 0:
