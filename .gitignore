@@ -3,8 +3,8 @@ player*
 stats_snapshot.json
 HH*.txt
 *.txt
-X.json
-Y.json
+learning/*.json
+learning/*.json
 
 # Pokerdata
 pokerdata/

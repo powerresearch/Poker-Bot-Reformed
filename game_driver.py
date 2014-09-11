@@ -34,7 +34,7 @@ class GameDriver():
             self.seat       = init_values['seat']
         self.steal_position = self.button == 0 or self.button == 1
         self.active         = [1, 1, 1, 1, 1, 1]
-        self.data_manager   = DataManager()
+        self.data_manager   = DataManager(self.button)
         self.data_manager.load_data(self.player_name, self.button)
         self.stats_handler  = StatsHandler(self)
         self.decision_maker = DecisionMaker(self)
@@ -75,7 +75,7 @@ class GameDriver():
         if self.stack[0] > 3 and self.decision_maker.get_preflop_move(self.cards) == 0:
             self.controller.sit_out()
             return self.game_number
-        if self.source == 'ps' and self.decision_maker.get_preflop_move(self.cards) == 0 and self.button != 4:
+        if self.source == 'ps' and self.decision_maker.get_preflop_move(self.cards) == 0 and self.button != 4 and self.button != 0:
             self.controller.fold()
             return self.game_number
         print#}}}
@@ -235,7 +235,7 @@ class GameDriver():
                         if self.button == 0 and\
                                 (type(self.player_name[1]) != unicode\
                                 or type(self.player_name[2]) != unicode):
-                            pass
+                            print 'Wait, Because: ', self.player_name[1:3]
                         elif self.button == 4 and\
                                 (self.data_manager.get_item(4, u'BSA') > 0.7):
                             pass

@@ -18,7 +18,7 @@ if sys.argv[1] == 'ps':
     while True:
         if time.time() - starting_time > session_length:
             print 'Rest for a while', rest_length
-            c = Controller()
+            c = Controller(1)
             c.rest(rest_length)
             starting_time = time.time()
             session_length = random.random() * 18000
@@ -30,13 +30,16 @@ if sys.argv[1] == 'ps':
             print 'Game Counting:', int(game_driver.game_count)
         last_game_number = game_number
         game_number = game_driver.game_stream(last_game_number)
-        if game_driver.game_count % 20 == 0:
+        if game_driver.game_count % 100 == 0:
+            print 'Getting Name Figure and Updating Database...\n\n\n\n'
             get_name_figure()
             game_driver.data_manager.update()
 elif sys.argv[1] == 'makedata':
     c = 0
-    for file_name in os.listdir('pokerdata'):
-        with open('pokerdata/'+file_name) as f:
+    #for file_name in os.listdir('pokerdata'):
+    for i in xrange(1):
+        file_name = 'vali.txt'
+        with open(file_name) as f:
             test_file = f.read()
             if '9-max Seat' in test_file:
                 continue

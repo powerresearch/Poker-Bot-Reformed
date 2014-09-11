@@ -5,14 +5,13 @@ from pokerstars.config import hhpath
 from public import is_recent_file
 
 class DataManager():
-    def __init__(self):
+    def __init__(self, button):
         with open('database/data/default_data.json') as f:#{{{
-            self.default_data = json.load(f)#}}}
+            self.default_data = json.load(f)
+        self.button = button#}}}
 
     def load_data(self, player_name, button):
-        vpip_factor = [1.2, 1, 0.9, 0.8, 1, 1.1]#{{{
-        pfr_factor = [1.3, 1.6, 1, 0.5, 0.6, 1]
-        self.player_data = list()
+        self.player_data = list()#{{{
         for i in xrange(6):
             if player_name[i] != u'd' and type(player_name[i]) == unicode:
                 try:
@@ -22,30 +21,33 @@ class DataManager():
                     print e
                     print player_name[i]
                     single_data = self.default_data
-                if single_data[u'HANDS'] > 30:
+                if single_data[u'HANDS'] > 10:
                     self.player_data.append(single_data)
                 else:
                     self.player_data.append(self.default_data)
             else:
-                self.player_data.append(self.default_data)
-        for position in xrange(6):
-            self.player_data[(button+position)%6][u'vpip'] *= vpip_factor[position]
-            self.player_data[(button+position)%6][u'pfr'] *= pfr_factor[position]#}}}
+                self.player_data.append(self.default_data)#}}}
 
     def get_item(self, seat, item):
         if type(seat) != int:#{{{
             s = seat
             seat = item
             item = s
-        if type(self.player_data[seat][item]) in [float, int]:
-            if self.player_data[seat][u'HANDS'] < 15:
-                return self.default_data[item]
-            else:
-                return self.player_data[seat][item]
-        elif self.player_data[seat][item][1] < 10:
-            return 1.0 * self.default_data[item][0] / self.default_data[item][1]
+        c = 1.0
+        vpip_factor = [1.2, 1.0, 0.9, 0.8, 1.0, 1.1]
+        pfr_factor = [1.3, 1.6, 1.0, 0.5, 0.6, 1.0]
+        if item == 'pfr':
+            item = u'PFR'
+            c = pfr_factor[(seat-self.button)%6] 
+        if item == 'vpip':
+            item = u'VPIP'
+            c = vpip_factor[(seat-self.button)%6]
+        if item == u'HANDS':
+            return self.player_data[seat][item]
+        if self.player_data[seat][item][1] < 10:
+            return c * self.default_data[item][0] / self.default_data[item][1]
         else:
-            return 1.0 * self.player_data[seat][item][0] / self.player_data[seat][item][1]#}}}
+            return c * self.player_data[seat][item][0] / self.player_data[seat][item][1]#}}}
 
     def update(self):
         with open('database/file_parsed.json') as f:#{{{
@@ -59,7 +61,8 @@ class DataManager():
             if 'Play Money' in file_name:
                 continue
             if file_name in file_parsed and not is_recent_file(file_name):
-                continue
+                pass
+#               continue
             else:
                 file_parsed[file_name] = 0
             with open(hhpath+'deoxy1909/'+file_name) as f:
@@ -182,12 +185,15 @@ class DataManager():
                                 player_data[winner[0]]['WWS'][0] += 1
 
                         for i in xrange(6):
+                            player_data[player[i]]['VPIP'][1] += 1
                             if vpip[i]:
-                                player_data[player[i]]['VPIP'] += 1
-                                player_data[player[i]]['VPIP'+str(i)] += 1
+                                player_data[player[i]]['VPIP'][0] += 1
+                        for ii in xrange(6):
+                            i = (ii - 3) % 6
+                            player_data[player[i]]['PFR'][1] += 1
                             if pfr[i]:
-                                player_data[player[i]]['PFR'] += 1
-                                player_data[player[i]]['PFR'+str(i)] += 1
+                                player_data[player[i]]['PFR'][0] += 1
+                                break
                         break
                     if stage == 1:
                         if re.match(r'.+? collected .+? from pot', line):
@@ -533,10 +539,20 @@ class DataManager():
                             winner.append(p)
                             continue
         for name in player_data:
-            player_data[name]['pfr'] = 1.0 * player_data[name]['PFR'] / player_data[name]['HANDS']
-            player_data[name]['vpip'] = 1.0 * player_data[name]['VPIP'] / player_data[name]['HANDS']
             with open('database/data/player '+name.replace('/', '')+'.json', 'w') as f:
                 json.dump(player_data[name], f)
+        default_data = self.player_data_init()
+        for name in player_data:
+            for k in default_data:
+                if k == 'NAME':
+                    default_data[k] = 'Default'
+                elif k == 'HANDS':
+                    default_data[k] += player_data[name][k]
+                else:
+                    default_data[k][0] += player_data[name][k][0]
+                    default_data[k][1] += player_data[name][k][1]
+        with open('database/default_data.json', 'w') as f:
+            json.dump(default_data, f)
         with open('database/file_parsed.json', 'w') as f:
             json.dump(file_parsed, f)
         with open('database/game_parsed.json', 'w') as f:
@@ -549,20 +565,8 @@ class DataManager():
         result['HANDS'] = 0
         result['WAS'] = [0, 0]  # [WAS, TOTAL SHOWDOWN]
         result['WWS'] = [0, 0]  # [WWS, TOTAL WIN]
-        result['VPIP'] = 0
-        result['VPIP0'] = 0
-        result['VPIP1'] = 0
-        result['VPIP2'] = 0
-        result['VPIP3'] = 0
-        result['VPIP4'] = 0
-        result['VPIP5'] = 0
-        result['PFR'] = 0
-        result['PFR0'] = 0
-        result['PFR1'] = 0
-        result['PFR2'] = 0
-        result['PFR3'] = 0
-        result['PFR4'] = 0
-        result['PFR5'] = 0
+        result['VPIP'] = [0, 0]
+        result['PFR'] = [0, 0]
         result['BSA'] = [0, 0]  # [BSA, CO&BTN&SB]
         result['BSAC'] = [0, 0] # [BSA at CO, CO]
         result['BSAB'] = [0, 0] # [BSA at BTN, BTN]

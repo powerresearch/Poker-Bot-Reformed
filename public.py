@@ -358,6 +358,28 @@ def get_can_beat_table(power_rank, stats, opponent, active):
                         can_beat_table[n1][c1][n2][c2] = pow(can_beat_table[n1][c1][n2][c2], no)
     return can_beat_table, outs_table#}}}
 
+def range_fight(power_rank, stat1, stat2):
+    s = 0#{{{
+    losing_chance = 0
+    z1 = 0
+    z2 = 0
+    for num1 in xrange(2, 15):
+        for col1 in xrange(1, 5):
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if num1 == num2 and col1 == col2:
+                        continue
+                    z1 += stat1[num1][col1][num2][col2]
+                    z2 += stat2[num1][col1][num2][col2]
+    for combo in power_rank:
+        card1, card2 = combo[0], combo[1]
+        losing_chance += s * stat1[card1[0]][card1[1]][card2[0]][card2[1]]
+        losing_chance += 0.5 * stat1[card1[0]][card1[1]][card2[0]][card2[1]] \
+                            * stat2[card1[0]][card1[1]][card2[0]][card2[1]]
+        s += stat2[card1[0]][card1[1]][card2[0]][card2[1]]
+    losing_chance = losing_chance / z1 / z2
+    return 1 - losing_chance#}}}
+
 def most_probable(stats, n=100):
     all_combo = list()#{{{
     for num1 in stats:

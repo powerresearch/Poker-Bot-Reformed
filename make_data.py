@@ -13,10 +13,14 @@ class GameDriver():
     def __init__(self, game_record, save_as):
         self.screen_scraper = ScreenScraper(game_driver=self, source=game_record)#{{{
         self.save_as        = save_as
-        self.flop_better    = 0
-        self.digit          = [0]*13*3
-        self.color          = [0]*4*3
-        self.position       = [0]*6
+        self.flop_actions   = [0] * 10
+        self.turn_actions   = [0] * 7
+        self.flop_digit_sum = [0]
+        self.flop_same_color = [0]
+        self.flop_abb       = [0]
+        self.flop_straight_draw = [0]
+        self.my_position    = [0]*6
+        self.his_position   = [0]*6
         self.rel_pos        = [0]
         self.is_last_better = [0]
         self.pf_bet_round   = [0, 0, 0, 0, 0]

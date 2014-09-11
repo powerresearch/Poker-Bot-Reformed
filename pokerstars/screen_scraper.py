@@ -385,7 +385,7 @@ class ScreenScraper():
         try:
             stack = float(stack)
         except:
-            print stack
+#           print stack
             return 'sitting out'
             pass
         return round(stack, 2)#}}}

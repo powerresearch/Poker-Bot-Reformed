@@ -3,18 +3,21 @@ import sys
 sys.path.insert(1, '/Library/Python/2.7/site-packages')
 from sklearn import tree
 
+with open('../bigX.json') as f:
+    X = json.load(f)
+with open('../bigY.json') as f:
+    Y = json.load(f)
+with open('../smallX.json') as f:
+    Xv = json.load(f)
+with open('../smallY.json') as f:
+    Yv = json.load(f)
+
 def main(training_n):
-    with open('../X.json') as f:
-        X = json.load(f)
-    with open('../Y.json') as f:
-        Y = json.load(f)
 
     Xt = X[:training_n]
     Yt = Y[:training_n]
-    Xv = X[-10000:]
-    Yv = Y[-10000:]
     
-    max_depth = [50]
+    max_depth = [25]
     min_samples_leaf = [2]
     min_samples_split = [2]
     prob_thres = [0.5]
@@ -60,4 +63,7 @@ def main(training_n):
                         
 
 if __name__ == '__main__':
-    main(30000)
+    t = [10, 20, 40, 100, 200, 400, 1000, 2000, 4000, 10000, 20000, 40000, 100000, 150000, 200000]
+    for n in t:
+        print 'Samples: %d' % (n)
+        main(n)

@@ -128,8 +128,6 @@ class MoveCatcher():
                     actions += self.make_even()
                 actions.append(['new stage', next_stage_result])
             if self.screen_scraper.shining(0):
-                print self.old_betting, self.betting
-                print self.old_stage, self.game_driver.stage
                 if self.old_betting[1:] != self.betting[1:]\
                         or self.game_driver.stage != self.old_stage:
                     actions.append(['my move', 0])

@@ -3,9 +3,9 @@ import sys
 import neurolab
 
 def main(training_n):
-    with open('../X.json') as f:
+    with open('../bigX.json') as f:
         X = json.load(f)
-    with open('../Y.json') as f:
+    with open('../bigY.json') as f:
         Y = json.load(f)
 
     Xt = X[:training_n]
