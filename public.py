@@ -330,7 +330,7 @@ def get_power_rank(cards):
     power_rank = sorted(power_rank, key=lambda x:x[2])
     return power_rank#}}}
 
-def get_can_beat_table(power_rank, stats, opponent, active):
+def get_can_beat_table(stage, power_rank, stats, opponent, active):
     no = 0#{{{
     for item in active:
         if item:
@@ -349,13 +349,14 @@ def get_can_beat_table(power_rank, stats, opponent, active):
     for c1, c2, fo, outs in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] /= prob
         outs_table[c1[0]][c1[1]][c2[0]][c2[1]] = outs
-        can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] += outs*0.03*(1-can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]])
+        can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] = max(can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]],\
+                outs*0.03*(3-stage))
     for n1 in xrange(2, 15):
         for c1 in xrange(1, 5):
             for n2 in xrange(2, 15):
                 for c2 in xrange(1, 5):
                     if can_beat_table[n1][c1][n2][c2]:
-                        can_beat_table[n1][c1][n2][c2] = pow(can_beat_table[n1][c1][n2][c2], no)
+                        can_beat_table[n1][c1][n2][c2] = pow(can_beat_table[n1][c1][n2][c2], 0.5+no*0.5)
     return can_beat_table, outs_table#}}}
 
 def range_fight(power_rank, stat1, stat2):

@@ -541,18 +541,18 @@ class DataManager():
         for name in player_data:
             with open('database/data/player '+name.replace('/', '')+'.json', 'w') as f:
                 json.dump(player_data[name], f)
-        default_data = self.player_data_init()
-        for name in player_data:
-            for k in default_data:
-                if k == 'NAME':
-                    default_data[k] = 'Default'
-                elif k == 'HANDS':
-                    default_data[k] += player_data[name][k]
-                else:
-                    default_data[k][0] += player_data[name][k][0]
-                    default_data[k][1] += player_data[name][k][1]
-        with open('database/default_data.json', 'w') as f:
-            json.dump(default_data, f)
+#        default_data = self.player_data_init()
+#        for name in player_data:
+#            for k in default_data:
+#                if k == 'NAME':
+#                    default_data[k] = 'Default'
+#                elif k == 'HANDS':
+#                    default_data[k] += player_data[name][k]
+#                else:
+#                    default_data[k][0] += player_data[name][k][0]
+#                    default_data[k][1] += player_data[name][k][1]
+#        with open('database/default_data.json', 'w') as f:
+#            json.dump(default_data, f)
         with open('database/file_parsed.json', 'w') as f:
             json.dump(file_parsed, f)
         with open('database/game_parsed.json', 'w') as f:

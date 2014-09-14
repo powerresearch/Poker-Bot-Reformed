@@ -1,5 +1,6 @@
 import json
 import time
+import random
 from pokerstars.config import BB
 from pokerstars.controller import Controller
 from strategy.config import preflop_move_ep
@@ -81,13 +82,16 @@ class DecisionMaker():
             print 'My Win Chance: ', beat_chance
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
+            print 'Last Better: ', gd.last_better
             if max(self.betting) < self.pot * 0.3:
-                if sum(self.betting) == 0 and beat_chance > 0.4 and ml:
-                    self.controller.rais(self.pot*0.6)
-                elif beat_chance > 0.6\
+                if beat_chance > 0.6\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.1\
                         + self.game_driver.stage*0.1:
                     self.controller.rais(self.pot*0.7+max(self.betting))
+                elif sum(self.betting) == 0 and beat_chance > 0.4 and ml:
+                    self.controller.rais(self.pot*0.6)
+                elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2:
+                    self.controller.rais(self.pot*0.6+max(self.betting))
                 else:
                     self.controller.call()#check
             else:
@@ -97,7 +101,8 @@ class DecisionMaker():
                     self.controller.rais(self.pot*0.8+max(self.betting))
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
-                        or my_outs*0.02*(3-self.stage) > ratio:
+                        or my_outs*0.02*(3-self.stage) > ratio\
+                        or self.stage == 3 and beat_chance > 1.5*ratio:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
@@ -161,7 +166,7 @@ class DecisionMaker():
                     fold_chance *= dm.get_item((button+1)%6, u'SFBS')
                     fold_chance *= dm.get_item((button+2)%6, u'BFBS') 
                     print 'Fold To Button Steal: '+str(fold_chance)
-                    if fold_chance > 0.6:
+                    if fold_chance > 0.6 or random.random() > 0.5:
                         self.controller.rais(3*BB)
                         return
                 if button == 5 and people_bet == 1 and people_play == 1:
@@ -296,18 +301,8 @@ class DecisionMaker():
                     self.controller.rais((people_play+2)*BB)
                     return
                 if people_bet == 2:
-                    self.controller.rais(max(betting)*(1.8+people_play*0.8)+2*BB)
+                    self.controller.rais(max(betting)*(1.8+people_play*0.6)+2*BB)
                     return
-                if people_bet == 2:
-                    fold_chance = 1.0
-                    for i in xrange(1,6):
-                        if betting[i] == max(betting):
-                            fold_chance *= dm.get_item(i, u'F3B') 
-                            print i, 'F3B', dm.get_item(i, u'F3B')
-                    if fold_chance > 0.7:
-                        print 'Fold To 3 Bet: '+str(fold_chance)
-                        self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
-                        return
                 if people_bet == 3:
                     fold_chance = 1.0
                     for i in xrange(1,6):
@@ -318,9 +313,8 @@ class DecisionMaker():
                         print 'Fold To 4 Bet: '+str(fold_chance)
                         self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
                         return 
-                if people_bet == 2:
-                    self.controller.call()
-                    return
+                    else:
+                        self.controller.call()
                 self.controller.fold()
                 return#}}}
             if my_move == 4:

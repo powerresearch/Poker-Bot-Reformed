@@ -11,7 +11,7 @@ SB = 0.01
 game_number_x = 46
 game_number_y = 72
 
-entry_position = (300, 503)
+entry_position = (300, 523)
 
 label_position = (600, 520)
 
@@ -72,7 +72,7 @@ card_height = 40
 
 window_close = (15.5, 35.5)
 sitout_confirm = (366.5, 345)
-join_game = (840, 730)
+join_game = (840, 750)
 
 with open('pokerstars/hand_figure.json') as f:
     hand_figure = json.load(f)

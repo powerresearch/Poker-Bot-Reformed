@@ -49,7 +49,11 @@ class MoveCatcher():
 
     def next_game(self):
         new_game_number = self.screen_scraper.get_game_number()#{{{
-        if new_game_number != self.game_number:
+        all_fold = 1
+        for i in xrange(1, 6):
+            if not self.screen_scraper.has_fold(i):
+                all_fold = 0
+        if new_game_number != self.game_number or all_fold:
             return new_game_number
         else:
             return False#}}}

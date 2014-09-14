@@ -209,7 +209,7 @@ class GameDriver():
             self.pot = round(self.pot, 2)
         self.stats_handler.postflop_update(actor, self.postflop_status,\
                 self.cards, self.stage)
-        self.can_beat_table[self.stage] = get_can_beat_table(self.power_rank[self.stage],\
+        self.can_beat_table[self.stage] = get_can_beat_table(self.stage, self.power_rank[self.stage],\
                 self.stats_handler.stats, self.last_better, self.active)
         if self.source != 'ps':
             show_stats(self.stats_handler.stats, actor)
@@ -286,7 +286,7 @@ class GameDriver():
                     if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
                         self.decision_maker.fast_fold(self)
                     self.can_beat_table[stage] ,self.outs[stage] =\
-                            get_can_beat_table(self.power_rank[self.stage],\
+                            get_can_beat_table(self.stage, self.power_rank[self.stage],\
                             self.stats_handler.stats, self.last_better, self.active)
                     indicator = self.handle_postflop_action(action)
                     if indicator:
@@ -296,14 +296,14 @@ class GameDriver():
                 if len(actions) == 1:
                     action = actions[0]
                     self.can_beat_table[stage] ,self.outs[stage] =\
-                            get_can_beat_table(self.power_rank[self.stage],\
+                            get_can_beat_table(self.stage, self.power_rank[self.stage],\
                             self.stats_handler.stats, self.last_better, self.active)
                     indicator = self.handle_postflop_action(action)
                     if indicator:
                         return indicator
                 else:
                     self.can_beat_table[stage] ,self.outs[stage] =\
-                            get_can_beat_table(self.power_rank[self.stage],\
+                            get_can_beat_table(self.stage, self.power_rank[self.stage],\
                             self.stats_handler.stats, self.last_better, self.active)
                     action = actions[1]
                     if type(action[1]) == float:
