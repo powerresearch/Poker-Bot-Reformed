@@ -19,7 +19,7 @@ class DecisionMaker():
     def get_preflop_move(self, cards):
         big_card = max([cards[0][0], cards[1][0]])#{{{
         small_card = min([cards[0][0], cards[1][0]])
-        if sum(self.game_driver.active) == 2 and button == 4 and active[5]:
+        if sum(self.game_driver.active) == 2 and self.button == 4 and self.game_driver.active[5]:
             ml = 1
         else:
             ml = 0
