@@ -349,8 +349,8 @@ def get_can_beat_table(stage, power_rank, stats, opponent, active):
     for c1, c2, fo, outs in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] /= prob
         outs_table[c1[0]][c1[1]][c2[0]][c2[1]] = outs
-        can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] = max(can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]],\
-                outs*0.03*(3-stage))
+        can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] = max([can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]],\
+                outs*0.03*(3-stage)])
     for n1 in xrange(2, 15):
         for c1 in xrange(1, 5):
             for n2 in xrange(2, 15):
