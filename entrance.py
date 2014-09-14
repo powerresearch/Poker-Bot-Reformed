@@ -30,9 +30,10 @@ if sys.argv[1] == 'ps':
             print 'Game Counting:', int(game_driver.game_count)
         last_game_number = game_number
         game_number = game_driver.game_stream(last_game_number)
-        if game_driver.game_count % 100 == 0:
-            print 'Getting Name Figure and Updating Database...\n\n\n\n'
+        if game_driver.game_count % 50 == 0:
+            print 'Getting Name Figure' 
             get_name_figure()
+            print 'Updating Database...\n\n\n\n'
             game_driver.data_manager.update()
 elif sys.argv[1] == 'makedata':
     c = 0

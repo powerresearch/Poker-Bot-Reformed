@@ -319,6 +319,7 @@ class DecisionMaker():
                         return 
                     else:
                         self.controller.call()
+                        return
                 self.controller.fold()
                 return#}}}
             if my_move == 4:
