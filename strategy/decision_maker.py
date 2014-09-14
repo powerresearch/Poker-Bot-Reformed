@@ -19,11 +19,15 @@ class DecisionMaker():
     def get_preflop_move(self, cards):
         big_card = max([cards[0][0], cards[1][0]])#{{{
         small_card = min([cards[0][0], cards[1][0]])
+        if sum(self.game_driver.active) == 2 and button == 4 and active[5]:
+            ml = 1
+        else:
+            ml = 0
         if cards[0][1] == cards[1][1]:
             suited = 1
         else:
             suited = 0
-        if self.button == 0 or self.button == 1:
+        if self.button == 0 or self.button == 1 or ml:
             if suited:
                 my_move = preflop_move_lp[small_card][big_card]
             else:
@@ -87,8 +91,8 @@ class DecisionMaker():
                 if beat_chance > 0.6\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.1\
                         + self.game_driver.stage*0.1:
-                    self.controller.rais(self.pot*0.7+max(self.betting))
-                elif sum(self.betting) == 0 and beat_chance > 0.4 and ml:
+                    self.controller.rais(self.pot*0.85+max(self.betting))
+                elif sum(self.betting) == 0 and gd.stage != 3 and ml:
                     self.controller.rais(self.pot*0.6)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2:
                     self.controller.rais(self.pot*0.6+max(self.betting))
@@ -98,7 +102,7 @@ class DecisionMaker():
                 to_call = max(self.betting) - self.betting[0]
                 ratio = to_call / (self.pot+to_call)
                 if beat_chance > 0.85:
-                    self.controller.rais(self.pot*0.8+max(self.betting))
+                    self.controller.rais(self.pot+max(self.betting))
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
