@@ -61,8 +61,7 @@ class DataManager():
             if 'Play Money' in file_name:
                 continue
             if file_name in file_parsed and not is_recent_file(file_name):
-                pass
-#               continue
+                continue
             else:
                 file_parsed[file_name] = 0
             with open(hhpath+'deoxy1909/'+file_name) as f:

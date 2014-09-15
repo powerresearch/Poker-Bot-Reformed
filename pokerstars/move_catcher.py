@@ -121,7 +121,14 @@ class MoveCatcher():
         if self.source == 'ps':
             actions = list()#{{{
             self.screen_scraper.update()
-            self.stack = [self.screen_scraper.get_stack(i) for i in xrange(6)]
+            self.stack = [[]]*6
+            for i in xrange(6):
+                fail = 0
+                while self.stack[i] == []:
+                    self.stack[i] = self.screen_scraper.get_stack(i)
+                    if fail == 1:
+                        self.screen_scraper.update()
+                    fail = 1
             next_game_result = self.next_game()
             if next_game_result:
                 actions = [['new game', next_game_result]]

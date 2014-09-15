@@ -126,15 +126,14 @@ class ScreenScraper():
                 fail += 1
                 if fail > 200:
                     return 'get back'
-            fail = 0
-            while not (stack[0] and stack[1] and stack[2] and stack[3]\
-                    and stack[4] and stack[5]):
-                for i in xrange(6):
+            for i in xrange(6):
+                fail = 0
+                while stack[i] == '':
                     stack[i] = self.get_stack(i)
-                if fail:
-                    self.update()
+                    if fail:
+                        self.update()
+                    fail = 1
 #               print 'stucking at getting stack'
-                fail = 1
             fail = 0
             while not (cards[0] and cards[1]):
                 cards[0] = self.get_card(0)
@@ -376,8 +375,7 @@ class ScreenScraper():
                         #fail += 1
                         pass
         if fail or not stack:
-            self.update()
-            return self.get_stack(number)
+            return [] 
         stack.replace('i', 'l')
         if 'l' in stack:
             stack = 0
