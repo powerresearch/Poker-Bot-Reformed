@@ -126,12 +126,18 @@ class MoveCatcher():
                 fail = 0
                 while self.stack[i] == []:
                     self.stack[i] = self.screen_scraper.get_stack(i)
+                    if self.next_game():
+                        next_game_result = self.next_game()
+                        if next_game_result:
+                            actions = [['new game', next_game_result]]
+                            return actions
                     if fail == 1:
                         self.screen_scraper.update()
                     fail = 1
             next_game_result = self.next_game()
             if next_game_result:
                 actions = [['new game', next_game_result]]
+                return actions
             actions += self.round_search()
             next_stage_result = self.next_stage()
             if next_stage_result:

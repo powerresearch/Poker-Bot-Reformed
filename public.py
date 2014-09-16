@@ -278,7 +278,13 @@ def flush_outs(cards, fo):
     for c in cards:
         col[c[1]] += 1
     if max(col) == 4:
-        return 9
+        if cards[0][1] == cards[1][1] and col[cards[0][1]] == 4:
+            return 9
+        if cards[0][0] >= 12 and col[cards[0][1]] == 4:
+            return 9
+        if cards[1][0] >= 12 and col[cards[1][1]] == 4:
+            return 9
+        return 0
     else:
         return 0#}}}
 

@@ -125,14 +125,21 @@ class ScreenScraper():
 #               print 'stucking at getting game number and button', game_number, button
                 fail += 1
                 if fail > 200:
-                    return 'get back'
+                    if self.has_fold(1) and self.has_fold(2) and self.has_fold(3)\
+                            and self.has_fold(4) and self.has_fold(5):
+                        return 'get back'
+            fail = 0
             for i in xrange(6):
                 fail = 0
                 while stack[i] == '':
                     stack[i] = self.get_stack(i)
                     if fail:
                         self.update()
-                    fail = 1
+                    fail += 1
+                    if fail > 200:
+                        if self.has_fold(1) and self.has_fold(2) and self.has_fold(3)\
+                                and self.has_fold(4) and self.has_fold(5):
+                            return 'get back'
 #               print 'stucking at getting stack'
             fail = 0
             while not (cards[0] and cards[1]):

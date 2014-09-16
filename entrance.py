@@ -13,7 +13,7 @@ if sys.argv[1] == 'ps':
     game_number = 0
     last_game_number = 1
     starting_time = time.time()
-    session_length = random.random() * 18000
+    session_length = 10000 + random.random() * 18000
     rest_length = random.random() * 1800
     while True:
         if time.time() - starting_time > session_length:
@@ -21,7 +21,7 @@ if sys.argv[1] == 'ps':
             c = Controller(1)
             c.rest(rest_length)
             starting_time = time.time()
-            session_length = random.random() * 18000
+            session_length = 10000 + random.random() * 18000
             rest_length = random.random() * 1800
         game_driver = GameDriver('ps')
         if game_number != last_game_number:

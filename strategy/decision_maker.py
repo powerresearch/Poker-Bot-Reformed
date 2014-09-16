@@ -88,9 +88,10 @@ class DecisionMaker():
             print 'My Outs', my_outs
             print 'Last Better: ', gd.last_better
             if max(self.betting) < self.pot * 0.3:
-                if beat_chance > 0.6\
-                        - move_last(self.game_driver.active, self.game_driver.button)*0.1\
-                        + self.game_driver.stage*0.1:
+                if beat_chance > 0.8\
+                        - move_last(self.game_driver.active, self.game_driver.button)*0.2\
+                        - (1-move_last(self.game_driver.active, self.game_driver.button))\
+                          * (3-self.game_driver.stage) * 0.05:\
                     self.controller.rais(self.pot*0.85+max(self.betting))
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml:
                     self.controller.rais(self.pot*0.6)
@@ -101,6 +102,7 @@ class DecisionMaker():
             else:
                 to_call = max(self.betting) - self.betting[0]
                 ratio = to_call / (self.pot+to_call)
+                print 'Ratio:', ratio
                 if beat_chance > 0.85:
                     self.controller.rais(self.pot+max(self.betting))
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
@@ -129,9 +131,10 @@ class DecisionMaker():
             print 'My Outs', my_outs
             print 'My Decision: ', 
             if max(self.betting) == 0:
-                if beat_chance > 0.6\
-                        - move_last(self.game_driver.active, self.game_driver.button)*0.1\
-                        + self.game_driver.stage*0.1:
+                if beat_chance > 0.8\
+                        - move_last(self.game_driver.active, self.game_driver.button)*0.2\
+                        - (1-move_last(self.game_driver.active, self.game_driver.button))\
+                          * (3-self.game_driver.stage) * 0.05:\
                     print 'Bet', round(self.pot*0.8, 2)
                 else:
                     print 'Check'
