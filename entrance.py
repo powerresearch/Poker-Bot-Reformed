@@ -11,23 +11,31 @@ import random
 
 if sys.argv[1] == 'ps':
     game_number = 0
+    c = Controller(1)
     last_game_number = 1
+    stuck_count = 0
     starting_time = time.time()
-    session_length = 10000 + random.random() * 18000
+    session_length = 18000 + random.random() * 18000
     rest_length = random.random() * 1800
     while True:
         if time.time() - starting_time > session_length:
             print 'Rest for a while', rest_length
-            c = Controller(1)
             c.rest(rest_length)
             starting_time = time.time()
-            session_length = 10000 + random.random() * 18000
+            session_length = 18000 + random.random() * 18000
             rest_length = random.random() * 1800
         game_driver = GameDriver('ps')
+        stuck_count += 1
+        if stuck_count > 2:
+            print 'Stuck Count: ', stuck_count
         if game_number != last_game_number:
+            stuck_count = 0
             game_driver.count_game()
             print '\n\n\nStarting New Game'
             print 'Game Counting:', int(game_driver.game_count)
+        if stuck_count > 100:
+#           c.fold()
+            continue
         last_game_number = game_number
         game_number = game_driver.game_stream(last_game_number)
         if game_driver.game_count % 50 == 0:

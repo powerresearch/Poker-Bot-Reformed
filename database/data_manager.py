@@ -44,7 +44,7 @@ class DataManager():
             c = vpip_factor[(seat-self.button)%6]
         if item == u'HANDS':
             return self.player_data[seat][item]
-        if self.player_data[seat][item][1] < 10:
+        if self.player_data[seat][item][1] < 7:
             return c * self.default_data[item][0] / self.default_data[item][1]
         else:
             return c * self.player_data[seat][item][0] / self.player_data[seat][item][1]#}}}

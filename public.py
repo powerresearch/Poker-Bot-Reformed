@@ -257,6 +257,8 @@ def straight_outs(cards, fo):
         if num+1 in nums and num+2 in nums and num+3 in nums:
             if num == 1:
                 outs.add(5)
+            elif num == 11:
+                outs.add(10)
             else:
                 outs.add(num-1)
                 outs.add(num+4)

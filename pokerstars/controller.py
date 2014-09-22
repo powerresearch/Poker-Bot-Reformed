@@ -4,6 +4,7 @@ from pokerstars.config import raise_position
 from pokerstars.config import label_position
 from pokerstars.config import window_close, sitout_confirm, join_game, entry_position
 from pokerstars.config import BB, SB
+from pokerstars.screen_scraper import ScreenScraper
 import pymouse
 import pyscreenshot
 import pykeyboard
@@ -34,6 +35,7 @@ class Controller():
         time.sleep(0.5)
         m.click(sitout_confirm[0], sitout_confirm[1], 1)
         time.sleep(rest_time)
+        print 'Done rest'
         m.click(round(entry_position[0]+200*(random.random()-0.5)),\
                 round(entry_position[1]+10*(random.random()-0.5)), 1)
         m.click(round(join_game[0]+100*(random.random()-0.5)),\
@@ -113,8 +115,8 @@ class Controller():
             last_control = json.load(f)
         if time.time() - last_control < 1.5:
             return
-        amount = round(amount/BB)*BB
-        if self.game_driver.stack[0] == 0 or amount / self.game_driver.stack[0] > 0.6:
+        amount = round(amount/SB)*SB
+        if self.game_driver.stack[0] == 0 or amount / self.game_driver.stack[0] > 0.8:
             amount = int(self.game_driver.stack[0]) + 1
         m = pymouse.PyMouse()
         k = pykeyboard.PyKeyboard()

@@ -230,6 +230,16 @@ class GameDriver():
                 for action in actions:
                     if action[0] == 'new game':
                         return 'new game' 
+                if not actions:
+                    if self.button == 0 and\
+                            (type(self.player_name[1]) != unicode\
+                            or type(self.player_name[2]) != unicode):
+                        print 'Wait, Because: ', self.player_name[1:3]
+                    elif self.button == 4 and\
+                            (self.data_manager.get_item(4, u'BSA') > 0.7):
+                        pass
+                    else:
+                        self.decision_maker.fast_fold(self)
                 for action in actions:
                     if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
                         if self.button == 0 and\

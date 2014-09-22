@@ -110,7 +110,9 @@ class MoveCatcher():
                     actions.append([player, self.old_stack[player]-self.stack[player]])
             else:
                 if self.betting[player] != max(self.betting):
-                    actions.append([player, 'fold'])
+#                    actions.append([player, max(self.betting)-self.betting[player]])
+#                    self.betting[player] = max(self.betting)
+                    return actions
                 else:
                     actions.append([player, 'check'])
         self.to_act = player
