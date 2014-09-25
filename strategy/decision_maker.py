@@ -132,33 +132,39 @@ class DecisionMaker():
             print 'My Win Chance: ', beat_chance
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
-            print 'My Decision: ', 
             if max(self.betting) == 0 or (gd.stage != 3 and max(self.betting) < self.pot * 0.2):
                 if beat_chance > 0.9\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3:
+                    print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.8+max(self.betting), 2)
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml:
+                    print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.75, 2)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
                         and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
+                    print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.75+max(self.betting), 2)
                 else:
+                    print 'My Decision: ', 
                     print 'Check'
             else:
                 to_call = max(self.betting) - self.betting[0]
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
+                    print 'My Decision: ', 
                     print 'Raise', round(self.pot+max(self.betting), 2)
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
                         or self.stage == 3 and beat_chance > 1.5*ratio:
+                    print 'My Decision: ', 
                     print 'Call'
                 else:
+                    print 'My Decision: ', 
                     print 'Fold'
             if self.game_driver.source != 'ps':
                 raw_input('---press any key---')
