@@ -21,6 +21,7 @@ class MoveCatcher():
         else:
             self.source = game_driver.source.splitlines()[12:]
             self.seat = game_driver.seat
+            self.made_my_move = 0
         self.screen_scraper = game_driver.screen_scraper#}}}
     
     def next_stage(self):
@@ -155,7 +156,7 @@ class MoveCatcher():
             for action in actions:
                 if type(action[1]) == float:
                     action[1] = round(action[1], 2)#}}}
-        else:
+        else:#{{{
             while 'has timed out' in self.source[0]\
                     or 'from pot' in self.source[0]\
                     or 'said, "' in self.source[0]\
@@ -163,7 +164,7 @@ class MoveCatcher():
                     or 'posts big blind' in self.source[0]\
                     or 'posts small blind' in self.source[0]\
                     or 'is disconnect' in self.source[0]\
-                    or 'is connect' in self.source[0]:#{{{
+                    or 'is connect' in self.source[0]:
                 self.source = self.source[1:]
             instr = self.source[0]
             cards = self.cards
@@ -171,6 +172,11 @@ class MoveCatcher():
             if ': ' in instr:
                 name = ':'.join(instr.split(':')[:-1])
                 player = self.seat[name]
+                if player == 0 and not self.made_my_move:
+                    self.source.insert(0, instr)
+                    self.made_my_move = 1
+                    return [['my move', 0]]
+                self.made_my_move = 0
                 action_str = instr.split(': ')[-1].strip()
                 action_str = re.sub(' and is all-in', '', action_str)
                 if action_str == 'folds':
@@ -194,10 +200,7 @@ class MoveCatcher():
                 except:
                     print instr
                     raise Exception
-                if player == 0:
-                    actions = [['my move', 0]] + actions
-                else:
-                    self.betting[player] = round(self.betting[player], 2)
+                self.betting[player] = round(self.betting[player], 2)
                 return actions
             else:
                 if instr.startswith('Uncalled bet'):

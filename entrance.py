@@ -66,6 +66,7 @@ else:
     with open(sys.argv[1]) as f:
         test_file = f.read()
     games = re.findall(r'PokerStars Zoom Hand \#.+?PokerStars Zoom Hand', test_file, re.DOTALL)
+    random.shuffle(games)
     for game in games:
         if re.findall(r'deoxy1909.*folded before Flop', game):
             continue

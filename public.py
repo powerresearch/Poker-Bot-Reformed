@@ -210,38 +210,37 @@ def has_same(original_cards):
                     return True
     return False#}}}
 
-def how_much_can_beat(stats, hole_cards, public_cards, opponent):
-    while not public_cards[-1]:#{{{
-        public_cards = public_cards[:-1]
-    win_chance = 0
+def how_much_can_beat(stats, power_rank, hole_cards, opponent):
+    win_chance = 0#{{{
     lose_chance = 0
     win_chance2 = 0
     lose_chance2 = 0
-    fo0 = find_out(hole_cards+public_cards)
-    for num1 in xrange(2, 15):
-        for num2 in xrange(2, 15):
-            for col1 in xrange(1, 5):
-                for col2 in xrange(1, 5):
-                    card1 = [num1, col1]
-                    card2 = [num2, col2]
-                    if card2 < card1:
-                        continue
-                    if has_same(hole_cards+public_cards+[card1, card2]):
-                        continue
-                    fo1 = find_out([card1, card2]+public_cards)
-                    prob = stats[opponent][num1][col1][num2][col2]
-                    if fo0 > fo1:
-                        win_chance += prob
-                        win_chance2 += 0.1
-                    elif fo0 < fo1:
-                        lose_chance += prob
-                        lose_chance2 += 0.1
-                    else:
-                        win_chance2 += 0.05
-                        lose_chance2 += 0.05
-                        win_chance += prob * 0.5
-                        lose_chance += prob * 0.5
-    return min(win_chance / (win_chance+lose_chance), win_chance2 / (win_chance2+lose_chance2))#}}}
+    winning = 1
+    max_stats_prob = 0
+    for c1, c2, fo, outs in power_rank:
+        max_stats_prob = max([max_stats_prob, stats[opponent][c1[0]][c1[1]][c2[0]][c2[1]]])
+    for tup in power_rank:
+        card1 = tup[0]
+        card2 = tup[1]
+        num1, col1 = card1[0], card1[1]
+        num2, col2 = card2[0], card2[1]
+        prob = stats[opponent][num1][col1][num2][col2]
+        if [card1, card2] == hole_cards or [card2, card1] == hole_cards:
+            winning = 0
+            win_chance2 += 0.05
+            lose_chance2 += 0.05
+            win_chance += prob * 0.5
+            lose_chance += prob * 0.5
+            continue
+        if prob < 0.1 * max_stats_prob:
+            continue
+        if winning:
+            win_chance += prob
+            win_chance2 += 0.1
+        else:
+            lose_chance += prob
+            lose_chance2 += 0.1
+    return win_chance / (win_chance+lose_chance)#, win_chance2 / (win_chance2+lose_chance2))#}}}
 
 def straight_outs(cards, fo):
     if fo[0] >= 4:#{{{
@@ -310,9 +309,9 @@ def how_many_outs(public_cards, hole_cards):
         else:
             if fo[0] == 0:
                 if n1 > m:
-                    outs += 3
+                    outs += 2# High card is not good outs
                 if n2 > m:
-                    outs += 3
+                    outs += 2# High card is not good outs
             elif fo[0] == 1 and fo[1] < max(pub_nums):
                 outs += 5
     elif fop[0] == 1:
@@ -357,14 +356,15 @@ def get_can_beat_table(stage, power_rank, stats, opponent, active):
     for c1, c2, fo, outs in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] /= prob
         outs_table[c1[0]][c1[1]][c2[0]][c2[1]] = outs
-        can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] = max([can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]],\
-                outs*0.03*(3-stage)])
     for n1 in xrange(2, 15):
         for c1 in xrange(1, 5):
             for n2 in xrange(2, 15):
                 for c2 in xrange(1, 5):
                     if can_beat_table[n1][c1][n2][c2]:
+                        outs = outs_table[n1][c1][n2][c2]
                         can_beat_table[n1][c1][n2][c2] = pow(can_beat_table[n1][c1][n2][c2], 0.5+no*0.5)
+                        can_beat_table[n1][c1][n2][c2] =\
+                                max([can_beat_table[n1][c1][n2][c2], outs*0.04*(3-stage)])
     return can_beat_table, outs_table#}}}
 
 def range_fight(power_rank, stat1, stat2):

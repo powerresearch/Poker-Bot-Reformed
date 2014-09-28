@@ -81,17 +81,18 @@ class DecisionMaker():
             range_fight_result = 1
             for i in xrange(1, 6):
                 if gd.active[i]:
-                    beat_chance = min([how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i), beat_chance])
+                    beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             print
+            print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
             print 'Last Better: ', gd.last_better
-            if max(self.betting) == 0 or (gd.stage != 3 and max(self.betting) < self.pot * 0.2):
+            if max(self.betting) == 0:
                 if beat_chance > 0.9\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3:
                     self.controller.rais(self.pot*0.8+max(self.betting))
@@ -107,6 +108,7 @@ class DecisionMaker():
                     self.controller.call()#check
             else:
                 to_call = max(self.betting) - self.betting[0]
+                to_call = min(to_call, self.betting[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
@@ -123,10 +125,11 @@ class DecisionMaker():
             range_fight_result = 1
             for i in xrange(1, 6):
                 if gd.active[i]:
-                    beat_chance = min([how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i), beat_chance])
+                    beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             print
+            print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
@@ -152,6 +155,7 @@ class DecisionMaker():
                     print 'Check'
             else:
                 to_call = max(self.betting) - self.betting[0]
+                to_call = min(to_call, self.betting[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
@@ -359,17 +363,19 @@ class DecisionMaker():
 
     def fast_fold_postflop(self):
         gd = self.game_driver
+        pw = gd.power_rank[gd.stage]
         stats = self.stats_handler.stats
         if self.game_driver.source == 'ps':#{{{
             beat_chance = 1
             for i in xrange(1, 6):
                 if gd.active[i]:
-                    beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
+                    beat_chance *= how_much_can_beat(stats, pw, gd.cards[:2], i)
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             if max(self.betting) == 0:
                 pass
             else:
                 to_call = max(self.betting) - self.betting[0]
+                to_call = min(to_call, self.betting[0])
                 ratio = to_call / (self.pot+to_call)
                 if beat_chance > 0.85:
                     pass
@@ -384,9 +390,10 @@ class DecisionMaker():
             beat_chance = 1
             for i in xrange(1, 6):
                 if gd.active[i]:
-                    beat_chance *= how_much_can_beat(stats, gd.cards[:2], gd.cards[2:], i)
+                    beat_chance *= how_much_can_beat(stats, pw, gd.cards[:2], i)
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             print
+            print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
@@ -401,6 +408,7 @@ class DecisionMaker():
                     print 'Check'
             else:
                 to_call = max(self.betting) - self.betting[0]
+                to_call = min(to_call, self.betting[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio,
                 if beat_chance > 0.85:

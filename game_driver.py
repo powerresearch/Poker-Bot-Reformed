@@ -256,23 +256,10 @@ class GameDriver():
                         return indicator
                 to_act = self.move_catcher.to_act#}}}
             else:#{{{
-                if len(actions) == 1:
-                    action = actions[0]
-                    indicator = self.handle_preflop_action(action)
-                    if indicator:
-                        return indicator
-                else:
-                    action = actions[1]
-                    if type(action[1]) == float:
-                        self.betting[0] -= action[1]
-                        self.betting[0] = round(self.betting[0], 2)
-                    action = actions[0]
-                    indicator = self.handle_preflop_action(action)
-                    action = actions[1]
-                    self.handle_preflop_action(action)
-                    if type(action[1]) == float:
-                        self.betting[0] += action[1]
-                        self.betting[0] = round(self.betting[0], 2)
+                action = actions[0]
+                indicator = self.handle_preflop_action(action)
+                if indicator:
+                    return indicator
                 to_act = self.move_catcher.to_act#}}}
             
     def post_flop(self, stage):
