@@ -108,7 +108,7 @@ class DecisionMaker():
                     self.controller.call()#check
             else:
                 to_call = max(self.betting) - self.betting[0]
-                to_call = min(to_call, self.betting[0])
+                to_call = min(to_call, self.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
@@ -155,7 +155,7 @@ class DecisionMaker():
                     print 'Check'
             else:
                 to_call = max(self.betting) - self.betting[0]
-                to_call = min(to_call, self.betting[0])
+                to_call = min(to_call, self.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
@@ -375,7 +375,7 @@ class DecisionMaker():
                 pass
             else:
                 to_call = max(self.betting) - self.betting[0]
-                to_call = min(to_call, self.betting[0])
+                to_call = min(to_call, self.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 if beat_chance > 0.85:
                     pass
@@ -408,7 +408,7 @@ class DecisionMaker():
                     print 'Check'
             else:
                 to_call = max(self.betting) - self.betting[0]
-                to_call = min(to_call, self.betting[0])
+                to_call = min(to_call, self.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio,
                 if beat_chance > 0.85:

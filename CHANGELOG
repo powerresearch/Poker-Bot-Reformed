@@ -1,13 +1,20 @@
 ------------------------------
+VERSION 0.2
+
+x 控池，避免无效加注
+x 在脏面上多下注，干燥面上拿着second nuts控池
+x 拿着nuts时候装作思考，暂停一小会再下注
+
+- 加入考虑河牌下注可能是破产的听牌的bluff
+- Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
+
+------------------------------
 VERSION 0.1
 
 o 计算beat_chance时，不考虑对手概率小于0.1的组合
 o 计算outs时，高张的outs不按1来算，为outs的强弱赋予不同的数值
 o 计算ratio时，考虑自己的后手筹码量
 o error analysis时对手牌进行shuffle
-
-- 下一步需要做的：加入控池概念，避免无效加注，加入考虑河牌下注可能是破产的听牌的bluff
-- Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
 
 ------------------------------
 VERSION 0.0
