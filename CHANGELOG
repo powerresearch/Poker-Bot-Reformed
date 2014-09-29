@@ -3,10 +3,13 @@ VERSION 0.2
 
 x 控池，避免无效加注
 x 在脏面上多下注，干燥面上拿着second nuts控池
-x 拿着nuts时候装作思考，暂停一小会再下注
+x 拿着nuts的时候装作思考，暂停一小会再下注
+x 拿到nuts的时候在干燥面Flop前位可以考虑check call
 
 - 加入考虑河牌下注可能是破产的听牌的bluff
 - Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
+- Preflop面对button miniraise可以考虑3Bet
+- Preflop面对mini 3Bet可以考虑用边缘牌去Call
 
 ------------------------------
 VERSION 0.1
