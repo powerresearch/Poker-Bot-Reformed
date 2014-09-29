@@ -1,13 +1,8 @@
 .*
 .pkl
-last_control.json
-names_to_figure.txt
 player*
-stats_snapshot.json
-HH*.txt
+*.json
 *.txt
-learning/*.json
-learning/*.json
 
 # Pokerdata
 pokerdata/
