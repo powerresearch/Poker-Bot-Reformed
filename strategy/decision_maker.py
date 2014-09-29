@@ -83,7 +83,7 @@ class DecisionMaker():
                 if gd.active[i]:
                     beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
-            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
@@ -95,7 +95,7 @@ class DecisionMaker():
             if max(self.betting) == 0:
                 if beat_chance > 0.9\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3:
-                    self.controller.rais(self.pot*0.8+max(self.betting))
+                    self.controller.rais(self.pot*0.8+max(self.betting), 10)
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml:
                     self.controller.rais(self.pot*0.75)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
@@ -112,7 +112,10 @@ class DecisionMaker():
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
-                    self.controller.rais(self.pot+max(self.betting))
+                    if beat_chance > 0.95:
+                        self.controller.rais(self.pot+max(self.betting), 15)
+                    else:
+                        self.controller.rais(self.pot+max(self.betting))
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
@@ -127,10 +130,11 @@ class DecisionMaker():
                 if gd.active[i]:
                     beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
-            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
+            print 'Board Wetness: ', get_board_wetness(stats, gd.power_rank[gd.stage], gd.active, gd.cards)
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'Range Fight Result:', range_fight_result
@@ -350,7 +354,10 @@ class DecisionMaker():
                 self.controller.fold()
                 return#}}}
             if my_move == 4:
-                self.controller.rais(max(betting)*(people_play+2))#{{{
+                if people_bet >= 3:#{{{
+                    self.controller.rais(max(betting)*(people_play+2), 20)
+                else:
+                    self.controller.rais(max(betting)*(people_play+2))
                 return#}}}
 #}}}
 
@@ -370,7 +377,7 @@ class DecisionMaker():
             for i in xrange(1, 6):
                 if gd.active[i]:
                     beat_chance *= how_much_can_beat(stats, pw, gd.cards[:2], i)
-            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
             if max(self.betting) == 0:
                 pass
             else:
@@ -391,7 +398,7 @@ class DecisionMaker():
             for i in xrange(1, 6):
                 if gd.active[i]:
                     beat_chance *= how_much_can_beat(stats, pw, gd.cards[:2], i)
-            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot

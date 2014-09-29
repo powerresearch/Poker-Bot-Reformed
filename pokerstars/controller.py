@@ -71,9 +71,10 @@ class Controller():
             last_control = time.time()
             f.write(json.dumps(last_control))#}}}
 
-    def call(self):
+    def call(self, pause=0):
         if self.folded:
             return
+        time.sleep(pause)
         print '-----CALLING-----'
         def all_in():#{{{
             im = pyscreenshot.grab()
@@ -105,9 +106,10 @@ class Controller():
             last_control = time.time()
             f.write(json.dumps(last_control))#}}}
 
-    def rais(self, amount):
+    def rais(self, amount, pause=0):
         if self.folded:
             return
+        time.sleep(pause)
         print '-----RAISING-----'
         m = self.m#{{{ 
         time.sleep(0.5)

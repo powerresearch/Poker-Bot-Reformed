@@ -217,7 +217,7 @@ def how_much_can_beat(stats, power_rank, hole_cards, opponent):
     lose_chance2 = 0
     winning = 1
     max_stats_prob = 0
-    for c1, c2, fo, outs in power_rank:
+    for c1, c2, fo, outs, outs_in_specific in power_rank:
         max_stats_prob = max([max_stats_prob, stats[opponent][c1[0]][c1[1]][c2[0]][c2[1]]])
     for tup in power_rank:
         card1 = tup[0]
@@ -292,9 +292,11 @@ def flush_outs(cards, fo):
 def how_many_outs(public_cards, hole_cards):
     while not public_cards[-1]:#{{{
         public_cards = public_cards[:-1]
+    highcard, twop, trip, straight, flush = 0, 0, 0, 0, 0
     cards = public_cards + hole_cards
     fo = find_out(cards)
-    outs = flush_outs(cards, fo) + straight_outs(cards, fo)
+    flush = flush_outs(cards, fo)
+    straight = straight_outs(cards, fo)
     pub_nums = list()
     fop = find_out(public_cards)
     for c in public_cards:
@@ -302,22 +304,21 @@ def how_many_outs(public_cards, hole_cards):
     n1, n2 = hole_cards[0][0], hole_cards[1][0]
     m = max(pub_nums)
     if fop[0] == 0:
-        if fo >= [1, m]:
-            return outs
         if n1 == n2:
-            outs += 2
+            trip += 2
         else:
             if fo[0] == 0:
                 if n1 > m:
-                    outs += 2# High card is not good outs
+                    highcard += 2# High card is not good outs
                 if n2 > m:
-                    outs += 2# High card is not good outs
+                    highcard += 2# High card is not good outs
             elif fo[0] == 1 and fo[1] < max(pub_nums):
-                outs += 5
+                trip += 2
+                twop += 3
     elif fop[0] == 1:
         if n1 == n2:
-            outs += 2
-    return outs#}}}
+            trip += 2
+    return highcard+twop+trip+straight+flush, highcard, twop, trip, straight, flush#}}}
 
 def get_power_rank(cards):
     power_rank = list()#{{{
@@ -333,7 +334,7 @@ def get_power_rank(cards):
                         continue
                     fo = find_out(cards+[card1, card2])
                     outs = how_many_outs(cards, [card1, card2])
-                    power_rank.append([card1, card2, fo, outs])
+                    power_rank.append([card1, card2, fo, outs[0], outs[1:]])
     power_rank = sorted(power_rank, key=lambda x:x[2])
     return power_rank#}}}
 
@@ -346,14 +347,14 @@ def get_can_beat_table(stage, power_rank, stats, opponent, active):
     can_beat_table = tree()
     outs_table = tree()
     prob = 0
-    for c1, c2, fo, outs in power_rank:
+    for c1, c2, fo, outs, outs_in_specific in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] = prob
         try:
             prob += stats[opponent][c1[0]][c1[1]][c2[0]][c2[1]]
         except:
             print stats[opponent]
             raise Exception
-    for c1, c2, fo, outs in power_rank:
+    for c1, c2, fo, outs, outs_in_specific in power_rank:
         can_beat_table[c1[0]][c1[1]][c2[0]][c2[1]] /= prob
         outs_table[c1[0]][c1[1]][c2[0]][c2[1]] = outs
     for n1 in xrange(2, 15):
@@ -461,3 +462,55 @@ def move_last(active, button):
             return 0 
         i += 1
     return 1#}}}
+
+def get_avg_stats(stats, active):
+    avg_stats = deepcopy(stats[0])#{{{
+    active_index = list()
+    for i in xrange(1, 6):
+        if active[i] == 1:
+            active_index.append(i)
+    if len(active_index) == 0:
+        return stats[0]
+    for n1 in avg_stats:
+        for c1 in avg_stats[n1]:
+            for n2 in avg_stats[n1][c1]:
+                for c2 in avg_stats[n1][c1][n2]:
+                    avg_stats[n1][c1][n2][c2] = 0
+                    for i in active_index:
+                        avg_stats[n1][c1][n2][c2] += stats[i][n1][c1][n2][c2]
+                    avg_stats[n1][c1][n2][c2] /= len(active_index)
+    return avg_stats#}}}
+
+def get_board_wetness(stats, power_rank, active, cards):
+    max_stats_prob = 0#{{{
+    total_prob = 0
+    while not cards[-1]:
+        cards = cards[:-1]
+    fo = find_out(cards)
+    avg_stats = get_avg_stats(stats, active)
+    likely_outs, real_outs = 0, 0
+    for c1, c2, fot, outs, outs_in_specific in power_rank:
+        max_stats_prob = max([max_stats_prob, avg_stats[c1[0]][c1[1]][c2[0]][c2[1]]])
+    for tup in power_rank:
+        card1 = tup[0]
+        card2 = tup[1]
+        num1, col1 = card1[0], card1[1]
+        num2, col2 = card2[0], card2[1]
+        prob = avg_stats[num1][col1][num2][col2]
+        if prob < 0.1 * max_stats_prob:
+            continue
+        total_prob += prob
+        likely_outs += prob * tup[3]
+        if fo[0] <= 1:
+            real_outs += prob * tup[3]
+        elif fo[0] == 2:
+            real_outs += prob * sum(tup[4][1:])
+        elif fo[0] == 3:
+            real_outs += prob * sum(tup[4][2:])
+        elif fo[0] == 4 or fo[0] == 5:
+            real_outs += prob * sum(tup[4][3:])
+        else:
+            pass
+    likely_outs /= total_prob
+    real_outs /= total_prob
+    return likely_outs, real_outs#}}} 
