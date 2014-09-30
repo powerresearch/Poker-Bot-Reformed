@@ -3,6 +3,7 @@ from make_data import GameDriver as make_data
 from pokerstars.get_name_figure import get_name_figure
 from pokerstars.controller import Controller
 from public import del_stdout_line
+import pyscreenshot
 import sys
 import os
 import time
@@ -14,6 +15,7 @@ if sys.argv[1] == 'ps':
     c = Controller(1)
     last_game_number = 1
     stuck_count = 0
+    very_starting_time = time.time()
     starting_time = time.time()
     session_length = 18000 + random.random() * 18000
     rest_length = random.random() * 1800
@@ -32,9 +34,16 @@ if sys.argv[1] == 'ps':
             stuck_count = 0
             game_driver.count_game()
             print '\n\n\nStarting New Game'
+            print 'Time Consumed:', int(time.time-very_starting_time)
             print 'Game Counting:', int(game_driver.game_count)
+        if stuck_count > 10:
+            im = pyscreenshot.grab()
+            im.save('stuckingshots/'+str(stuck_count)+'.png')
         if stuck_count > 100:
-#           c.fold()
+            c.fold()
+            continue
+        if stuck_count > 200:
+            c.sit_out()
             continue
         last_game_number = game_number
         game_number = game_driver.game_stream(last_game_number)

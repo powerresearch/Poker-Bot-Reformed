@@ -3,6 +3,10 @@
 player*
 *.json
 *.txt
+*.png
+
+# stuckingshots
+stuckingshots/
 
 # Pokerdata
 pokerdata/
