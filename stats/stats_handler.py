@@ -224,7 +224,7 @@ class StatsHandler():
                                     +self.data_manager.get_item(STAGE[stage]+u'FDK', actor)) / 2.0
                             raise_prob = self.data_manager.get_item(STAGE[stage]+u'R', actor)
                             vertex_l = fold_prob + 0.15
-                            vertex_r = (1-raise_prob)
+                            vertex_r = 1
                             prob = self.map_power_to_prob(can_beat, vertex_l, vertex_r, slope=3)
 #                           print big_card, small_card, can_beat, vertex_l, vertex_r, prob
                             self.stats[actor][num1][col1][num2][col2] = \

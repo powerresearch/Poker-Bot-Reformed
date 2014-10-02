@@ -365,8 +365,8 @@ def get_can_beat_table(stage, power_rank, stats, opponent, active):
                     if can_beat_table[n1][c1][n2][c2]:
                         outs = outs_table[n1][c1][n2][c2]
                         can_beat_table[n1][c1][n2][c2] = pow(can_beat_table[n1][c1][n2][c2], 0.5+no*0.5)
-                        can_beat_table[n1][c1][n2][c2] =\
-                                max([can_beat_table[n1][c1][n2][c2], outs*0.04*(3-stage)])
+                        can_beat_table[n1][c1][n2][c2] = min(1, \
+                                max([can_beat_table[n1][c1][n2][c2], outs*0.04*(3-stage)]))
     return can_beat_table, outs_table#}}}
 
 def range_fight(power_rank, stat1, stat2):
@@ -402,9 +402,18 @@ def most_probable(stats, n=100):
                     if [num1, col1] < [num2, col2]:
                         continue
                     prob = stats[num1][col1][num2][col2]
-                    all_combo.append([prob, (num1, col1), (num2, col2)])
+                    b = 0
+                    for i in xrange(1, 5):
+                        for j in xrange(1, 5):
+                            if [round(prob, 2), num1, i, num2, j] in all_combo:
+                                b = 1
+                                break
+                        if b:
+                            break
+                    if not b:
+                        all_combo.append([round(prob, 2), num1, col1, num2, col2])
     sorted_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
-    return print_stats(sorted_combo, n)#}}}
+    return sorted_combo#print_stats(sorted_combo, n)#}}}
 
 def map_card_string_to_tuple(card):
     result = [0, 0]#{{{
@@ -438,23 +447,76 @@ def print_stats(sorted_combo, n):
     return filtered_combo[:n]#}}}
 
 def del_stdout_line(n):
-    for i in xrange(n):#{{{
-        CURSOR_UP_ONE = '\x1b[1A'
-        ERASE_LINE = '\x1b[2K'
-        print(CURSOR_UP_ONE + ERASE_LINE + CURSOR_UP_ONE)#}}}
+    CURSOR_UP_ONE = '\x1b[1A'#{{{
+    ERASE_LINE = '\x1b[2K'
+    for i in xrange(n):
+        print CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE
+        #}}}
 
-def show_stats(stats, i):
-    sorted_combo = most_probable(stats[i], 169)#{{{
+def show_can_beat_table(can_beat_table):
+    all_combo = list()#{{{
+    for n1 in can_beat_table:
+        for c1 in can_beat_table[n1]:
+            for n2 in can_beat_table[n1][c1]:
+                for c2 in can_beat_table[n1][c1][n2]:
+                    if can_beat_table[n1][c1][n2][c2]:
+                        b = 0
+                        for i in xrange(1, 5):
+                            for j in xrange(1, 5):
+                                if can_beat_table[n1][i][n2][j]:
+                                    if [round(can_beat_table[n1][c1][n2][c2], 2), n1, i, n2, j] in all_combo:
+                                        b = 1
+                                        break
+                            if b:
+                                break
+                        if not b:
+                            all_combo.append([round(can_beat_table[n1][c1][n2][c2], 2),\
+                                    n1, c1, n2, c2])
+    all_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
+    p = len(all_combo) / 150
+    j = len(all_combo) % 150
+    for i in xrange(p):
+        count = 0
+        for combo in all_combo[i*150:i*150+150]:
+            count += 1
+            print combo, '\t',
+            if count % 5 == 0:
+                print
+        raw_input('---press any key for next page---')
+        del_stdout_line(31)
     count = 0
-    for combo in sorted_combo:
+    for combo in all_combo[-j:]:
         count += 1
-        print combo,'     \t',
+        print combo, '\t',
         if count % 5 == 0:
             print
-    print 'Player', i
     raw_input('---press any key---')
-    del_stdout_line(35)
-    print#}}}
+    del_stdout_line(count/5+2)
+    #}}}
+    
+def show_stats(stats, i):
+    all_combo = most_probable(stats[i], 169)#{{{
+    p = len(all_combo) / 150
+    j = len(all_combo) % 150
+    for ii in xrange(p):
+        count = 0
+        for combo in all_combo[ii*150:ii*150+150]:
+            count += 1
+            print combo, '\t',
+            if count % 5 == 0:
+                print
+        raw_input('---press any key for next page---')
+        del_stdout_line(31)
+    count = 0
+    for combo in all_combo[-j:]:
+        count += 1
+        print combo, '\t',
+        if count % 5 == 0:
+            print
+    print 'Player:', i
+    raw_input('---press any key---')
+    del_stdout_line(count/5+2)
+    #}}}
 
 def move_last(active, button):
     i = 1#{{{

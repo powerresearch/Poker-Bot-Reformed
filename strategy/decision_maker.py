@@ -125,7 +125,9 @@ class DecisionMaker():
                 to_call = min(to_call, gd.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
-                if beat_chance > 0.85:
+                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                    self.controller.call()
+                elif beat_chance > 0.85:
                     if gd.board_wetness[gd.stage] > 2.5 or gd.stage == 3 or ratio < 0.2:
                         if beat_chance > 0.95:
                             self.controller.rais(self.pot*(0.75-0.15*(gd.stage==3))\
@@ -163,11 +165,12 @@ class DecisionMaker():
                         #and not move_last(gd.active, gd.button):
                     print 'My Decision: Check'
                 elif beat_chance > 0.9\
-                        - move_last(self.game_driver.active, self.game_driver.button)*0.3:
+                        - move_last(self.game_driver.active, self.game_driver.button)*0.3\
+                        + (gd.stage==3)*move_last(gd.active, gd.button)*0.2:
                     print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.8+max(self.betting), 2)
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml and sum(gd.active) == 2\
-                        and gd.board_wetness[gd.stage] < 3:
+                        and gd.board_wetness[gd.stage] < 3 and range_fight_result > 0.5:
                     print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.75, 2)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
@@ -186,7 +189,9 @@ class DecisionMaker():
                 to_call = min(to_call, gd.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio, my_outs*0.02*(3-self.stage)
-                if beat_chance > 0.85:
+                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                    print 'My Decision: Call'
+                elif beat_chance > 0.85:
                     if gd.board_wetness[gd.stage] > 2.5 or gd.stage == 3 or ratio < 0.2:
                         print 'My Decision: ', 
                         print 'Raise', round(self.pot*(0.75-0.15*(self.stage==3))\
