@@ -300,7 +300,97 @@ class DecisionMaker():
                 if betting[0] == max(betting):
                     self.controller.call()
                     return
-                if people_bet == 2 and my_move == 1 and max(betting)-betting[0] <= 0.08:
+                if people_bet == 1 and button == 4:
+                    self.controller.call()
+                    return
+                if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
+                        and self.cards[0][0] == self.cards[1][0]:
+                    self.controller.call()
+                    return
+                else:
+                    self.controller.fold()
+                    return#}}}
+            if my_move == 1.5:
+                if (button == 0 or button == 1) and people_bet == 1 and people_play == 1:#{{{
+                    fold_chance = 1.0
+                    fold_chance *= dm.get_item((button+1)%6, u'SFBS')
+                    fold_chance *= dm.get_item((button+2)%6, u'BFBS') 
+                    print 'Fold To Button Steal: '+str(fold_chance)
+                    if fold_chance > 0.6 or random.random() > 0.5:
+                        self.controller.rais(3*BB)
+                        return
+                if button == 5 and people_bet == 1 and people_play == 1:
+                    fold_chance = 1.0
+                    fold_chance *= dm.get_item((button+2)%6, u'BFBS')
+                    print 'Fold To Button Steal: '+str(fold_chance)
+                    if fold_chance > 0.6:
+                        self.controller.rais(3*BB)
+                        return 
+                if people_bet == 2 and people_play == 1 and button >= 4:
+                    for i in xrange(1, 6):
+                        if betting[i] == max(betting):
+                            better = i
+                    if better == button:
+                        print 'BSA: ', dm.get_item(better, u'BSA')
+                        if dm.get_item(better, u'BSA') > 0.6:
+                            self.controller.rais(3*max(betting))
+                            return
+                if people_bet == 2:
+                    fold_chance = 1.0
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F3B')
+                    print 'Fold To 3 Bet: '+str(fold_chance)
+                    if fold_chance > 0.7:
+                        self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
+                        return
+                if people_bet == 2 and people_play == 1:
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            print 'PFR', i, dm.get_item(i, 'pfr') 
+                            if dm.get_item(i, 'pfr') > 0.5:
+                                self.controller.rais(max(betting)*3)
+                                return
+                if people_bet == 3:
+                    fold_chance = 1.0
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F4B') 
+                    print 'Fold To 4 Bet: '+str(fold_chance)
+                    if fold_chance > 0.7:
+                        self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
+                        return 
+                if people_bet == 1 and people_play == 1 and button == 1:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    fold_chance *= (1-dm.get_item(2, 'vpip'))
+                    fold_chance *= (1-dm.get_item(3, 'vpip'))
+                    if fold_chance > 0.8:
+                        print 'Low VPIP, Steal, Fold Chance: ', fold_chance
+                        self.controller.rais(BB*3)
+                        return
+                if people_bet == 1 and people_play == 1 and button == 0:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    fold_chance *= (1-dm.get_item(2, 'vpip'))
+                    if fold_chance > 0.8:
+                        print 'Low VPIP, Steal, Fold Chance: ', fold_chance
+                        self.controller.rais(BB*3)
+                        return
+                if people_bet == 1 and people_play == 1 and button == 5:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    if fold_chance > 0.9:
+                        print 'Low VPIP, Steal, Fold Chance: ', fold_chance
+                        self.controller.rais(BB*3)
+                        return
+                if people_bet == 1 and my_move == 1.5:
+                    self.controller.rais(BB*(2+people_play))
+                    return
+                if betting[0] == max(betting):
+                    self.controller.call()
+                    return
+                if people_bet == 2 and my_move == 1.5 and max(betting)-betting[0] <= 0.08:
                     self.controller.call()
                     return
                 if people_bet == 1 and button == 4:
