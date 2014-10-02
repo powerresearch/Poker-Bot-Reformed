@@ -39,10 +39,10 @@ if sys.argv[1] == 'ps':
         if stuck_count > 10:
             im = pyscreenshot.grab()
             im.save('stuckingshots/'+str(stuck_count)+'.png')
-        if stuck_count > 100:
+        if stuck_count > 30:
             c.fold()
             continue
-        if stuck_count > 200:
+        if stuck_count > 100:
             c.sit_out()
             continue
         last_game_number = game_number

@@ -133,6 +133,8 @@ class ScreenScraper():
                 fail = 0
                 while stack[i] == '':
                     stack[i] = self.get_stack(i)
+                    if stack[i] == 'sitting out':
+                        stack[i] = 2.0001
                     if fail:
                         self.update()
                     fail += 1
@@ -392,7 +394,6 @@ class ScreenScraper():
         except:
 #           print stack
             return 'sitting out'
-            pass
         return round(stack, 2)#}}}
 
     def get_button(self):

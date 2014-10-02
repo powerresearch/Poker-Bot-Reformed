@@ -132,11 +132,13 @@ class MoveCatcher():
                 fail = 0
                 while self.stack[i] == []:
                     self.stack[i] = self.screen_scraper.get_stack(i)
-                    if self.next_game():
+                    if self.game_driver.stack[i] == 2.0001:
+                        self.game_driver.stack[i] = self.stack[i]
+                        self.old_stack[i] = self.stack[i]
+                    if self.next_game() != False:
                         next_game_result = self.next_game()
-                        if next_game_result:
-                            actions = [['new game', next_game_result]]
-                            return actions
+                        actions = [['new game', next_game_result]]
+                        return actions
                     if fail == 1:
                         self.screen_scraper.update()
                     fail = 1

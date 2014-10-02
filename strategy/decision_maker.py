@@ -98,19 +98,22 @@ class DecisionMaker():
             print 'My Outs', my_outs
             print 'Last Better: ', gd.last_better
             if max(self.betting) == 0:
-                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
                         #and not move_last(gd.active, gd.button):
                     self.controller.call()
                 elif beat_chance > 0.9\
-                        - move_last(self.game_driver.active, self.game_driver.button)*0.3:
+                        - move_last(gd.active, gd.button)*0.3\
+                        + (gd.stage==3)*move_last(gd.active, gd.button)*0.2:
                     if beat_chance > 0.9:
                         self.controller.rais(self.pot*0.8, 5)
                     else:
                         self.controller.rais(self.pot*0.8)
-                elif sum(self.betting) == 0 and gd.stage != 3 and ml:
+                elif sum(self.betting) == 0 and gd.stage != 3 and ml and sum(gd.active) == 2\
+                        and gd.board_wetness[gd.stage] < 3 and range_fight_result > 0.5:
                     self.controller.rais(self.pot*0.75)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
+                        and gd.board_wetness[gd.stage] < 3\
                         and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
@@ -135,7 +138,7 @@ class DecisionMaker():
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
-                        or self.stage == 3 and beat_chance > ratio:
+                        or self.stage == 3 and beat_chance > 0.75 * ratio:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
@@ -156,18 +159,20 @@ class DecisionMaker():
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
             if max(self.betting) == 0 or (gd.stage != 3 and max(self.betting) < self.pot * 0.2):
-                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
                         #and not move_last(gd.active, gd.button):
                     print 'My Decision: Check'
                 elif beat_chance > 0.9\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3:
                     print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.8+max(self.betting), 2)
-                elif sum(self.betting) == 0 and gd.stage != 3 and ml:
+                elif sum(self.betting) == 0 and gd.stage != 3 and ml and sum(gd.active) == 2\
+                        and gd.board_wetness[gd.stage] < 3:
                     print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.75, 2)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
+                        and gd.board_wetness[gd.stage] < 3\
                         and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
@@ -191,7 +196,7 @@ class DecisionMaker():
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
-                        or self.stage == 3 and beat_chance > 1.5*ratio:
+                        or self.stage == 3 and beat_chance > 0.75*ratio:
                     print 'My Decision: ', 
                     print 'Call'
                 else:
