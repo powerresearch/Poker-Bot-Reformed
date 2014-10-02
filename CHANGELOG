@@ -1,8 +1,5 @@
 -----------------------------
-VERSION 0.3
-
-o River raise小一些
-o 拿到nuts的时候在干燥面Flop前位可以考虑check call
+VERSION 0.4
 
 - 在脏面上多下注，干燥面上拿着second nuts控池
 - 加入考虑河牌下注可能是破产的听牌的bluff
@@ -12,6 +9,20 @@ o 拿到nuts的时候在干燥面Flop前位可以考虑check call
 - Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了
 - 卡住的时候很可能是别人all in了，然后到新一局以后还以为没结束
 - steal多一些
+
+-----------------------------
+VERSION 0.3
+
+o River raise小一些
+o 加入了board_wetness
+o 拿到nuts的时候在干燥面Flop前位可以考虑check call
+o 在3bet后谨慎bluff
+o 在bluff的时候考虑range_fight_result
+o 用更多的draw买
+o 在后位的时候用更多的牌来open
+o 修正了偶尔出现的莫名其妙卡住并且无法自动恢复的bug
+
+T 2014.10.1~2014.10.2 HANDS:3500 NET:-1.6
 
 ------------------------------
 VERSION 0.2

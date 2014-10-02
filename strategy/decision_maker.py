@@ -137,7 +137,7 @@ class DecisionMaker():
                         self.controller.call()
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
-                        or my_outs*0.02*(3-self.stage) > ratio\
+                        or my_outs*0.02*(3-self.stage) > ratio*1.2\
                         or self.stage == 3 and beat_chance > 0.75 * ratio:
                     self.controller.call()
                 else:
