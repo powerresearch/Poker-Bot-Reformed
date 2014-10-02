@@ -34,7 +34,7 @@ if sys.argv[1] == 'ps':
             stuck_count = 0
             game_driver.count_game()
             print '\n\n\nStarting New Game'
-            print 'Time Consumed:', int(time.time-very_starting_time)
+            print 'Time Consumed:', int(time.time()-very_starting_time)
             print 'Game Counting:', int(game_driver.game_count)
         if stuck_count > 10:
             im = pyscreenshot.grab()

@@ -73,6 +73,10 @@ class DecisionMaker():
                 opponent = i
                 break#}}}
         if self.game_driver.source == 'ps':#{{{
+            if gd.fold:
+                print 'Bugged'
+                self.controller.fold()
+                return
             if sum(gd.active) == 1:
                 print 'Bugged'
                 self.controller.fold()
@@ -87,18 +91,22 @@ class DecisionMaker():
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
+            print 'Board Wetness: ', gd.board_wetness[gd.stage]
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
             print 'Last Better: ', gd.last_better
             if max(self.betting) == 0:
-                if beat_chance > 0.9\
+                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                        #and not move_last(gd.active, gd.button):
+                    self.controller.call()
+                elif beat_chance > 0.9\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3:
                     if beat_chance > 0.9:
-                        self.controller.rais(self.pot*0.8+max(self.betting), 10)
+                        self.controller.rais(self.pot*0.8, 5)
                     else:
-                        self.controller.rais(self.pot*0.8+max(self.betting))
+                        self.controller.rais(self.pot*0.8)
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml:
                     self.controller.rais(self.pot*0.75)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
@@ -115,14 +123,19 @@ class DecisionMaker():
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
-                    if beat_chance > 0.95:
-                        self.controller.rais(self.pot*0.75+max(self.betting), 15)
+                    if gd.board_wetness[gd.stage] > 2.5 or gd.stage == 3 or ratio < 0.2:
+                        if beat_chance > 0.95:
+                            self.controller.rais(self.pot*(0.75-0.15*(gd.stage==3))\
+                                    +max(self.betting)*(1-0.25*(gd.stage==3)), 5)
+                        else:
+                            self.controller.rais(self.pot*(0.75-0.15*(gd.stage==3))\
+                                    +max(self.betting)*(1-0.25*(gd.stage==3)), 5)
                     else:
-                        self.controller.rais(self.pot*0.75+max(self.betting))
+                        self.controller.call()
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
-                        or self.stage == 3 and beat_chance > 1.5*ratio:
+                        or self.stage == 3 and beat_chance > ratio:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
@@ -137,13 +150,16 @@ class DecisionMaker():
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
-            print 'Board Wetness: ', get_board_wetness(stats, gd.power_rank[gd.stage], gd.active, gd.cards)
+            print 'Board Wetness: ', gd.board_wetness[gd.stage]
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
             print 'My Win Chance: ', beat_chance
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
             if max(self.betting) == 0 or (gd.stage != 3 and max(self.betting) < self.pot * 0.2):
-                if beat_chance > 0.9\
+                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                        #and not move_last(gd.active, gd.button):
+                    print 'My Decision: Check'
+                elif beat_chance > 0.9\
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3:
                     print 'My Decision: ', 
                     print 'Bet', round(self.pot*0.8+max(self.betting), 2)
@@ -166,8 +182,12 @@ class DecisionMaker():
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio: ', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.85:
-                    print 'My Decision: ', 
-                    print 'Raise', round(self.pot+max(self.betting), 2)
+                    if gd.board_wetness[gd.stage] > 2.5 or gd.stage == 3 or ratio < 0.2:
+                        print 'My Decision: ', 
+                        print 'Raise', round(self.pot*(0.75-0.15*(self.stage==3))\
+                                +max(self.betting)*(1-0.25*(self.stage==3)), 2)
+                    else:
+                        print 'My Decision: Call'
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
                         or my_outs*0.02*(3-self.stage) > ratio\
@@ -192,6 +212,7 @@ class DecisionMaker():
         if self.game_driver.source == 'ps':
             if sum(self.game_driver.active) == 1:
                 print 'Bugged'
+                self.game_driver.fold = 1
                 self.controller.fold()
                 return
             if my_move == 0 or my_move == 1:
@@ -329,7 +350,8 @@ class DecisionMaker():
                     self.controller.call()
                     return 
                 if betting[0] == max(betting):
-                    self.controller.fold()
+                    print 'bugged'
+                    self.controller.call()
                     return
                 else:
                     self.controller.fold()
@@ -358,7 +380,7 @@ class DecisionMaker():
                 return#}}}
             if my_move == 4:
                 if people_bet >= 3:#{{{
-                    self.controller.rais(max(betting)*(people_play+2), 20)
+                    self.controller.rais(max(betting)*(people_play+2), 5)
                 else:
                     self.controller.rais(max(betting)*(people_play+2))
                 return#}}}
@@ -440,7 +462,7 @@ class DecisionMaker():
         people_bet = self.bet_round
         button = self.button 
         people_play = self.people_play
-        if betting[0] == max(betting):
+        if betting[0] == max(betting) and people_bet != 1:
             if is_only_max(betting, 0):
                 people_bet -= 1
                 people_play = 1
@@ -548,7 +570,7 @@ class DecisionMaker():
                 if people_bet == 2:
                     return 
                 if betting[0] == max(betting):
-                    self.controller.fold()
+                    print 'bugged'
                     return
                 else:
                     self.controller.fold()
@@ -565,6 +587,8 @@ class DecisionMaker():
                             fold_chance *= dm.get_item(i, u'F4B')
                     if fold_chance > 0.8:
                         return 
+                    else:
+                        return
                 self.controller.fold()
                 return#}}}
             if my_move == 4:

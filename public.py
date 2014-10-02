@@ -1,4 +1,5 @@
 import datetime
+import random
 from collections import defaultdict
 from copy import deepcopy
 
@@ -293,7 +294,7 @@ def how_many_outs(public_cards, hole_cards):
     while not public_cards[-1]:#{{{
         public_cards = public_cards[:-1]
     highcard, twop, trip, straight, flush = 0, 0, 0, 0, 0
-    cards = public_cards + hole_cards
+    cards = hole_cards + public_cards
     fo = find_out(cards)
     flush = flush_outs(cards, fo)
     straight = straight_outs(cards, fo)
@@ -475,11 +476,22 @@ def get_avg_stats(stats, active):
         for c1 in avg_stats[n1]:
             for n2 in avg_stats[n1][c1]:
                 for c2 in avg_stats[n1][c1][n2]:
+#                    print n1,c1,n2,c2
+#                    print 'aaa',stats[0][n1][c1][n2][c2]
+#                    print 'aaa',stats[2][n1][c1][n2][c2]
+#                    print 'aaa',stats[4][n1][c1][n2][c2]
                     avg_stats[n1][c1][n2][c2] = 0
                     for i in active_index:
+#                        print n1,c1,n2,c2,i
                         avg_stats[n1][c1][n2][c2] += stats[i][n1][c1][n2][c2]
                     avg_stats[n1][c1][n2][c2] /= len(active_index)
     return avg_stats#}}}
+
+def random_cards(n):
+    result = list()#{{{
+    for i in xrange(n):
+        result.append([random.randint(2, 15), random.randint(1,5)])
+    return result#}}}
 
 def get_board_wetness(stats, power_rank, active, cards):
     max_stats_prob = 0#{{{

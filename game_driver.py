@@ -7,6 +7,7 @@ from public import is_only_max
 from public import get_power_rank
 from public import get_can_beat_table
 from public import show_stats
+from public import get_board_wetness
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
@@ -49,6 +50,8 @@ class GameDriver():
         self.postflop_status = ['', '', '', '', '', '']
         self.power_rank     = [0, 0, 0, 0]
         self.can_beat_table = [0, 0, 0, 0]
+        self.board_wetness  = [0, 0, 0, 0]
+        self.fold           = 0
         self.outs           = [0, 0, 0, 0]#}}}
 
     @classmethod
@@ -76,6 +79,7 @@ class GameDriver():
             self.controller.sit_out()
             return self.game_number
         if self.source == 'ps' and self.decision_maker.get_preflop_move(self.cards) == 0 and self.button != 4 and self.button != 0:
+            print 'Fold because my preflop move is 0'
             self.controller.fold()
             return self.game_number
         print#}}}
@@ -128,13 +132,19 @@ class GameDriver():
         if is_only_max(self.betting, actor):
             self.last_better = actor
             self.bet_round += 1
+            if self.bet_round == 2:
+                if self.betting[actor] / BB > 5 + self.people_play:
+                    self.bet_round += 1
+            if self.bet_round == 3:
+                if self.betting[actor] > 3.5 * self.pot:
+                    self.bet_round += 1
             self.people_play = 1
         else:
             self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
                 self.people_play, self.last_better)
-        if self.source != 'ps':
-            show_stats(self.stats_handler.stats, actor)
+#       if self.source != 'ps':
+#           show_stats(self.stats_handler.stats, actor)
         self.pot += value
         self.pot = round(self.pot, 2)
         self.stack[actor] -= value
@@ -183,7 +193,7 @@ class GameDriver():
                 self.active[actor] = 0.5
             if is_only_max(self.betting, actor):
                 if max(self.betting) == sum(self.betting): 
-                    if max(self.betting) < self.pot*0.3:
+                    if max(self.betting) < self.pot*0.2 and self.stage != 3:
                         self.postflop_status[actor] = 'check'
                     elif self.last_better == actor:
                         self.postflop_status[actor] = 'cb'
@@ -211,8 +221,8 @@ class GameDriver():
                 self.cards, self.stage)
         self.can_beat_table[self.stage] = get_can_beat_table(self.stage, self.power_rank[self.stage],\
                 self.stats_handler.stats, self.last_better, self.active)
-        if self.source != 'ps':
-            show_stats(self.stats_handler.stats, actor)
+#       if self.source != 'ps':
+#           show_stats(self.stats_handler.stats, actor)
         return []#}}}
 
     def preflop(self):
@@ -266,6 +276,8 @@ class GameDriver():
         self.postflop_status = ['', '', '', '', '', '']#{{{
         self.stats_handler.postflop_big_update()
         self.power_rank[stage] = get_power_rank(self.cards[2:stage+4])
+        self.board_wetness[stage] = get_board_wetness(self.stats_handler.stats,\
+                self.power_rank[stage], self.active, self.cards)[0]
         to_act = (self.button+1) % 6
         self.betting = [0, 0, 0, 0, 0, 0]
         self.last_mover = self.button

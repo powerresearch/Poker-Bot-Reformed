@@ -46,7 +46,7 @@ class Controller():
             return
         self.folded = 1
         print '-----FOLDING-----'
-        time.sleep(0.5)
+        time.sleep(0.1)
         m = self.m#{{{
         with open('pokerstars/last_control.json') as f:
             last_control = json.load(f)

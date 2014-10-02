@@ -87,6 +87,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -113,6 +115,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -136,6 +140,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -159,6 +165,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -180,6 +188,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -203,6 +213,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -226,6 +238,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
@@ -247,6 +261,8 @@ class StatsHandler():
                         for col2 in xrange(1, 5):
                             big_card = max([num1, col1], [num2, col2])
                             small_card = min([num1, col1], [num2, col2])
+                            if big_card == small_card:
+                                continue
                             if has_same([big_card, small_card]+cards):
                                 self.stats[actor][num1][col1][num2][col2] = 0
                                 continue
