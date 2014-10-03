@@ -1,17 +1,28 @@
 -----------------------------
+VERSION 1.0
+
+x 加入判断对手弃牌率的分类器
+x Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
+x Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了。其实还是依赖判断对手弃牌率的分类器
+
+- 不要拿着有showdown价值的牌去尝试打掉对手
+- 干燥面上拿着second nuts控池
+- 加入考虑河牌下注可能是破产的听牌的bluff
+- Preflop面对button miniraise可以考虑3Bet
+- Preflop面对mini 3Bet可以考虑用边缘牌去Call
+
+-----------------------------
+VERSION 0.5
+
+o 有showdown价值的中等牌力的牌不要后位开枪了
+
+-----------------------------
 VERSION 0.4
 
 o 在脏面上多下注
 o steal多一些
 
 T 2014.10.3 HANDS:1000 NET:-3
-
-- 干燥面上拿着second nuts控池
-- 加入考虑河牌下注可能是破产的听牌的bluff
-- Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
-- Preflop面对button miniraise可以考虑3Bet
-- Preflop面对mini 3Bet可以考虑用边缘牌去Call
-- Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了
 
 -----------------------------
 VERSION 0.3

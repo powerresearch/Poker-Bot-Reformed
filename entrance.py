@@ -36,15 +36,15 @@ if sys.argv[1] == 'ps':
             print '\n\n\nStarting New Game'
             print 'Time Consumed:', int(time.time()-very_starting_time)
             print 'Game Counting:', int(game_driver.game_count)
-        if stuck_count > 10:
-            im = pyscreenshot.grab()
-            im.save('stuckingshots/'+str(stuck_count)+'.png')
-        if stuck_count > 30:
-            c.fold()
-            continue
-        if stuck_count > 100:
+        if stuck_count > 20:
             c.sit_out()
             continue
+#       if stuck_count > 30:
+#           c.fold()
+#           continue
+#       if stuck_count > 10:
+#           im = pyscreenshot.grab()
+#           im.save('stuckingshots/'+str(stuck_count)+'.png')
         last_game_number = game_number
         game_number = game_driver.game_stream(last_game_number)
         if game_driver.game_count % 50 == 0:

@@ -87,7 +87,8 @@ class DecisionMaker():
                 if gd.active[i]:
                     beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
-            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
+            my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
+            my_outs = my_outs[0] - my_outs[1]
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
@@ -101,25 +102,26 @@ class DecisionMaker():
                 if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
                         #and not move_last(gd.active, gd.button):
                     self.controller.call()
-                elif beat_chance > 0.9\
-                        - move_last(gd.active, gd.button)*0.3\
-                        + (gd.stage==3)*move_last(gd.active, gd.button)*0.2:
+                elif beat_chance > 1 - gd.stage * 0.1:
                     if beat_chance > 0.9:
                         self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage]\
-                                *(3-gd.stage)*0.035), 5)
+                                *(3-gd.stage)*0.035), 3)
                     else:
                         self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage]\
-                                *(3-gd.stage)*0.035), 5)
-                elif sum(self.betting) == 0 and gd.stage != 3 and ml and sum(gd.active) == 2\
-                        and gd.board_wetness[gd.stage] < 3 and range_fight_result > 0.5:
-                    self.controller.rais(self.pot*0.6)
+                                *(3-gd.stage)*0.035), 3)
+                elif sum(self.betting) == 0 and gd.stage == 1 and ml and sum(gd.active) == 2\
+                        and beat_chance < 0.6 and range_fight_result > 0.5:
+                    self.controller.rais(self.pot*0.7)
+                elif sum(self.betting) == 0 and gd.stage == 2 and ml and sum(gd.active) == 2\
+                        and beat_chance < 0.5 and range_fight_result > 0.6:
+                    self.controller.rais(self.pot*0.7)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
                         and gd.board_wetness[gd.stage] < 3\
                         and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
-                    self.controller.rais(self.pot*0.6)
+                    self.controller.rais(self.pot*0.7)
                 else:
                     self.controller.call()#check
             else:
@@ -128,6 +130,7 @@ class DecisionMaker():
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
                 if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                    time.sleep(5)
                     self.controller.call()
                 elif beat_chance > 0.85:
                     if gd.board_wetness[gd.stage] > 2.5 or gd.stage == 3 or ratio < 0.2:
@@ -139,10 +142,10 @@ class DecisionMaker():
                                     +max(self.betting)*(1-0.25*(gd.stage==3)), 5)
                     else:
                         self.controller.call()
-                elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
+                elif beat_chance+my_outs*0.02*(3-self.stage) > 1.5*ratio\
                         or beat_chance > 0.6\
-                        or my_outs*0.02*(3-self.stage) > ratio\
-                        or self.stage == 3 and beat_chance > 0.75 * ratio:
+                        or my_outs*0.02*(3-self.stage) > 0.8*ratio\
+                        or self.stage == 3 and beat_chance > 0.8 * ratio - 0.1:
                     self.controller.call()
                 else:
                     self.controller.fold()#}}}
