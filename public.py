@@ -319,6 +319,10 @@ def how_many_outs(public_cards, hole_cards):
     elif fop[0] == 1:
         if n1 == n2:
             trip += 2
+    if flush_outs(public_cards, fop) > 0:
+        highcard, twop, trip, straight = 0, 0, 0, 0
+    if straight_outs(public_cards, fop) > 0:
+        highcard, twop, trip = 0, 0, 0
     return highcard+twop+trip+straight+flush, highcard, twop, trip, straight, flush#}}}
 
 def get_power_rank(cards):

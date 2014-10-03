@@ -105,19 +105,21 @@ class DecisionMaker():
                         - move_last(gd.active, gd.button)*0.3\
                         + (gd.stage==3)*move_last(gd.active, gd.button)*0.2:
                     if beat_chance > 0.9:
-                        self.controller.rais(self.pot*0.8, 5)
+                        self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage]\
+                                *(3-gd.stage)*0.035), 5)
                     else:
-                        self.controller.rais(self.pot*0.8)
+                        self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage]\
+                                *(3-gd.stage)*0.035), 5)
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml and sum(gd.active) == 2\
                         and gd.board_wetness[gd.stage] < 3 and range_fight_result > 0.5:
-                    self.controller.rais(self.pot*0.75)
+                    self.controller.rais(self.pot*0.6)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
                         and gd.board_wetness[gd.stage] < 3\
                         and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
-                    self.controller.rais(self.pot*0.75+max(self.betting))
+                    self.controller.rais(self.pot*0.6)
                 else:
                     self.controller.call()#check
             else:
@@ -139,7 +141,7 @@ class DecisionMaker():
                         self.controller.call()
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 2*ratio\
                         or beat_chance > 0.6\
-                        or my_outs*0.02*(3-self.stage) > ratio*1.2\
+                        or my_outs*0.02*(3-self.stage) > ratio\
                         or self.stage == 3 and beat_chance > 0.75 * ratio:
                     self.controller.call()
                 else:
@@ -168,11 +170,11 @@ class DecisionMaker():
                         - move_last(self.game_driver.active, self.game_driver.button)*0.3\
                         + (gd.stage==3)*move_last(gd.active, gd.button)*0.2:
                     print 'My Decision: ', 
-                    print 'Bet', round(self.pot*0.8+max(self.betting), 2)
+                    print 'Bet', round(self.pot*(0.6+gd.board_wetness[gd.stage]*(3-gd.stage)*0.035), 2)
                 elif sum(self.betting) == 0 and gd.stage != 3 and ml and sum(gd.active) == 2\
                         and gd.board_wetness[gd.stage] < 3 and range_fight_result > 0.5:
                     print 'My Decision: ', 
-                    print 'Bet', round(self.pot*0.75, 2)
+                    print 'Bet', round(self.pot*0.6, 2)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
                         and gd.board_wetness[gd.stage] < 3\
@@ -180,7 +182,7 @@ class DecisionMaker():
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
                     print 'My Decision: ', 
-                    print 'Bet', round(self.pot*0.75+max(self.betting), 2)
+                    print 'Bet', round(self.pot*0.6, 2)
                 else:
                     print 'My Decision: ', 
                     print 'Check'

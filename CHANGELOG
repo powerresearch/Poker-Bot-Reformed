@@ -1,14 +1,17 @@
 -----------------------------
 VERSION 0.4
 
-- 在脏面上多下注，干燥面上拿着second nuts控池
+o 在脏面上多下注
+o steal多一些
+
+T 2014.10.3 HANDS:1000 NET:-3
+
+- 干燥面上拿着second nuts控池
 - 加入考虑河牌下注可能是破产的听牌的bluff
 - Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
 - Preflop面对button miniraise可以考虑3Bet
 - Preflop面对mini 3Bet可以考虑用边缘牌去Call
 - Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了
-- 卡住的时候很可能是别人all in了，然后到新一局以后还以为没结束
-- steal多一些
 
 -----------------------------
 VERSION 0.3
