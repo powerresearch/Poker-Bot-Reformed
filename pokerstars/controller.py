@@ -20,6 +20,7 @@ class Controller():
 
     def sit_out(self):
         m = self.m#{{{
+        print 'Sitting Out'
         m.click(window_close[0], window_close[1], 1)
         time.sleep(0.5)
         m.click(sitout_confirm[0], sitout_confirm[1], 1)
@@ -142,5 +143,6 @@ class Controller():
         m.click(xp, yp)#}}}
 
     def get_back(self):
+        print 'Getting Back'
         back_position = [raise_position[0], raise_position[1]-20]
         self.m.click(*back_position)

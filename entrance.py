@@ -30,6 +30,7 @@ if sys.argv[1] == 'ps':
         stuck_count += 1
         if stuck_count > 2:
             print 'Stuck Count: ', stuck_count
+        print game_number, last_game_number
         if game_number != last_game_number:
             stuck_count = 0
             game_driver.count_game()
@@ -52,6 +53,7 @@ if sys.argv[1] == 'ps':
             get_name_figure()
             print 'Updating Database...\n\n\n\n'
             game_driver.data_manager.update()
+            game_driver.count_game()
 elif sys.argv[1] == 'makedata':
     c = 0
     #for file_name in os.listdir('pokerdata'):

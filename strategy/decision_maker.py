@@ -313,7 +313,7 @@ class DecisionMaker():
                 if people_bet == 1 and button == 4:
                     self.controller.call()
                     return
-                if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.3\
                         and self.cards[0][0] == self.cards[1][0]:
                     self.controller.call()
                     return
@@ -406,7 +406,7 @@ class DecisionMaker():
                 if people_bet == 1 and button == 4:
                     self.controller.call()
                     return
-                if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.3\
                         and self.cards[0][0] == self.cards[1][0]:
                     self.controller.call()
                     return

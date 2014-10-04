@@ -24,8 +24,11 @@ class GameDriver():
         self.source         = game_record
         self.controller     = Controller(self)
         init_values = self.screen_scraper.get_init_values()
-        while init_values == 'get back':
-            self.controller.get_back()
+        while init_values in ['sit out', 'get back']:
+            if init_values == 'sit out':
+                self.controller.sit_out()
+            else:
+                self.controller.get_back()
             init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
@@ -239,6 +242,8 @@ class GameDriver():
         self.move_catcher.to_act = to_act
 #       move_catcher = MoveCatcher(to_act, self)#}}}
         while True:
+            if sum([self.active[j] == 1 for j in xrange(1, 6)]) == 0:
+                return 'new game'
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:
@@ -290,6 +295,8 @@ class GameDriver():
         self.move_catcher.to_act = to_act
 #       move_catcher = MoveCatcher(to_act, self)#}}}
         while True:
+            if sum([self.active[j] == 1 for j in xrange(1, 6)]) == 0:
+                return 'new game'
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:

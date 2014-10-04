@@ -124,7 +124,9 @@ class ScreenScraper():
                     self.update()
 #               print 'stucking at getting game number and button', game_number, button
                 fail += 1
-                if fail > 200:
+                if fail > 250:
+                    return 'sit out'
+                if fail > 150:
                     if self.has_fold(1) and self.has_fold(2) and self.has_fold(3)\
                             and self.has_fold(4) and self.has_fold(5):
                         return 'get back'
