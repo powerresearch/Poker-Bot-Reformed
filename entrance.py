@@ -20,12 +20,12 @@ if sys.argv[1] == 'ps':
     session_length = 18000 + random.random() * 18000
     rest_length = random.random() * 1800
     while True:
-        if time.time() - starting_time > session_length:
-            print 'Rest for a while', rest_length
-            c.rest(rest_length)
-            starting_time = time.time()
-            session_length = 18000 + random.random() * 18000
-            rest_length = random.random() * 1800
+#        if time.time() - starting_time > session_length:
+#            print 'Rest for a while', rest_length
+#            c.rest(rest_length)
+#            starting_time = time.time()
+#            session_length = 18000 + random.random() * 18000
+#            rest_length = random.random() * 1800
         game_driver = GameDriver('ps')
         stuck_count += 1
         if stuck_count > 2:
@@ -37,12 +37,17 @@ if sys.argv[1] == 'ps':
             print '\n\n\nStarting New Game'
             print 'Time Consumed:', int(time.time()-very_starting_time)
             print 'Game Counting:', int(game_driver.game_count)
-        if stuck_count > 20:
+        if stuck_count > 100:
             c.sit_out()
+            last_game_number = 1
+            game_number = 0
+            stuck_count = 0
             continue
-#       if stuck_count > 30:
-#           c.fold()
-#           continue
+        if stuck_count > 20:
+            c.fold()
+            last_game_number = 1
+            game_number = 0
+            continue
 #       if stuck_count > 10:
 #           im = pyscreenshot.grab()
 #           im.save('stuckingshots/'+str(stuck_count)+'.png')

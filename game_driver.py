@@ -66,10 +66,10 @@ class GameDriver():
             cls.game_count = 1#}}}
 
     def game_stream(self, last_game):
+        print 'Game Number:', self.game_number
         if self.game_number == last_game:
             return last_game
         print 'Stack:', self.stack#{{{
-        print 'Game Number:', self.game_number
         print 'Button:', self.button
         print 'Cards:', self.cards[:2]
         print 'Names:', self.player_name

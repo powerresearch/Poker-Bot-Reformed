@@ -279,6 +279,9 @@ class DecisionMaker():
                     if fold_chance > 0.7:
                         self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
                         return 
+                if people_bet == 3 and max(betting) - betting[0] <= BB*3:
+                    self.controller.call()
+                    return
                 if people_bet == 1 and people_play == 1 and button == 1:
                     fold_chance = 1.0
                     fold_chance *= (1-dm.get_item(1, 'vpip'))
@@ -312,7 +315,7 @@ class DecisionMaker():
                 if people_bet == 1 and button == 4:
                     self.controller.call()
                     return
-                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.3\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.33\
                         and self.cards[0][0] == self.cards[1][0]:
                     self.controller.call()
                     return
@@ -369,6 +372,9 @@ class DecisionMaker():
                     if fold_chance > 0.7:
                         self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
                         return 
+                if people_bet == 3 and max(betting) - betting[0] <= BB*3:
+                    self.controller.call()
+                    return
                 if people_bet == 1 and people_play == 1 and button == 1:
                     fold_chance = 1.0
                     fold_chance *= (1-dm.get_item(1, 'vpip'))
@@ -405,7 +411,7 @@ class DecisionMaker():
                 if people_bet == 1 and button == 4:
                     self.controller.call()
                     return
-                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.3\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.33\
                         and self.cards[0][0] == self.cards[1][0]:
                     self.controller.call()
                     return
@@ -566,12 +572,8 @@ class DecisionMaker():
         people_bet = self.bet_round
         button = self.button 
         people_play = self.people_play
-        if betting[0] == max(betting) and people_bet != 1:
-            if is_only_max(betting, 0):
-                people_bet -= 1
-                people_play = 1
-            else:
-                people_play -= 1
+        if betting[0] == max(betting):
+            return
         dm = self.data_manager
         if self.game_driver.source == 'ps':
             if my_move == 0 or my_move == 1:
@@ -612,6 +614,8 @@ class DecisionMaker():
                             fold_chance *= dm.get_item(i, u'F4B') 
                     if fold_chance > 0.7:
                         return 
+                if people_bet == 3 and max(betting) - betting[0] <= BB*3:
+                    return
                 if people_bet == 1 and people_play == 1 and button == 1:
                     fold_chance = 1.0
                     fold_chance *= (1-dm.get_item(1, 'vpip'))
@@ -634,7 +638,7 @@ class DecisionMaker():
                     return
                 if betting[0] == max(betting):
                     return
-                if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.33\
                         and self.cards[0][0] == self.cards[1][0]:
                     return
                 else:
@@ -678,6 +682,8 @@ class DecisionMaker():
                             fold_chance *= dm.get_item(i, u'F4B') 
                     if fold_chance > 0.7:
                         return 
+                if people_bet == 3 and max(betting) - betting[0] <= BB*3:
+                    return
                 if people_bet == 1 and people_play == 1 and button == 1:
                     fold_chance = 1.0
                     fold_chance *= (1-dm.get_item(1, 'vpip'))
@@ -696,13 +702,13 @@ class DecisionMaker():
                     fold_chance *= (1-dm.get_item(1, 'vpip'))
                     if fold_chance > 0.9:
                         return
-                if people_bet == 1 and my_move == 1:
+                if people_bet == 1 and my_move == 1.5:
                     return
                 if betting[0] == max(betting):
                     return
-                if people_bet == 2 and my_move == 1.5 and max(betting)-betting[0] <= 0.08:
+                if people_bet == 2 and my_move == 1.5 and max(betting)-betting[0] <= 4*BB:
                     return
-                if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.33\
                         and self.cards[0][0] == self.cards[1][0]:
                     return
                 else:

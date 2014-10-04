@@ -302,6 +302,8 @@ def how_many_outs(public_cards, hole_cards):
     m = max(pub_nums)
     if fo[0] == 3 and hole_cards[0][0] == hole_cards[1][0]:
         fuhos = 1 + (len(public_cards)-1)*3
+    if fo[0] == 2 and hole_cards[0][0] in fo[1:3] and hole_cards[1][0] in fo[1:3]:
+        fuhos = 4
     if fop[0] == 0:
         if n1 == n2:
             trip += 2
