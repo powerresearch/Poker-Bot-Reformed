@@ -293,7 +293,7 @@ def flush_outs(cards, fo):
 def how_many_outs(public_cards, hole_cards):
     while not public_cards[-1]:#{{{
         public_cards = public_cards[:-1]
-    highcard, twop, trip, straight, flush = 0, 0, 0, 0, 0
+    highcard, twop, trip, straight, flush, fuhos = 0, 0, 0, 0, 0, 0
     cards = hole_cards + public_cards
     fo = find_out(cards)
     flush = flush_outs(cards, fo)
@@ -304,6 +304,8 @@ def how_many_outs(public_cards, hole_cards):
         pub_nums.append(c[0])
     n1, n2 = hole_cards[0][0], hole_cards[1][0]
     m = max(pub_nums)
+    if fo[0] == 3 and hole_cards[0][0] == hole_cards[1][0]:
+        fuhos = 1 + (len(public_cards)-1)*3
     if fop[0] == 0:
         if n1 == n2:
             trip += 2
@@ -323,7 +325,7 @@ def how_many_outs(public_cards, hole_cards):
         highcard, twop, trip, straight = 0, 0, 0, 0
     if straight_outs(public_cards, fop) > 0:
         highcard, twop, trip = 0, 0, 0
-    return highcard+twop+trip+straight+flush, highcard, twop, trip, straight, flush#}}}
+    return highcard+twop+trip+straight+flush+fuhos, highcard, twop, trip, straight, flush, fuhos#}}}
 
 def get_power_rank(cards):
     power_rank = list()#{{{

@@ -286,7 +286,7 @@ class GameDriver():
         self.stats_handler.postflop_big_update()
         self.power_rank[stage] = get_power_rank(self.cards[2:stage+4])
         self.board_wetness[stage] = get_board_wetness(self.stats_handler.stats,\
-                self.power_rank[stage], self.active, self.cards)[0]
+                self.power_rank[stage], self.active, self.cards)
         to_act = (self.button+1) % 6
         self.betting = [0, 0, 0, 0, 0, 0]
         self.last_mover = self.button

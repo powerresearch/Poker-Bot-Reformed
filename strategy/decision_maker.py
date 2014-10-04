@@ -99,16 +99,12 @@ class DecisionMaker():
             print 'My Outs', my_outs
             print 'Last Better: ', gd.last_better
             if max(self.betting) == 0:
-                if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1][1] < 1.5:
                         #and not move_last(gd.active, gd.button):
                     self.controller.call()
-                elif beat_chance > 1 - gd.stage * 0.1:
-                    if beat_chance > 0.9:
-                        self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage]\
-                                *(3-gd.stage)*0.035), 3)
-                    else:
-                        self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage]\
-                                *(3-gd.stage)*0.035), 3)
+                elif beat_chance > 1 - (1-(gd.board_wetness[gd.stage][0]<2)*0.3)*gd.stage*0.1:
+                    self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage][0]\
+                            *(3-gd.stage)*0.03), 3)
                 elif sum(self.betting) == 0 and gd.stage == 1 and ml and sum(gd.active) == 2\
                         and beat_chance < 0.6 and range_fight_result > 0.5:
                     self.controller.rais(self.pot*0.7)
@@ -117,7 +113,8 @@ class DecisionMaker():
                     self.controller.rais(self.pot*0.7)
                 elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
                         and gd.bet_round == 2 and sum(self.betting) == 0\
-                        and gd.board_wetness[gd.stage] < 3\
+                        and gd.board_wetness[gd.stage][0] < 3\
+                        and beat_chance < 0.6\
                         and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
                         random.random() > 1):
                     print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
@@ -129,22 +126,24 @@ class DecisionMaker():
                 to_call = min(to_call, gd.stack[0])
                 ratio = to_call / (self.pot+to_call)
                 print 'Ratio:', ratio, my_outs*0.02*(3-self.stage)
-                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1] < 1.5:
+                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1][1] < 0.75:
                     time.sleep(5)
                     self.controller.call()
                 elif beat_chance > 0.85:
-                    if gd.board_wetness[gd.stage] > 2.5 or gd.stage == 3 or ratio < 0.2:
+                    if gd.board_wetness[gd.stage][0] > 2.5\
+                            or gd.board_wetness[gd.stage][1] > 0.75\
+                            or gd.stage == 3 or ratio < 0.2:
                         if beat_chance > 0.95:
                             self.controller.rais(self.pot*(0.75-0.15*(gd.stage==3))\
-                                    +max(self.betting)*(1-0.25*(gd.stage==3)), 5)
+                                    +max(self.betting)*(1-0.25*(gd.stage==3)), 3)
                         else:
                             self.controller.rais(self.pot*(0.75-0.15*(gd.stage==3))\
-                                    +max(self.betting)*(1-0.25*(gd.stage==3)), 5)
+                                    +max(self.betting)*(1-0.25*(gd.stage==3)), 3)
                     else:
                         self.controller.call()
                 elif beat_chance+my_outs*0.02*(3-self.stage) > 1.5*ratio\
                         or beat_chance > 0.6\
-                        or my_outs*0.02*(3-self.stage) > 0.8*ratio\
+                        or my_outs*0.02*(3-self.stage) > (0.8-0.1*gd.stage==3)*ratio\
                         or self.stage == 3 and beat_chance > 0.8 * ratio - 0.1:
                     self.controller.call()
                 else:
@@ -635,7 +634,73 @@ class DecisionMaker():
                     return
                 if betting[0] == max(betting):
                     return
-                if people_bet == 2 and my_move == 1 and max(betting)-betting[0] <= 0.08:
+                if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
+                        and self.cards[0][0] == self.cards[1][0]:
+                    return
+                else:
+                    self.controller.fold()
+                    return#}}}
+            if my_move == 1.5:
+                if (button == 0 or button == 1) and people_bet == 1 and people_play == 1:#{{{
+                    fold_chance = 1.0
+                    fold_chance *= dm.get_item((button+1)%6, u'SFBS')
+                    fold_chance *= dm.get_item((button+2)%6, u'BFBS') 
+                    if fold_chance > 0.6:
+                        return
+                if button == 5 and people_bet == 1 and people_play == 1:
+                    fold_chance = 1.0
+                    fold_chance *= dm.get_item((button+2)%6, u'BFBS')
+                    if fold_chance > 0.6:
+                        return 
+                if people_bet == 2 and people_play == 1 and button >= 4:
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            better = i
+                    if better == button:
+                        if dm.get_item(better, u'BSA') > 0.7:
+                            return
+                if people_bet == 2:
+                    fold_chance = 1.0
+                    for i in xrange(6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F3B')
+                    if fold_chance > 0.7:
+                        return
+                if people_bet == 2 and people_play == 1:
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            if dm.get_item(i, 'pfr') > 0.5:
+                                return
+                if people_bet == 3:
+                    fold_chance = 1.0
+                    for i in xrange(1,6):
+                        if betting[i] == max(betting):
+                            fold_chance *= dm.get_item(i, u'F4B') 
+                    if fold_chance > 0.7:
+                        return 
+                if people_bet == 1 and people_play == 1 and button == 1:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    fold_chance *= (1-dm.get_item(2, 'vpip'))
+                    fold_chance *= (1-dm.get_item(3, 'vpip'))
+                    if fold_chance > 0.8:
+                        return
+                if people_bet == 1 and people_play == 1 and button == 0:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    fold_chance *= (1-dm.get_item(2, 'vpip'))
+                    if fold_chance > 0.8:
+                        return
+                if people_bet == 1 and people_play == 1 and button == 5:
+                    fold_chance = 1.0
+                    fold_chance *= (1-dm.get_item(1, 'vpip'))
+                    if fold_chance > 0.9:
+                        return
+                if people_bet == 1 and my_move == 1:
+                    return
+                if betting[0] == max(betting):
+                    return
+                if people_bet == 2 and my_move == 1.5 and max(betting)-betting[0] <= 0.08:
                     return
                 if max(betting)-betting[0] / (sum(betting[1:])+max(betting)) < 0.3\
                         and self.cards[0][0] == self.cards[1][0]:
