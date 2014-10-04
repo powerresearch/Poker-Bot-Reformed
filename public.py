@@ -220,22 +220,18 @@ def how_much_can_beat(stats, power_rank, hole_cards, opponent):
     max_stats_prob = 0
     for c1, c2, fo, outs, outs_in_specific in power_rank:
         max_stats_prob = max([max_stats_prob, stats[opponent][c1[0]][c1[1]][c2[0]][c2[1]]])
+        if [c1, c2] == hole_cards or [c2, c1] == hole_cards:
+            the_fo = fo
     for tup in power_rank:
         card1 = tup[0]
         card2 = tup[1]
+        fo = tup[2]
         num1, col1 = card1[0], card1[1]
         num2, col2 = card2[0], card2[1]
         prob = stats[opponent][num1][col1][num2][col2]
-        if [card1, card2] == hole_cards or [card2, card1] == hole_cards:
-            winning = 0
-            win_chance2 += 0.05
-            lose_chance2 += 0.05
-            win_chance += prob * 0.5
-            lose_chance += prob * 0.5
-            continue
         if prob < 0.1 * max_stats_prob:
             continue
-        if winning:
+        if the_fo >= fo:
             win_chance += prob
             win_chance2 += 0.1
         else:
