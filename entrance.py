@@ -2,6 +2,7 @@ from game_driver import GameDriver
 from make_data import GameDriver as make_data
 from pokerstars.get_name_figure import get_name_figure
 from pokerstars.controller import Controller
+from pokerstars.screen_scraper import get_shift
 from public import del_stdout_line
 import pyscreenshot
 import sys
@@ -12,13 +13,17 @@ import random
 
 if sys.argv[1] == 'ps':
     game_number = 0
-    c = Controller(1)
     last_game_number = 1
     stuck_count = 0
     very_starting_time = time.time()
     starting_time = time.time()
     session_length = 18000 + random.random() * 18000
     rest_length = random.random() * 1800
+    shift = []
+    while not shift:
+        im = pyscreenshot.grab()
+        shift = get_shift(im) 
+    c = Controller(1, shift)
     while True:
 #        if time.time() - starting_time > session_length:
 #            print 'Rest for a while', rest_length
@@ -26,7 +31,7 @@ if sys.argv[1] == 'ps':
 #            starting_time = time.time()
 #            session_length = 18000 + random.random() * 18000
 #            rest_length = random.random() * 1800
-        game_driver = GameDriver('ps')
+        game_driver = GameDriver('ps', shift)
         stuck_count += 1
         if stuck_count > 2:
             print 'Stuck Count: ', stuck_count

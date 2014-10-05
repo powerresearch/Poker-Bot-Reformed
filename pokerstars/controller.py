@@ -13,34 +13,35 @@ import time
 import json
 
 class Controller():
-    def __init__(self, game_driver):
+    def __init__(self, game_driver, shift):
         self.m = pymouse.PyMouse()
         self.game_driver = game_driver
         self.folded = 0
+        self.shift = shift
 
     def sit_out(self):
         m = self.m#{{{
         print 'Sitting Out'
-        m.click(window_close[0], window_close[1], 1)
+        m.click(window_close[0]+self.shift[0], window_close[1]+self.shift[1], 1)
         time.sleep(0.5)
-        m.click(sitout_confirm[0], sitout_confirm[1], 1)
+        m.click(sitout_confirm[0]+self.shift[0], sitout_confirm[1]+self.shift[1], 1)
         time.sleep(3)
-        m.click(round(entry_position[0]+200*(random.random()-0.5)),\
-                round(entry_position[1]+10*(random.random()-0.5)), 1)
-        m.click(round(join_game[0]+100*(random.random()-0.5)),\
-                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
+        m.click(round(entry_position[0]+200*(random.random()-0.5)+self.shift[0]),\
+                round(entry_position[1]+10*(random.random()-0.5)+self.shift[1]), 1)
+        m.click(round(join_game[0]+100*(random.random()-0.5)+self.shift[0]),\
+                round(join_game[1]+10*(random.random()-0.5)+self.shift[1]), 1)#}}}
 
     def rest(self, rest_time):
         m = self.m#{{{
-        m.click(window_close[0], window_close[1], 1)
+        m.click(window_close[0]+self.shift[0], window_close[1]+self.shift[1], 1)
         time.sleep(0.5)
-        m.click(sitout_confirm[0], sitout_confirm[1], 1)
+        m.click(sitout_confirm[0]+self.shift[0], sitout_confirm[1]+self.shift[1], 1)
         time.sleep(rest_time)
         print 'Done rest'
-        m.click(round(entry_position[0]+200*(random.random()-0.5)),\
-                round(entry_position[1]+10*(random.random()-0.5)), 1)
-        m.click(round(join_game[0]+100*(random.random()-0.5)),\
-                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
+        m.click(round(entry_position[0]+200*(random.random()-0.5)+self.shift[0]),\
+                round(entry_position[1]+10*(random.random()-0.5)+self.shift[1]), 1)
+        m.click(round(join_game[0]+100*(random.random()-0.5)+self.shift[0]),\
+                round(join_game[1]+10*(random.random()-0.5)+self.shift[1]), 1)#}}}
 
     def fold(self):
         if self.folded:
@@ -62,12 +63,12 @@ class Controller():
         while fold_mark == 0:
             for xchange in xrange(-20, 20):
                 for ychange in xrange(-20, 20):
-                    color = im.getpixel((fold_position[0]+xchange, fold_position[1]+ychange))
+                    color = im.getpixel((fold_position[0]+xchange+self.shift[0], fold_position[1]+ychange+self.shift[1]))
                     if color[0] > max(color[1:]) + 30:
                         fold_mark = 1
                         break
             im = pyscreenshot.grab()
-        m.click(xp, yp)
+        m.click(xp+self.shift[0], yp+self.shift[1])
         with open('pokerstars/last_control.json', 'w') as f:
             last_control = time.time()
             f.write(json.dumps(last_control))#}}}
@@ -83,7 +84,7 @@ class Controller():
                 for j in xrange(-20, 20):
                     x = call_position[0] + i
                     y = call_position[1] + j
-                    color = im.getpixel((x, y))
+                    color = im.getpixel((x+self.shift[0], y+self.shift[1]))
                     if color[0] > max(color[1:]) + 20:
                         return 0
             return 1
@@ -102,7 +103,7 @@ class Controller():
         else:
             xp = raise_position[0] + xr
             yp = raise_position[1] + yr
-        m.click(xp, yp)
+        m.click(xp+self.shift[0], yp+self.shift[1])
         with open('pokerstars/last_control.json', 'w') as f:
             last_control = time.time()
             f.write(json.dumps(last_control))#}}}
@@ -127,11 +128,11 @@ class Controller():
         lyp = label_position[1]
         xp = raise_position[0]
         yp = raise_position[1]
-        m.click(lxp+10, lyp)
+        m.click(lxp+10+self.shift[0], lyp+self.shift[1])
         time.sleep(1)
-        m.press(lxp+10, lyp, 1)
-        m.move(lxp-300, lyp)
-        m.release(lxp-300, lyp, 1)
+        m.press(lxp+10+self.shift[0], lyp+self.shift[1], 1)
+        m.move(lxp-300+self.shift[0], lyp+self.shift[1])
+        m.release(lxp-300+self.shift[0], lyp+self.shift[1], 1)
         time.sleep(0.5)
         string = str(amount)
         for ch in string:
@@ -140,9 +141,9 @@ class Controller():
         with open('pokerstars/last_control.json', 'w') as f:
             last_control = time.time()
             f.write(json.dumps(last_control))
-        m.click(xp, yp)#}}}
+        m.click(xp+self.shift[0], yp+self.shift[1])#}}}
 
     def get_back(self):
         print 'Getting Back'
-        back_position = [raise_position[0], raise_position[1]-20]
+        back_position = [raise_position[0]+self.shift[0], raise_position[1]-20+self.shift[1]]
         self.m.click(*back_position)

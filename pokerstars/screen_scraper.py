@@ -82,13 +82,32 @@ def norm(l):
         l[index][1] = l[index][1] - miny
     return l#}}}
 
+def get_shift(im):
+    for starti in xrange(im.size[0]-215):#{{{
+        for startj in xrange(im.size[1]-50):
+            fail = 0
+            count = 0
+            for i in xrange(215):
+                for j in xrange(50):
+                    pix = im.getpixel((starti+i, startj+j))
+                    if pix[0] != logo[count][0] or pix[1] != logo[count][1] or pix[2] != logo[count][2]:
+                        fail = 1
+                        break
+                    count += 1
+                if fail:
+                    break
+            if not fail:
+                return [starti-285, startj-235]
+    return []#}}}
+
 class ScreenScraper():
-    def __init__(self, game_driver, source='ps'):
-        if source == 'ps':
+    def __init__(self, game_driver, source='ps', shift=[0,0]):
+        if source == 'ps':#{{{
             self.im = pyscreenshot.grab()
+        self.shift = shift 
         self.source = source
         self.game_driver = game_driver
-        self.got_names = 'to start'
+        self.got_names = 'to start'#}}}
 
     def update(self):
         self.im = pyscreenshot.grab()#{{{
@@ -224,7 +243,7 @@ class ScreenScraper():
             i = 0
             for x in xrange(5):
                 for y in xrange(8):
-                    if sum(im.getpixel((game_number_x+digi*6+x, game_number_y+y))) > 300:
+                    if sum(im.getpixel((game_number_x+digi*6+x+self.shift[0], game_number_y+y+self.shift[1]))) > 300:
                         code += '1'
                     else:
                         code += '0'
@@ -244,7 +263,7 @@ class ScreenScraper():
                 group[x][y] = [[x, y], [x, y]]
         for x in xrange(card_width):
             for y in xrange(card_height):
-                color = im.getpixel((card_position[number][0]+x, card_position[number][1]+y))
+                color = im.getpixel((card_position[number][0]+x+self.shift[0], card_position[number][1]+y+self.shift[1]))
                 if sum(color) > 500:
                     pixels[x][y] = 0
                 else:
@@ -314,11 +333,11 @@ class ScreenScraper():
                     return i
             return []
         for y in xrange(50):
-            if sum(im.getpixel((xy[number][0], xy[number][1]+y))) > 450 and \
-                    sum(im.getpixel((xy[number][0], xy[number][1]+y))) > 450:
+            if sum(im.getpixel((xy[number][0]+self.shift[0], xy[number][1]+y+self.shift[1]))) > 450 and \
+                    sum(im.getpixel((xy[number][0]+self.shift[0], xy[number][1]+y+self.shift[1]))) > 450:
                 mark = 1
                 for x in xrange(-5, 15):
-                    if sum(im.getpixel((xy[number][0]+x, xy[number][1]+y))) <= 450:
+                    if sum(im.getpixel((xy[number][0]+x+self.shift[0], xy[number][1]+y+self.shift[1]))) <= 450:
                         mark = 0
                 if mark == 1:
                     return True
@@ -335,7 +354,7 @@ class ScreenScraper():
                 group[x][y] = [[x, y], [x, y]]
         for x in xrange(stack_width):
             for y in xrange(stack_height):
-                if sum(im.getpixel((xy[number][0]+x, xy[number][1]+y))) > 180:
+                if sum(im.getpixel((xy[number][0]+x+self.shift[0], xy[number][1]+y+self.shift[1]))) > 180:
                     pixels[x][y] = 1
                 else:
                     pixels[x][y] = 0
@@ -407,7 +426,7 @@ class ScreenScraper():
                 if success:
                     break
                 for j in xrange(-3, 4, 1):
-                    color = im.getpixel((button[number][0]+i, button[number][1]+j))
+                    color = im.getpixel((button[number][0]+i+self.shift[0], button[number][1]+j+self.shift[1]))
                     if color[0] > 2 * (color[1]+color[2]):
                         success = 1
                         break
@@ -420,7 +439,7 @@ class ScreenScraper():
             for j in xrange(-10, 10):
                 x = raise_position[0] + i
                 y = raise_position[1] + j
-                color = im.getpixel((x, y))
+                color = im.getpixel((x+self.shift[0], y+self.shift[1]))
                 if color[0] > color[1] + 30 and color[0] > color[2] + 30:
                     return True
         return False#}}}
@@ -430,7 +449,7 @@ class ScreenScraper():
         x, y = cardposition[number][0], cardposition[number][1]
         for i in xrange(x-10, x+10):
             for j in xrange(y-10, y+10):
-                if im.getpixel((i, j))[0] > 100 and im.getpixel((i, j))[0] == max(im.getpixel((i, j))):
+                if im.getpixel((i+self.shift[0], j+self.shift[1]))[0] > 100 and im.getpixel((i+self.shift[0], j+self.shift[1]))[0] == max(im.getpixel((i+self.shift[0], j+self.shift[1]))):
                     return False
         return True#}}}
 
@@ -452,7 +471,7 @@ class ScreenScraper():
             return 3 #'no anchor, why?'
         for x in xrange(90):
             for y in xrange(20):
-                tup = im.getpixel((anchor[0]-45+x, anchor[1]-20+y))
+                tup = im.getpixel((anchor[0]-45+x+self.shift[0], anchor[1]-20+y+self.shift[1]))
                 if sum(tup) > 450:
                     code += str(x)+str(y)
                 if tup[2] - 30 > tup[0] and tup[2] - 30 > tup[1]:
@@ -480,9 +499,9 @@ class ScreenScraper():
         im = self.im#{{{    
         for x in xrange(25, -25, -1):
             for y in xrange(10, -10, -1):
-                tup = im.getpixel((xy[number][0]+x, xy[number][1]+y))
+                tup = im.getpixel((xy[number][0]+x+self.shift[0], xy[number][1]+y+self.shift[1]))
                 if tup[0] == 200 and tup[1] == 200 and tup[2] == 200:
-                    tup = im.getpixel((xy[number][0]+x+1, xy[number][1]+y))
+                    tup = im.getpixel((xy[number][0]+x+1+self.shift[0], xy[number][1]+y+self.shift[1]))
                     if tup[0] == 217 and tup[1] == 217 and tup[2] == 217:
                         return (xy[number][0]+x+19, xy[number][1]+y)
         print 'fail to get anchor!!!'

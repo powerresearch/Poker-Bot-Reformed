@@ -19,10 +19,11 @@ from strategy.decision_maker import DecisionMaker
 
 class GameDriver():
 
-    def __init__(self, game_record='ps'):
-        self.screen_scraper = ScreenScraper(game_driver=self, source=game_record)#{{{
+    def __init__(self, game_record='ps', shift=[0, 0]):
+        self.screen_scraper = ScreenScraper(game_driver=self, source=game_record, shift=shift)#{{{
+        self.shift          = shift
         self.source         = game_record
-        self.controller     = Controller(self)
+        self.controller     = Controller(self, shift)
         init_values = self.screen_scraper.get_init_values()
         while init_values in ['sit out', 'get back']:
             if init_values == 'sit out':
@@ -44,7 +45,7 @@ class GameDriver():
         self.stats_handler  = StatsHandler(self)
         self.decision_maker = DecisionMaker(self)
         self.betting        = [0, 0, 0, 0, 0, 0]
-        self.pot            = SB+BB 
+        self.pot            = SB+BB
         self.last_better    = -1
         self.all_limper     = -1
         self.stage          = 0
@@ -79,7 +80,7 @@ class GameDriver():
                         (self.player_name[i], self.data_manager.get_item(i, u'HANDS'),\
                         self.data_manager.get_item(i, u'pfr'), self.data_manager.get_item(i, u'F3B'),\
                         self.data_manager.get_item(i, u'BSA'))
-        if self.stack[0] > 3 and self.decision_maker.get_preflop_move(self.cards) == 0:
+        if self.stack[0] > 300*SB and self.decision_maker.get_preflop_move(self.cards) == 0:
             self.controller.sit_out()
             return self.game_number
         if self.source == 'ps' and self.decision_maker.get_preflop_move(self.cards) == 0 and self.button != 4 and self.button != 0:

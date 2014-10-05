@@ -11,7 +11,7 @@ from public import *
 class DecisionMaker():
     def __init__(self, game_driver):
         self.data_manager = game_driver.data_manager#{{{
-        self.controller = Controller(game_driver)
+        self.controller = Controller(game_driver, game_driver.shift)
         self.game_driver = game_driver
         self.button = game_driver.button
         self.stats_handler = game_driver.stats_handler#}}}
@@ -19,7 +19,8 @@ class DecisionMaker():
     def get_preflop_move(self, cards):
         big_card = max([cards[0][0], cards[1][0]])#{{{
         small_card = min([cards[0][0], cards[1][0]])
-        if sum(self.game_driver.active) == 2 and self.button == 4 and self.game_driver.active[5]:
+        if sum(self.game_driver.active) == 2 and self.button == 4 and\
+                sum(self.game_driver.active[1:5]) == 0:
             ml = 1
         else:
             ml = 0
@@ -129,7 +130,8 @@ class DecisionMaker():
                 if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1][1] < 0.75:
                     time.sleep(5)
                     self.controller.call()
-                elif beat_chance > 0.85:
+                elif beat_chance > 0.95-move_last(gd.active, gd.button)*0.05*(3-gd.stage)\
+                        -0.05*(gd.stage==2):
                     if gd.board_wetness[gd.stage][0] > 2.5\
                             or gd.board_wetness[gd.stage][1] > 0.75\
                             or gd.stage == 3 or ratio < 0.2:

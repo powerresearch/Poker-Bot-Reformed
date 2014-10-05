@@ -4,7 +4,7 @@ import json
 hhpath = '/Users/zw/Library/Application Support/PokerStars/HandHistory/'
 
 # Const
-BB = 0.02
+BB = 0.02 
 SB = 0.01
 
 # Position
@@ -82,3 +82,6 @@ with open('pokerstars/graph_data.json') as f:
 
 with open('pokerstars/names.json') as f:
     names = json.load(f)
+
+with open('pokerstars/logo.json') as f:
+    logo = json.load(f)
