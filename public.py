@@ -585,8 +585,29 @@ def get_board_wetness(stats, power_rank, active, cards):
             real_outs += prob * sum(tup[4][1:])
         elif fo[0] == 3:
             real_outs += prob * sum(tup[4][2:])
-        elif fo[0] == 4 or fo[0] == 5:
+        elif fo[0] == 4:
             real_outs += prob * sum(tup[4][3:])
+        elif fo[0] == 5:
+            the_color = [0,0,0,0,0]
+            for c in cards:
+                the_color[c[1]] += 1
+            for i in xrange(1,5):
+                if the_color[i] > 4:
+                    the_color = i
+                    break
+            my_top = 0
+            if cards[0][1] == the_color:
+                my_top = max([my_top, cards[0][0]])
+            if cards[1][1] == the_color:
+                my_top = max([my_top, cards[1][0]])
+            how_many_big_vacant = 0
+            for i in xrange(my_top+1, 15):
+                if not i in fo[1:]:
+                    how_many_big_vacant += 1
+            if how_many_big_vacant > 1:
+                real_outs += prob * sum(tup[4][4:])
+            else:
+                real_outs += prob * sum(tup[4][5:])
         else:
             pass
     likely_outs /= total_prob

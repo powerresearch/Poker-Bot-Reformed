@@ -103,9 +103,12 @@ class DecisionMaker():
                 if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1][1] < 1.5:
                         #and not move_last(gd.active, gd.button):
                     self.controller.call()
-                elif beat_chance > 1 - (1-(gd.board_wetness[gd.stage][0]<2)*0.3)*gd.stage*0.1:
+                elif beat_chance > 1 - (1-(gd.board_wetness[gd.stage][0]<2)*0.3)*gd.stage*0.1\
+                        and gd.stage < 3:
                     self.controller.rais(self.pot*(0.6+gd.board_wetness[gd.stage][0]\
                             *(3-gd.stage)*0.03), 3)
+                elif gd.stage == 3 and beat_chance > 0.8:
+                    self.controller.rais(self.pot*(beat_chance-0.2))
                 elif sum(self.betting) == 0 and gd.stage == 1 and ml and sum(gd.active) == 2\
                         and beat_chance < 0.6 and range_fight_result > 0.5:
                     self.controller.rais(self.pot*0.7)
@@ -461,8 +464,15 @@ class DecisionMaker():
                 if people_bet == 2:
                     self.controller.call()
                     return 
+                if people_bet == 3 and max(betting) - betting[0] <= BB*3:
+                    self.controller.call()
+                    return
                 if betting[0] == max(betting):
                     print 'bugged'
+                    self.controller.call()
+                    return
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.33\
+                        and self.cards[0][0] == self.cards[1][0]:
                     self.controller.call()
                     return
                 else:

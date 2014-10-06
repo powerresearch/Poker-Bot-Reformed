@@ -26,10 +26,10 @@ class Controller():
         time.sleep(0.5)
         m.click(sitout_confirm[0]+self.shift[0], sitout_confirm[1]+self.shift[1], 1)
         time.sleep(3)
-        m.click(round(entry_position[0]+200*(random.random()-0.5)+self.shift[0]),\
-                round(entry_position[1]+10*(random.random()-0.5)+self.shift[1]), 1)
-        m.click(round(join_game[0]+100*(random.random()-0.5)+self.shift[0]),\
-                round(join_game[1]+10*(random.random()-0.5)+self.shift[1]), 1)#}}}
+        m.click(round(entry_position[0]+200*(random.random()-0.5)),
+                round(entry_position[1]+10*(random.random()-0.5)), 1)
+        m.click(round(join_game[0]+100*(random.random()-0.5)),\
+                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
 
     def rest(self, rest_time):
         m = self.m#{{{
@@ -38,10 +38,10 @@ class Controller():
         m.click(sitout_confirm[0]+self.shift[0], sitout_confirm[1]+self.shift[1], 1)
         time.sleep(rest_time)
         print 'Done rest'
-        m.click(round(entry_position[0]+200*(random.random()-0.5)+self.shift[0]),\
-                round(entry_position[1]+10*(random.random()-0.5)+self.shift[1]), 1)
-        m.click(round(join_game[0]+100*(random.random()-0.5)+self.shift[0]),\
-                round(join_game[1]+10*(random.random()-0.5)+self.shift[1]), 1)#}}}
+        m.click(round(entry_position[0]+200*(random.random()-0.5)),\
+                round(entry_position[1]+10*(random.random()-0.5)), 1)
+        m.click(round(join_game[0]+100*(random.random()-0.5)),\
+                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
 
     def fold(self):
         if self.folded:
