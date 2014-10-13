@@ -1,10 +1,18 @@
 import datetime
+import time
 import random
 from collections import defaultdict
 from copy import deepcopy
+import random
+import threading
 
 def tree():
     return defaultdict(tree)
+
+def rand_card():
+    n = random.randint(2,14)#{{{
+    c = random.randint(1,4)
+    return [n, c]#}}}
 
 def is_recent_file(file_name):
     date = datetime.datetime.now().strftime('%Y,%m,%d,%H,%m,%s')#{{{
@@ -56,122 +64,479 @@ def max(obj):
         return result#}}}
 
 def find_out(list_of_cards):
-    try:
-        cards = list()#{{{
-        original_number = defaultdict(int)
-        color = defaultdict(int)
+    while not list_of_cards[-1]:#{{{
+        list_of_cards = list_of_cards[:-1]
+    nums = list()
+    nums2 = list()
+    cols = [0,0,0,0,0]
+    for card in list_of_cards:
+        b_mark = 0
+        if not card[0] in nums2:
+            nums2.append(card[0])
+        for num_pair in nums:
+            if num_pair[1] == card[0]:
+                num_pair[0] += 1
+                b_mark = 1
+                break
+        if not b_mark:
+            nums.append([1, card[0]])
+        cols[card[1]] += 1
+    col = 0
+    for i in xrange(5):
+        if cols[i] >= 5:
+            col = i
+    nums = sorted(nums, reverse=True)
+    nums += [[1, 0]] * (5-len(nums))
+    nums2 = sorted(nums2, reverse=True)
+    if nums[0][0] == 4:
+        return [7, nums[0][1], nums[1][1]]
+    if nums[0][0] == 3 and nums[1][0] >= 2:
+        return [6, nums[0][1], nums[1][1]]
+    if col:
+        tmp = list()
         for card in list_of_cards:
-            original_number[card[0]] += 1
-            color[card[1]] += 1
-            cards.append(card[0])
-        number = deepcopy(original_number)
-        for key in number:
-            result = [0, 0]
-            if number[key] == 4:
-                result[0] = key
-                number[key] -= 4
-                result[1] = max(number)
-                return [7] + result + [0, 0, 0]
-        number = deepcopy(original_number)
-        for key in number:
-            result = [0, 0]
-            if number[key] == 3:
-                result[0] = key
-                number[key] -= 3
-                for key2 in number:
-                    if number[key2] >= 2:
-                        if key2 > result[1]:
-                            result[1] = key2 
-                if result[1] > 0:
-#                if cards[0] == key and cards[1] == key:
-                    return [6] + result + [0, 0, 0]
-#                if key in cards[:2]:
-#                    return [3] + result
-#                if key2 in cards[:2]:
-#                    return [2] + result
-#                return [0] + result
-        number = deepcopy(original_number)
-        for i in xrange(1, 5):
-            if color[i] >= 5:
-                result = [5]
-                for card in sorted(list_of_cards, key=lambda x:x[0], reverse=True):
-                    if card[1] == i:
-                        result.append(card[0])
-                        if len(result) == 6:
-                            return result
-        number = deepcopy(original_number)
-        result = straight(number)
-        for i in xrange(11):
-            if result[i] == -1:
-                return [4, i, 0, 0, 0, 0]
-        number = deepcopy(original_number)
-        for key in number:
-            if number[key] == 3:
-                number[key] -= 3
-                kicker1 = max(number)
-                number[kicker1] -= 1
-                kicker2 = max(number)
-#            if key in cards[:2]:
-#                return [3, key, kicker1, kicker2, 0, 0]
-#            else:
-                return [3, key, kicker1, kicker2, 0, 0]
-        number = deepcopy(original_number)
-        pair1, pair2 = 0, 0
-        for key in number:
-            if number[key] == 2:
-                if key > pair2:
-                    pair2 = key
-                    if pair2 > pair1:
-                        pair2, pair1 = pair1, pair2
-        if pair2 > 0:
-            number[pair1] -= 2
-            number[pair2] -= 2
-            kicker = max(number)
-#        if pair1 in cards[:2] and pair2 in cards[:2]:
-#            return [2, pair1, pair2, kicker, 0, 0]
-#        if pair1 in cards[:2] or pair2 in cards[:2]:
-#            return [1, pair1, pair2, kicker, 0, 0]
-            return [2, pair1, pair2, kicker, 0, 0]
-        number = deepcopy(original_number)
-        for key in number:
-            if number[key] == 2:
-                number[key] -= 2
-                pair = key
-                kicker1 = max(number)
-                number[kicker1] -= 1
-                kicker2 = max(number)
-                number[kicker2] -= 1
-                kicker3 = max(number)
-#            if pair > max(cards[2:]):
-#                return [1.5, pair, kicker1, kicker2, kicker3, 0]
-#            if not pair in cards[:2]:
-#                return [0, pair, kicker1, kicker2, kicker3, 0]
-#            if cards[0] == pair and cards[1] > 10:
-#                return [1.5, pair, kicker1, kicker2, kicker3, 0]
-#            if cards[1] == pair and cards[0] > 10:
-#                return [1.5, pair, kicker1, kicker2, kicker3, 0]
-#            if pair in cards[:2]:
-#                return [1, pair, kicker1, kicker2, kicker3, 0]
-#            if pair < max(cards[2:]):
-#                return [1, pair, kicker1, kicker2, kicker3, 0]
-                return [1, pair, kicker1, kicker2, kicker3, 0]
-        number = deepcopy(original_number)
-        h1 = max(number)
-        number[h1] -= 1
-        h2 = max(number)
-        number[h2] -= 1
-        h3 = max(number)
-        number[h3] -= 1
-        h4 = max(number)
-        number[h4] -= 1
-        h5 = max(number)
-#    if max(cards[:2]) > 11:
-#        return [0.5, h1, h2, h3, h4, h5]
-#    else:
-        return [0, h1, h2, h3, h4, h5]#}}}
-    except:
-#       print list_of_cards
-        pass
+            if card[1] == col:
+                tmp.append(card[0])
+        tmp = sorted(tmp, reverse=True)
+        return [5] + tmp[:5]
+    interval = 1
+    for i in xrange(len(nums2)-1):
+        if nums2[i+1]-nums2[i] == -1:
+            interval += 1
+        else:
+            interval = 1
+        if interval == 5:
+            return [4, nums2[i+1]]
+    if 14 == nums2[0] and 2 == nums2[-1] and 3 == nums2[-2] and 4 == nums2[-3] and 5 == nums2[-4]:
+        return [4, 1]
+    if nums[0][0] == 3 and nums[1][0] < 2:
+        return [3, nums[0][1], nums[1][1], nums[2][1]]
+    if nums[0][0] == 2 and nums[1][0] == 2 and nums[2][0] == 2:
+        return [2, nums[0][1], nums[1][1], max([nums[-1][1], nums[2][1]])]
+    if nums[0][0] == 2 and nums[1][0] == 2:
+        return [2, nums[0][1], nums[1][1], nums[2][1]]
+    if nums[0][0] == 2:
+        return [1, nums[0][1], nums[1][1], nums[2][1], nums[3][1]]
+    return [0, nums[0][1], nums[1][1], nums[2][1], nums[3][1], nums[4][1]]#}}}
+            
+def mc_range_fight(comb1, comb2, board):
+    t1 = time.clock()#{{{
+    a = [0, 0, 0]
+    for i in xrange(500):
+        new_board = []+board
+        for j in xrange(5-len(board)):
+            new_board.append(rand_card())
+        if has_same(new_board+comb1+comb2):
+            continue
+        fo0 = find_out(new_board+comb1)
+        fo1 = find_out(new_board+comb2)
+        if fo0 < fo1:
+            a[0] += 1
+        elif fo0 == fo1:
+            a[1] += 1
+        else:
+            a[2] += 1
+    a = [1.0*c/sum(a) for c in a]
+    print a
+    print time.clock()-t1#}}}
+
+def get_win_chance_table(stats, board):
+    while not board[-1]:
+        board = board[:-1]
+    if len(board) == 3:
+        return get_win_chance_table_flop(stats, board)
+    if len(board) == 4:
+        return get_win_chance_table_turn(stats, board)
+    if len(board) == 5:
+        return get_win_chance_table_river(stats, board)
+
+def get_win_chance_table_flop(stats, board):
+    combination = list()#{{{
+    histogram = list()
+    while not board[-1]:
+        board = board[:-1]
+    for num1 in xrange(2, 15):#{{{
+        for col1 in xrange(1, 5):
+            if has_same(board+[[num1, col1]]):
+                continue
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if has_same(board+[[num1, col1], [num2, col2]]):
+                        continue
+                    if [num1, col1] > [num2, col2]:
+                        continue
+                    the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    if the_color:
+                        if col1 == the_color and col2 == the_color:
+                            if [[num1, col1], [num2, col2]] in combination:
+                                histogram[combination.index([[num1, col1], [num2, col2]])] += 1
+                                continue
+                            else:
+                                combination.append([[num1, col1], [num2, col2]])
+                                histogram.append(1)
+                        elif col1 == the_color:
+                            if [[num1, col1], [num2, 0]] in combination:
+                                histogram[combination.index([[num1, col1], [num2, 0]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, col1], [num2, 0]])
+                        elif col2 == the_color:
+                            if [[num1, 0], [num2, col2]] in combination:
+                                histogram[combination.index([[num1, 0], [num2, col2]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, 0], [num2, col2]])
+                        else:
+                            if [[num1, 0], [num2, 0]] in combination:
+                                histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, 0], [num2, 0]])
+                    else:
+                        if [[num1, 0], [num2, 0]] in combination:
+                            histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                            continue
+                        else:
+                            histogram.append(1)
+                            combination.append([[num1, 0], [num2, 0]])#}}}
+    l = len(combination)
+    fo_cache = [{} for i in xrange(l)]
+    for i in xrange(l):
+        fo_cache[i][0] = find_out(board+combination[i])
+        for num3 in xrange(2, 15):
+            fo_cache[i][num3] = {}
+            for col3 in xrange(1, 5):
+                fo_cache[i][num3][col3] = find_out(board+combination[i]+[[num3, col3]])
+    small_table = [range(l) for i in xrange(l)]#{{{
+    for i in xrange(l):
+        for j in xrange(i+1, l):
+            comb1 = combination[i]
+            comb2 = combination[j]
+            if has_same(comb1+comb2):
+                small_table[i][j] = -1
+                small_table[j][i] = -1
+                continue
+            fo0 = fo_cache[i][0]
+            fo1 = fo_cache[j][0] 
+            if fo0 < fo1:
+                stronger = 1
+            elif fo0 == fo1:
+                stronger = -1
+            else:
+                stronger = 0
+            a = [0, 0, 0] 
+            for num3 in xrange(2, 15):
+                for col3 in xrange(1, 5):
+                    if [num3, col3] in board+comb1+comb2:
+                        continue
+                    fo10 = fo_cache[i][num3][col3] 
+                    fo11 = fo_cache[j][num3][col3] 
+                    if fo10 < fo11:
+                        a[2] += 1
+                    elif fo10 == fo11:
+                        a[1] += 1
+                    else:
+                        a[0] += 1
+            a = [1.0*hh/sum(a) for hh in a]
+            if stronger == 1:
+                small_table[i][j] = 1 - (1 - a[0]) * (1 - a[0])
+                small_table[j][i] = (1 - a[0]) * (1 - a[0])
+            elif stronger == 0:
+                small_table[i][j] = (1 - a[2]) * (1 - a[2])
+                small_table[j][i] = 1 - (1 - a[2]) * (1 - a[2])
+            else:
+                tmp1 = 1 - (1 - a[0]) * (1 - a[0])
+                tmp2 = 1 - (1 - a[2]) * (1 - a[2])
+                small_table[i][j] = tmp1 + (1-tmp1-tmp2) / 2
+                small_table[j][i] = tmp2 + (1-tmp1-tmp2) / 2#}}}
+    big_table = tree()
+    for num1 in xrange(2, 15):#{{{
+        for col1 in xrange(1, 5):
+            if has_same(board+[[num1, col1]]):
+                continue
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if has_same(board+[[num1, col1], [num2, col2]]):
+                        continue
+                    if [num1, col1] > [num2, col2]:
+                        continue
+                    the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    if the_color:
+                        if col1 == the_color and col2 == the_color:
+                            the_index = combination.index([[num1, col1], [num2, col2]])
+                        elif col1 == the_color:
+                            the_index = combination.index([[num1, col1], [num2, 0]]) 
+                        elif col2 == the_color:
+                            the_index = combination.index([[num1, 0], [num2, col2]]) 
+                        else:
+                            the_index = combination.index([[num1, 0], [num2, 0]]) 
+                    else:
+                        the_index = combination.index([[num1, 0], [num2, 0]])
+                    wc = 0
+                    s = 0
+                    for i in xrange(l):
+                        if the_index == i:
+                            continue
+                        if small_table[the_index][i] == -1:
+                            continue
+                        wc += histogram[i] * small_table[the_index][i]
+                        s += histogram[i]
+                    wc /= s
+                    big_table[num1][col1][num2][col2] = wc#}}}
+    return big_table#}}}
+
+def get_win_chance_table_turn(stats, board):
+    combination = list()#{{{
+    histogram = list()
+    for num1 in xrange(2, 15):#{{{
+        for col1 in xrange(1, 5):
+            if has_same(board+[[num1, col1]]):
+                continue
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if has_same(board+[[num1, col1], [num2, col2]]):
+                        continue
+                    if [num1, col1] > [num2, col2]:
+                        continue
+                    the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    if the_color:
+                        if col1 == the_color and col2 == the_color:
+                            if [[num1, col1], [num2, col2]] in combination:
+                                histogram[combination.index([[num1, col1], [num2, col2]])] += 1
+                                continue
+                            else:
+                                combination.append([[num1, col1], [num2, col2]])
+                                histogram.append(1)
+                        elif col1 == the_color:
+                            if [[num1, col1], [num2, 0]] in combination:
+                                histogram[combination.index([[num1, col1], [num2, 0]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, col1], [num2, 0]])
+                        elif col2 == the_color:
+                            if [[num1, 0], [num2, col2]] in combination:
+                                histogram[combination.index([[num1, 0], [num2, col2]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, 0], [num2, col2]])
+                        else:
+                            if [[num1, 0], [num2, 0]] in combination:
+                                histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, 0], [num2, 0]])
+                    else:
+                        if [[num1, 0], [num2, 0]] in combination:
+                            histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                            continue
+                        else:
+                            histogram.append(1)
+                            combination.append([[num1, 0], [num2, 0]])#}}}
+    l = len(combination)
+    fo_cache = [{} for i in xrange(l)]
+    for i in xrange(l):
+        fo_cache[i][0] = find_out(board+combination[i])
+        for num3 in xrange(2, 15):
+            fo_cache[i][num3] = {}
+            for col3 in xrange(1, 5):
+                fo_cache[i][num3][col3] = find_out(board+combination[i]+[[num3, col3]])
+    small_table = [range(l) for i in xrange(l)]#{{{
+    for i in xrange(l):
+        for j in xrange(i+1, l):
+            comb1 = combination[i]
+            comb2 = combination[j]
+            if has_same(comb1+comb2):
+                small_table[i][j] = -1
+                small_table[j][i] = -1
+                continue
+            fo0 = fo_cache[i][0]
+            fo1 = fo_cache[j][0] 
+            if fo0 < fo1:
+                stronger = 1
+            elif fo0 == fo1:
+                stronger = -1
+            else:
+                stronger = 0
+            a = [0, 0, 0] 
+            for num3 in xrange(2, 15):
+                for col3 in xrange(1, 5):
+                    if [num3, col3] in board+comb1+comb2:
+                        continue
+                    fo10 = fo_cache[i][num3][col3] 
+                    fo11 = fo_cache[j][num3][col3] 
+                    if fo10 < fo11:
+                        a[2] += 1
+                    elif fo10 == fo11:
+                        a[1] += 1
+                    else:
+                        a[0] += 1
+            a = [1.0*hh/sum(a) for hh in a]
+            small_table[i][j] = a[0] + 0.5*a[1]
+            small_table[j][i] = a[2] + 0.5*a[2]#}}}
+    big_table = tree()
+    for num1 in xrange(2, 15):#{{{
+        for col1 in xrange(1, 5):
+            if has_same(board+[[num1, col1]]):
+                continue
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if has_same(board+[[num1, col1], [num2, col2]]):
+                        continue
+                    if [num1, col1] > [num2, col2]:
+                        continue
+                    the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    if the_color:
+                        if col1 == the_color and col2 == the_color:
+                            the_index = combination.index([[num1, col1], [num2, col2]])
+                        elif col1 == the_color:
+                            the_index = combination.index([[num1, col1], [num2, 0]]) 
+                        elif col2 == the_color:
+                            the_index = combination.index([[num1, 0], [num2, col2]]) 
+                        else:
+                            the_index = combination.index([[num1, 0], [num2, 0]]) 
+                    else:
+                        the_index = combination.index([[num1, 0], [num2, 0]])
+                    wc = 0
+                    s = 0
+                    for i in xrange(l):
+                        if the_index == i:
+                            continue
+                        if small_table[the_index][i] == -1:
+                            continue
+                        wc += histogram[i] * small_table[the_index][i]
+                        s += histogram[i]
+                    wc /= s
+                    big_table[num1][col1][num2][col2] = wc#}}}
+    return big_table#}}}
+
+def get_win_chance_table_river(stats, board):
+    combination = list()#{{{
+    histogram = list()
+    for num1 in xrange(2, 15):#{{{
+        for col1 in xrange(1, 5):
+            if has_same(board+[[num1, col1]]):
+                continue
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if has_same(board+[[num1, col1], [num2, col2]]):
+                        continue
+                    if [num1, col1] > [num2, col2]:
+                        continue
+                    the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    if the_color:
+                        if col1 == the_color and col2 == the_color:
+                            if [[num1, col1], [num2, col2]] in combination:
+                                histogram[combination.index([[num1, col1], [num2, col2]])] += 1
+                                continue
+                            else:
+                                combination.append([[num1, col1], [num2, col2]])
+                                histogram.append(1)
+                        elif col1 == the_color:
+                            if [[num1, col1], [num2, 0]] in combination:
+                                histogram[combination.index([[num1, col1], [num2, 0]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, col1], [num2, 0]])
+                        elif col2 == the_color:
+                            if [[num1, 0], [num2, col2]] in combination:
+                                histogram[combination.index([[num1, 0], [num2, col2]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, 0], [num2, col2]])
+                        else:
+                            if [[num1, 0], [num2, 0]] in combination:
+                                histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                                continue
+                            else:
+                                histogram.append(1)
+                                combination.append([[num1, 0], [num2, 0]])
+                    else:
+                        if [[num1, 0], [num2, 0]] in combination:
+                            histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                            continue
+                        else:
+                            histogram.append(1)
+                            combination.append([[num1, 0], [num2, 0]])#}}}
+    l = len(combination)
+    fo_cache = [{} for i in xrange(l)]
+    for i in xrange(l):
+        fo_cache[i][0] = find_out(board+combination[i])
+        for num3 in xrange(2, 15):
+            fo_cache[i][num3] = {}
+            for col3 in xrange(1, 5):
+                fo_cache[i][num3][col3] = find_out(board+combination[i]+[[num3, col3]])
+    small_table = [range(l) for i in xrange(l)]#{{{
+    for i in xrange(l):
+        for j in xrange(i+1, l):
+            comb1 = combination[i]
+            comb2 = combination[j]
+            if has_same(comb1+comb2):
+                small_table[i][j] = -1
+                small_table[j][i] = -1
+                continue
+            fo0 = fo_cache[i][0]
+            fo1 = fo_cache[j][0] 
+            if fo0 < fo1:
+                small_table[i][j] = 0
+                small_table[j][i] = 1
+            elif fo0 == fo1:
+                small_table[i][j] = 0.5
+                small_table[j][i] = 0.5
+            else:
+                small_table[i][j] = 1
+                small_table[j][i] = 0#}}}
+    big_table = tree()
+    for num1 in xrange(2, 15):#{{{
+        for col1 in xrange(1, 5):
+            if has_same(board+[[num1, col1]]):
+                continue
+            for num2 in xrange(2, 15):
+                for col2 in xrange(1, 5):
+                    if has_same(board+[[num1, col1], [num2, col2]]):
+                        continue
+                    if [num1, col1] > [num2, col2]:
+                        continue
+                    the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    if the_color:
+                        if col1 == the_color and col2 == the_color:
+                            the_index = combination.index([[num1, col1], [num2, col2]])
+                        elif col1 == the_color:
+                            the_index = combination.index([[num1, col1], [num2, 0]]) 
+                        elif col2 == the_color:
+                            the_index = combination.index([[num1, 0], [num2, col2]]) 
+                        else:
+                            the_index = combination.index([[num1, 0], [num2, 0]]) 
+                    else:
+                        the_index = combination.index([[num1, 0], [num2, 0]])
+                    wc = 0
+                    s = 0
+                    for i in xrange(l):
+                        if the_index == i:
+                            continue
+                        if small_table[the_index][i] == -1:
+                            continue
+                        wc += histogram[i] * small_table[the_index][i]
+                        s += histogram[i]
+                    wc /= s
+                    big_table[num1][col1][num2][col2] = wc#}}}
+    return big_table#}}}
+
+def color_make_different(cards):
+    cols = [0, 0, 0, 0, 0]#{{{
+    for c in cards:
+        cols[c[1]] += 1
+    for i in xrange(1, 5):
+        if cols[i] >= 4:
+            return i
+    return 0#}}}
 
 def straight(ddict):
     result = [0,0,0,0,0,0,0,0,0,0,0]#{{{
@@ -199,16 +564,13 @@ def straight(ddict):
     return result#}}}
 
 def has_same(original_cards):
+    while not original_cards[-1]:
+        original_cards = original_cards[:-1]
     cards = original_cards#{{{
-    while not cards[-1]:
-        cards = cards[:-1]
     for i in xrange(len(cards)):
-        for j in xrange(len(cards)):
-            if i == j: 
-                continue
-            else:
-                if cards[i] == cards[j]:
-                    return True
+        for j in xrange(i+1, len(cards)):
+            if cards[i] == cards[j] and cards[i][1] != 0:
+                return True
     return False#}}}
 
 def how_much_can_beat(stats, power_rank, hole_cards, opponent):
@@ -283,6 +645,15 @@ def flush_outs(cards, fo):
         if cards[1][0] >= 12 and col[cards[1][1]] == 4:
             return 9
         return 0
+    else:
+        return 0#}}}
+
+def naive_flush_outs(cards):
+    col = [0, 0, 0, 0, 0]#{{{
+    for c in cards:
+        col[c[1]] += 1
+    if max(col) == 4:
+        return 9
     else:
         return 0#}}}
 
@@ -457,7 +828,7 @@ def del_stdout_line(n):
         print CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE
         #}}}
 
-def show_can_beat_table(can_beat_table):
+def show_can_beat_table(can_beat_table, outs_table):
     all_combo = list()#{{{
     for n1 in can_beat_table:
         for c1 in can_beat_table[n1]:
@@ -476,6 +847,36 @@ def show_can_beat_table(can_beat_table):
                         if not b:
                             all_combo.append([round(can_beat_table[n1][c1][n2][c2], 2),\
                                     n1, c1, n2, c2])
+    all_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
+    p = len(all_combo) / 150
+    j = len(all_combo) % 150
+    for i in xrange(p):
+        count = 0
+        for combo in all_combo[i*150:i*150+150]:
+            count += 1
+            print combo, '\t',
+            if count % 5 == 0:
+                print
+        raw_input('---press any key for next page---')
+        del_stdout_line(31)
+    count = 0
+    for combo in all_combo[-j:]:
+        count += 1
+        print combo, '\t',
+        if count % 5 == 0:
+            print
+    raw_input('---press any key---')
+    del_stdout_line(count/5+2)
+    #}}}
+    
+def show_win_chance_table(can_beat_table):
+    all_combo = list()#{{{
+    for n1 in can_beat_table:
+        for c1 in can_beat_table[n1]:
+            for n2 in can_beat_table[n1][c1]:
+                for c2 in can_beat_table[n1][c1][n2]:
+                    all_combo.append([round(can_beat_table[n1][c1][n2][c2], 2),\
+                            n1, c1, n2, c2])
     all_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
     p = len(all_combo) / 150
     j = len(all_combo) % 150
@@ -579,8 +980,10 @@ def get_board_wetness(stats, power_rank, active, cards):
             continue
         total_prob += prob
         likely_outs += prob * tup[3]
-        if fo[0] <= 1:
+        if fo[0] <= 1 and fo[1] < 14:
             real_outs += prob * tup[3]
+        elif fo[0] == 1 and fo[1] == 14:
+            real_outs += prob * sum(tup[4][1:])
         elif fo[0] == 2:
             real_outs += prob * sum(tup[4][1:])
         elif fo[0] == 3:
@@ -613,3 +1016,230 @@ def get_board_wetness(stats, power_rank, active, cards):
     likely_outs /= total_prob
     real_outs /= total_prob
     return likely_outs, real_outs#}}} 
+
+def get_fold_chance(stats, power_rank, cards):
+    total_prob = 0#{{{
+    fold_prob = 0
+    for c1, c2, fot, outs, outs_in_specific in power_rank:
+        prob = stats[c1[0]][c1[1]][c2[0]][c2[1]]
+        if fot[0] == 0 and outs < 8:
+            total_prob += prob
+            fold_prob += prob
+        else:
+            total_prob += prob
+    return fold_prob / total_prob#}}}
+
+def can_value(cards):
+    if find_out(cards)[0] > 3:#{{{
+        return True
+    if find_out(cards)[0] == 1:
+        if find_out(cards)[1] == max(cards)[0] and max(cards)[0] in [cards[0][0], cards[1][0]]:
+            return True
+    if find_out(cards)[0] == 2:
+        if find_out(cards)[1] in [cards[0][0], cards[1][0]]\
+                or find_out(cards)[1] in [cards[0][0], cards[1][0]]:
+            return True
+    if find_out(cards)[0] == 3:
+        if find_out(cards)[1] in [cards[0][0], cards[1][0]]:
+            return True
+    return False#}}}
+
+def get_board_texture(stats, power_rank, active, cards):
+    max_stats_prob = 0#{{{
+    total_prob = 0
+    high_card_feature = 0
+    one_pair_feature = 0
+    top_pair_feature = 0
+    over_pair_feature = 0
+    fake_two_pair_feature = 0
+    real_two_pair_feature = 0
+    trip_feature = 0
+    set_feature = 0
+    straight_feature = 0
+    flush_feature = 0
+    straight_outs_feature = 0
+    flush_outs_feature = 0
+    full_house_feature = 0
+    while not cards[-1]:
+        cards = cards[:-1]
+    avg_stats = get_avg_stats(stats, active)
+    for c1, c2, fo, outs, outs_in_specific in power_rank:
+        max_stats_prob = max([max_stats_prob, avg_stats[c1[0]][c1[1]][c2[0]][c2[1]]])
+    for tup in power_rank:
+        card1 = tup[0]
+        card2 = tup[1]
+        num1, col1 = card1[0], card1[1]
+        num2, col2 = card2[0], card2[1]
+        fo = tup[2]
+        prob = avg_stats[num1][col1][num2][col2]
+        if prob < 0.1 * max_stats_prob:
+            continue
+        if cards[0][0] > max(cards[2:])[0]:
+            high_card_feature += prob
+        if cards[1][0] > max(cards[2:])[0]:
+            high_card_feature += prob
+        if fo[0] == 1 and fo[1] in [cards[0][0], cards[1][0]] and fo[1] < max(cards[2:])[0]:
+            one_pair_feature += prob
+        if fo[0] == 1 and fo[1] in [cards[0][0], cards[1][0]] and fo[1] == max(cards[2:])[0]:
+            top_pair_feature += prob
+        if fo[0] == 1 and fo[1] > max(cards[2:])[0]:
+            over_pair_feature += prob
+        if fo[0] == 2:
+            if fo[1] in [cards[0][0], cards[1][0]] and fo[2] in [cards[0][0], cards[1][0]]:
+                real_two_pair_feature += prob
+            else:
+                fake_two_pair_feature += prob
+        if fo[0] == 3:
+            if fo[1] == cards[0][0] and fo[1] == cards[1][0]:
+                set_feature += prob
+            else:
+                trip_feature += prob
+        if fo[0] == 4:
+            straight_feature += prob
+        if fo[0] == 5:
+            flush_feature += prob
+        if fo[0] == 6:
+            full_house_feature += prob
+        flush_outs_feature += naive_flush_outs(cards[2:]+[card1, card2]) * prob
+        straight_outs_feature += straight_outs(cards[2:]+[card1, card2], [0]) * prob
+        total_prob += prob
+    high_card_feature /= total_prob
+    one_pair_feature /= total_prob
+    top_pair_feature /= total_prob
+    over_pair_feature /= total_prob
+    fake_two_pair_feature /= total_prob
+    real_two_pair_feature /= total_prob
+    trip_feature /= total_prob
+    set_feature /= total_prob
+    straight_feature /= total_prob
+    flush_feature /= total_prob
+    straight_outs_feature /= total_prob
+    flush_outs_feature /= total_prob
+    full_house_feature /= total_prob
+    return [high_card_feature, one_pair_feature, top_pair_feature, over_pair_feature,
+            fake_two_pair_feature, real_two_pair_feature, trip_feature, set_feature,
+            straight_feature, flush_feature, straight_outs_feature, flush_outs_feature,
+            full_house_feature]#}}} 
+
+def what_do_i_have(cards):
+    while not cards[-1]:#{{{
+        cards = cards[:-1]
+    fo = find_out(cards)
+    if cards[0] < cards[1]:
+        tmp = cards[0]
+        cards[0] = cards[1]
+        cards[1] = tmp
+    if cards[0][0] > max(cards[2:])[0]:
+        high_card_feature0 = 1.0*cards[0][0] / 14 
+    else:
+        high_card_feature0 = -1
+    if cards[1][0] > max(cards[2:])[0]:
+        high_card_feature1 = 1.0*cards[1][0] / 14
+    else:
+        high_card_feature1 = -1
+    high_card_feature = [high_card_feature0, high_card_feature1]
+    if fo[0] == 1 and fo[1] in [cards[0][0], cards[1][0]] and fo[1] < max(cards[2:])[0]:
+        one_pair_feature = 1.0*fo[1] / 14
+    else:
+        one_pair_feature = -1
+    if fo[0] == 1 and fo[1] == cards[0][0]:
+        top_pair_feature = 1.0*cards[1][0] / 14
+    elif fo[0] == 1 and fo[1] == cards[1][0]:
+        top_pair_feature = 1.0*cards[0][0] / 14
+    else:
+        top_pair_feature = -1
+    if fo[0] == 1 and fo[1] > max(cards[2:])[0]:
+        over_pair_feature = 1.0*fo[1] / 14
+    else:
+        over_pair_feature = -1
+    fake_two_pair_feature = -1 
+    real_two_pair_feature = -1
+    if fo[0] == 2:
+        if fo[1] in [cards[0][0], cards[1][0]] and fo[2] in [cards[0][0], cards[1][0]]:
+            hat = 0
+            for c in cards[2:]:
+                if cards[0][0] < c[0]:
+                    hat += 1
+            real_two_pair_feature = 1.0*(len(cards)-2-hat) / (len(cards)-2)
+        else:
+            if fo[1] == cards[0][0] or fo[2] == cards[0][0]:
+                hat = 0
+                for c in cards[2:]:
+                    if cards[0][0] < c[0]:
+                        hat += 1
+                fake_two_pair_feature = 1.0*(len(cards)-2-hat) / (len(cards)-2)
+            elif fo[1] == cards[1][0] or fo[2] == cards[1][0]:
+                hat = 0
+                for c in cards[2:]:
+                    if cards[1][0] < c[0]:
+                        hat += 1
+                fake_two_pair_feature = 1.0*(len(cards)-2-hat) / (len(cards)-2)
+    set_feature = -1
+    trip_feature = -1
+    if fo[0] == 3:
+        if fo[1] == cards[0][0] and fo[1] == cards[1][0]:
+            set_feature = 1
+        else:
+            if cards[0][0] == fo[1]:
+                trip_feature = 1.0*cards[1][0] / 14
+            elif cards[1][0] == fo[1]:
+                trip_feature = 1.0*cards[0][0] / 14
+    if fo[0] == 4:
+        no_use_card = 0
+        free_card = 0
+        if cards[0][0] in [c[0] for c in cards[2:]]:
+            no_use_card += 1
+        if cards[1][0] in [c[0] for c in cards[2:]]:
+            no_use_card += 1
+        if cards[0][0] == cards[1][0]:
+            no_use_card += 1
+        if not fo[1] in [c[0] for c in cards[2:]]:
+            free_card += 1
+            if not fo[1]+1 in [c[0] for c in cards[2:]]:
+                free_card += 1
+        straight_feature = 1.0*(2-no_use_card-free_card)/2
+    else:
+        straight_feature = -1
+    if fo[0] == 5:
+        color = [0,0,0,0,0]
+        for c in cards:
+            color[c[1]] += 1
+        my_top = 0
+        hat = 0
+        if color[cards[0][1]] >= 5:
+            my_top = cards[0][0]
+        elif color[cards[1][1]] >= 5:
+            my_top = cards[1][0]
+        for i in xrange(my_top+1, 15):
+            if not i in fo[1:]:
+                hat += 1
+        flush_feature = 1.0*(8-hat) / 8
+    else:
+        flush_feature = -1
+    if fo[0] >= 6:
+        full_house_feature = 1
+    else:
+        full_house_feature = -1
+    straight_outs_feature = 1.0*straight_outs(cards, [0]) / 8
+    if not straight_outs_feature:
+        straight_outs_feature = -1
+    if flush_outs(cards, fo) > 0:
+        color = [0,0,0,0,0]
+        for c in cards:
+            color[c[1]] += 1
+        my_top = 0
+        hat = 0
+        if color[cards[0][1]] >= 4:
+            my_top = cards[0][0]
+        elif color[cards[1][1]] >= 4:
+            my_top = cards[1][0]
+        for i in xrange(my_top+1, 15):
+            if not i in fo[1:]:
+                hat += 1
+        flush_outs_feature = 1.0*(8-hat) / 8
+    else:
+        flush_outs_feature = -1
+    return high_card_feature + [one_pair_feature, top_pair_feature, over_pair_feature,
+            fake_two_pair_feature, real_two_pair_feature, trip_feature, set_feature,
+            straight_feature, flush_feature, straight_outs_feature, flush_outs_feature,
+            full_house_feature]#}}} 

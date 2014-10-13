@@ -4,6 +4,8 @@ player*
 *.json
 *.txt
 *.png
+learning/tmp*.*
+learning/dataset*.*
 
 # stuckingshots
 stuckingshots/

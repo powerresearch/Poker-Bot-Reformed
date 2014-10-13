@@ -1,69 +1,113 @@
 import json
+import math
+import cPickle
 import sys
+import random
 sys.path.insert(1, '/Library/Python/2.7/site-packages')
-from sklearn import tree
+from sklearn import tree 
 
-with open('../bigX.json') as f:
-    X = json.load(f)
-with open('../bigY.json') as f:
-    Y = json.load(f)
-with open('../smallX.json') as f:
-    Xv = json.load(f)
-with open('../smallY.json') as f:
-    Yv = json.load(f)
+def map_stack_data(stack):
+    stack = math.sqrt(stack)
+    if stack > 1:
+        return 1
+    else:
+        return stack
 
-def main(training_n):
+def load_data(file_name):
+    with open('../tmp.txt'+file_name) as f:
+        raw_text = f.read()
+    allX = list()
+    allY = list()
+    lines = raw_text.split('\n')[:-1]
+    stack_feature = list()
+    for line in lines:
+        features = line.split(',')
+        for i in xrange(len(features)-1):
+            if float(features[i]) > 2:
+                if not i in stack_feature:
+                    stack_feature.append(i)
+    for line in lines:
+        feature = line.split(',')
+        X = list()
+        for i in xrange(len(features)-1):
+            if i in stack_feature:
+                X.append(map_stack_data(float(features[i])))
+            else:
+                X.append(float(feature[i]))
+        if float(feature[-1]) == -1:
+            Y = -1
+        elif float(feature[-1]) == 0:
+            Y = 0
+        else:
+            Y = 1
+        allX.append(X)
+        allY.append(Y)
+    return allX, allY
 
-    Xt = X[:training_n]
-    Yt = Y[:training_n]
-    
-    max_depth = [25]
-    min_samples_leaf = [2]
-    min_samples_split = [2]
-    prob_thres = [0.5]
-    for md in max_depth:
-        for msl in min_samples_leaf:
-            for mss in min_samples_split:
-                for pt in prob_thres:
-                    print 'max_depth: %d, min_samples_leaf: %d, min_samples_split: %d, prob_thres: %.1f' % (md, msl, mss, pt)
-                    t = tree.DecisionTreeClassifier(max_depth=md, min_samples_leaf=msl, min_samples_split=mss)
-                    t.fit(Xt, Yt)
-                    a = [0, 0]
-                    for xx,yy in zip(Xt, Yt):
-                        h = t.predict_proba(xx)
-                        if h[0][1] > pt:
-                            if yy == 1:
-                                a[1] += 1
-                            else:
-                                a[0] += 1
-                        else:
-                            if yy == 1:
-                                a[0] += 1
-                            else:
-                                a[1] += 1
-                    print 'TrainingSetAccuracy: %f' % (1.0*a[1]/(a[0]+a[1])) 
-                    a = [0, 0]
-                    b = [0, 0]
-                    for xx,yy in zip(Xv, Yv):
-                        h = t.predict_proba(xx)
-                        if h[0][1] > pt:
-                            if yy == 1:
-                                b[1] += 1
-                                a[1] += 1
-                            else:
-                                a[0] += 1
-                                b[0] += 1
-                        else:
-                            if yy == 1:
-                                a[0] += 1
-                            else:
-                                a[1] += 1
-                    print 'ValidationAccuracy: %f' % (1.0*a[1]/(a[0]+a[1])) 
-                    print 'ValidationPrecision: %f' % (1.0*b[1]/(b[0]+b[1])), b 
-                        
+def main(training_n, allX, allY):
+    random.shuffle(allX)
+    random.shuffle(allY)
+    Xt = allX[:training_n]
+    Yt = allY[:training_n]
+    X = [999]*len(Xt[0])
+    Y = -1
+    Xt.append(X)
+    Yt.append(Y)
+    Xv = allX[-500:]
+    Yv = allY[-500:]
+    clf = tree.DecisionTreeClassifier()
+    clf.max_depth = 30
+    clf.min_split = 10
+    clf.fit(Xt, Yt)
+    a = [0, 0]
+    cost = 0
+    index_map = [-1, 0, 1]
+    Xt = Xt[:-1]
+    Yt = Yt[:-1]
+    for xx,yy in zip(Xt, Yt):
+#       print xx
+        h = clf.predict_proba(xx)[0]
+        if h[0] == max(h):
+            predict = -1
+        elif h[1] == max(h):
+            predict = 0
+        else:
+            predict = 1
+#       print yy,h
+        a[predict==yy] += 1
+        cost += (1-h[0])*(yy==index_map[0])+(1-h[1])*(yy==index_map[1])+(1-h[2])*(yy==index_map[2])
+    print 'TrainingSetAccuracy: %f' % (1.0*a[1]/sum(a))
+    print 'TrainingSetCost: %f' % (cost / training_n)
+    a = [0, 0]
+    b = [0, 0]
+    cost = 0
+    for xx,yy in zip(Xv, Yv):
+        h = clf.predict_proba(xx)[0]
+        if h[0] == max(h):
+            predict = -1
+        elif h[1] == max(h):
+            predict = 0
+        else:
+            predict = 1
+        a[predict==yy] += 1
+        cost += (1-h[0])*(yy==index_map[0])+(1-h[1])*(yy==index_map[1])+(1-h[2])*(yy==index_map[2])
+        if h[0] == 1:
+            if yy == 1:
+                b[1] += 1
+            else:
+                b[0] += 1
+    print 'ValidationSetAccuracy: %f' % (1.0*a[1]/sum(a))
+    print 'ValidationSetCost: %f' % (cost / len(Xv))
+
+#    print 'ValidationSetPrecision: %f' % (1.0*b[1]/sum(b)), b
 
 if __name__ == '__main__':
-    t = [10, 20, 40, 100, 200, 400, 1000, 2000, 4000, 10000, 20000, 40000, 100000, 150000, 200000]
+    filename = sys.argv[1]
+    X, Y = load_data(filename)
+    print len(X)
+    t = [10, 20, 40, 100, 200, 400, 1000, 2000, 4000, 8000]
     for n in t:
+        if n > len(X) * 3 / 3:
+            continue
         print 'Samples: %d' % (n)
-        main(n)
+        main(n, X, Y)

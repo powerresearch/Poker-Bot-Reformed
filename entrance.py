@@ -79,7 +79,7 @@ elif sys.argv[1] == 'makedata':
             if not 'Seat 6' in game:
                 continue
             c += 1
-            if c % 100 == 0:
+            if c % 10 == 0:
                 print c, '/', len(games)
             game_driver = make_data(game, sys.argv[2])
             game_driver.game_stream(-1)
