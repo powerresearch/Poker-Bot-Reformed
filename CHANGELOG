@@ -1,15 +1,21 @@
 -----------------------------
-VERSION 1.0
 
-x 加入判断对手弃牌率的分类器
-x Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
-x Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了。其实还是依赖判断对手弃牌率的分类器
+x 重写stats handler
 
+- 加入判断对手弃牌率的分类器
+- Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
+- Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了。其实还是依赖判断对手弃牌率的分类器
 - 不要拿着有showdown价值的牌去尝试打掉对手
 - 干燥面上拿着second nuts控池
 - 加入考虑河牌下注可能是破产的听牌的bluff
 - Preflop面对button miniraise可以考虑3Bet
 - Preflop面对mini 3Bet可以考虑用边缘牌去Call
+
+-----------------------------
+VERSION 1.0
+
+o 重新改写了win chance的计算，现在使用的是真正的win chance而不是通过power rank和outs table得到的近似win chance
+o 增加了show win chance的功能
 
 -----------------------------
 VERSION 0.6

@@ -166,41 +166,42 @@ def get_win_chance_table_flop(stats, board):
                     if [num1, col1] > [num2, col2]:
                         continue
                     the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    prob = stats[num1][col1][num2][col2]
                     if the_color:
                         if col1 == the_color and col2 == the_color:
                             if [[num1, col1], [num2, col2]] in combination:
-                                histogram[combination.index([[num1, col1], [num2, col2]])] += 1
+                                histogram[combination.index([[num1, col1], [num2, col2]])] += prob 
                                 continue
                             else:
                                 combination.append([[num1, col1], [num2, col2]])
-                                histogram.append(1)
+                                histogram.append(prob)
                         elif col1 == the_color:
                             if [[num1, col1], [num2, 0]] in combination:
-                                histogram[combination.index([[num1, col1], [num2, 0]])] += 1
+                                histogram[combination.index([[num1, col1], [num2, 0]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, col1], [num2, 0]])
                         elif col2 == the_color:
                             if [[num1, 0], [num2, col2]] in combination:
-                                histogram[combination.index([[num1, 0], [num2, col2]])] += 1
+                                histogram[combination.index([[num1, 0], [num2, col2]])] += prob 
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, 0], [num2, col2]])
                         else:
                             if [[num1, 0], [num2, 0]] in combination:
-                                histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                                histogram[combination.index([[num1, 0], [num2, 0]])] += prob 
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, 0], [num2, 0]])
                     else:
                         if [[num1, 0], [num2, 0]] in combination:
-                            histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                            histogram[combination.index([[num1, 0], [num2, 0]])] += prob 
                             continue
                         else:
-                            histogram.append(1)
+                            histogram.append(prob)
                             combination.append([[num1, 0], [num2, 0]])#}}}
     l = len(combination)
     fo_cache = [{} for i in xrange(l)]
@@ -213,9 +214,41 @@ def get_win_chance_table_flop(stats, board):
     small_table = [range(l) for i in xrange(l)]#{{{
     for i in xrange(l):
         for j in xrange(i+1, l):
-            comb1 = combination[i]
-            comb2 = combination[j]
+            comb1 = [[0, 0], [0, 0]]
+            comb2 = [[0, 0], [0, 0]]
+            if combination[i][0][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[i][0][0], col] not in board:
+                        comb1[0] = [combination[i][0][0], col]
+                        break
+            else:
+                comb1[0] = combination[i][0]
+            if combination[i][1][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[i][1][0], col] not in board+[comb1[0]]:
+                        comb1[1] = [combination[i][1][0], col]
+                        break
+            else:
+                comb1[1] = combination[i][1]
+            if combination[j][0][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[j][0][0], col] not in board+comb1:
+                        comb2[0] = [combination[j][0][0], col]
+                        break
+            else:
+                comb2[0] = combination[j][0]
+            if combination[j][1][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[j][1][0], col] not in board+comb1+[comb2[0]]:
+                        comb2[1] = [combination[j][1][0], col]
+                        break
+            else:
+                comb2[1] = combination[j][1]
             if has_same(comb1+comb2):
+                small_table[i][j] = -1
+                small_table[j][i] = -1
+                continue
+            if [0, 0] in comb1+comb2:
                 small_table[i][j] = -1
                 small_table[j][i] = -1
                 continue
@@ -252,7 +285,9 @@ def get_win_chance_table_flop(stats, board):
                 tmp2 = 1 - (1 - a[2]) * (1 - a[2])
                 small_table[i][j] = tmp1 + (1-tmp1-tmp2) / 2
                 small_table[j][i] = tmp2 + (1-tmp1-tmp2) / 2#}}}
+    less_big_table = tree()
     big_table = tree()
+    super_big_table = tree()
     for num1 in xrange(2, 15):#{{{
         for col1 in xrange(1, 5):
             if has_same(board+[[num1, col1]]):
@@ -282,11 +317,20 @@ def get_win_chance_table_flop(stats, board):
                             continue
                         if small_table[the_index][i] == -1:
                             continue
+                        card_i = combination[i]
+                        super_big_table[num1][col1][num2][col2]\
+                                [card_i[0][0]][card_i[0][1]][card_i[1][0]][card_i[1][1]]\
+                                = small_table[the_index][i], histogram[i]
                         wc += histogram[i] * small_table[the_index][i]
                         s += histogram[i]
                     wc /= s
+                    less_big_table[combination[the_index][0][0]]\
+                            [combination[the_index][0][1]]\
+                            [combination[the_index][1][0]]\
+                            [combination[the_index][1][1]]\
+                            = wc
                     big_table[num1][col1][num2][col2] = wc#}}}
-    return big_table#}}}
+    return less_big_table, big_table, super_big_table#}}}
 
 def get_win_chance_table_turn(stats, board):
     combination = list()#{{{
@@ -302,41 +346,42 @@ def get_win_chance_table_turn(stats, board):
                     if [num1, col1] > [num2, col2]:
                         continue
                     the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    prob = stats[num1][col1][num2][col2]
                     if the_color:
                         if col1 == the_color and col2 == the_color:
                             if [[num1, col1], [num2, col2]] in combination:
-                                histogram[combination.index([[num1, col1], [num2, col2]])] += 1
+                                histogram[combination.index([[num1, col1], [num2, col2]])] += prob
                                 continue
                             else:
                                 combination.append([[num1, col1], [num2, col2]])
-                                histogram.append(1)
+                                histogram.append(prob)
                         elif col1 == the_color:
                             if [[num1, col1], [num2, 0]] in combination:
-                                histogram[combination.index([[num1, col1], [num2, 0]])] += 1
+                                histogram[combination.index([[num1, col1], [num2, 0]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, col1], [num2, 0]])
                         elif col2 == the_color:
                             if [[num1, 0], [num2, col2]] in combination:
-                                histogram[combination.index([[num1, 0], [num2, col2]])] += 1
+                                histogram[combination.index([[num1, 0], [num2, col2]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, 0], [num2, col2]])
                         else:
                             if [[num1, 0], [num2, 0]] in combination:
-                                histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                                histogram[combination.index([[num1, 0], [num2, 0]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, 0], [num2, 0]])
                     else:
                         if [[num1, 0], [num2, 0]] in combination:
-                            histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                            histogram[combination.index([[num1, 0], [num2, 0]])] += prob
                             continue
                         else:
-                            histogram.append(1)
+                            histogram.append(prob)
                             combination.append([[num1, 0], [num2, 0]])#}}}
     l = len(combination)
     fo_cache = [{} for i in xrange(l)]
@@ -349,9 +394,41 @@ def get_win_chance_table_turn(stats, board):
     small_table = [range(l) for i in xrange(l)]#{{{
     for i in xrange(l):
         for j in xrange(i+1, l):
-            comb1 = combination[i]
-            comb2 = combination[j]
+            comb1 = [[0, 0], [0, 0]]
+            comb2 = [[0, 0], [0, 0]]
+            if combination[i][0][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[i][0][0], col] not in board:
+                        comb1[0] = [combination[i][0][0], col]
+                        break
+            else:
+                comb1[0] = combination[i][0]
+            if combination[i][1][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[i][1][0], col] not in board+[comb1[0]]:
+                        comb1[1] = [combination[i][1][0], col]
+                        break
+            else:
+                comb1[1] = combination[i][1]
+            if combination[j][0][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[j][0][0], col] not in board+comb1:
+                        comb2[0] = [combination[j][0][0], col]
+                        break
+            else:
+                comb2[0] = combination[j][0]
+            if combination[j][1][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[j][1][0], col] not in board+comb1+[comb2[0]]:
+                        comb2[1] = [combination[j][1][0], col]
+                        break
+            else:
+                comb2[1] = combination[j][1]
             if has_same(comb1+comb2):
+                small_table[i][j] = -1
+                small_table[j][i] = -1
+                continue
+            if [0, 0] in comb1+comb2:
                 small_table[i][j] = -1
                 small_table[j][i] = -1
                 continue
@@ -378,8 +455,10 @@ def get_win_chance_table_turn(stats, board):
                         a[0] += 1
             a = [1.0*hh/sum(a) for hh in a]
             small_table[i][j] = a[0] + 0.5*a[1]
-            small_table[j][i] = a[2] + 0.5*a[2]#}}}
+            small_table[j][i] = a[2] + 0.5*a[1]#}}}
+    less_big_table = tree()
     big_table = tree()
+    super_big_table = tree()
     for num1 in xrange(2, 15):#{{{
         for col1 in xrange(1, 5):
             if has_same(board+[[num1, col1]]):
@@ -409,11 +488,20 @@ def get_win_chance_table_turn(stats, board):
                             continue
                         if small_table[the_index][i] == -1:
                             continue
+                        card_i = combination[i]
+                        super_big_table[num1][col1][num2][col2]\
+                                [card_i[0][0]][card_i[0][1]][card_i[1][0]][card_i[1][1]]\
+                                = small_table[the_index][i], histogram[i]
                         wc += histogram[i] * small_table[the_index][i]
                         s += histogram[i]
                     wc /= s
+                    less_big_table[combination[the_index][0][0]]\
+                            [combination[the_index][0][1]]\
+                            [combination[the_index][1][0]]\
+                            [combination[the_index][1][1]]\
+                            = wc
                     big_table[num1][col1][num2][col2] = wc#}}}
-    return big_table#}}}
+    return less_big_table, big_table, super_big_table#}}}
 
 def get_win_chance_table_river(stats, board):
     combination = list()#{{{
@@ -429,41 +517,42 @@ def get_win_chance_table_river(stats, board):
                     if [num1, col1] > [num2, col2]:
                         continue
                     the_color = color_make_different(board+[[num1, col1], [num2, col2]])
+                    prob = stats[num1][col1][num2][col2]
                     if the_color:
                         if col1 == the_color and col2 == the_color:
                             if [[num1, col1], [num2, col2]] in combination:
-                                histogram[combination.index([[num1, col1], [num2, col2]])] += 1
+                                histogram[combination.index([[num1, col1], [num2, col2]])] += prob
                                 continue
                             else:
                                 combination.append([[num1, col1], [num2, col2]])
-                                histogram.append(1)
+                                histogram.append(prob)
                         elif col1 == the_color:
                             if [[num1, col1], [num2, 0]] in combination:
-                                histogram[combination.index([[num1, col1], [num2, 0]])] += 1
+                                histogram[combination.index([[num1, col1], [num2, 0]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, col1], [num2, 0]])
                         elif col2 == the_color:
                             if [[num1, 0], [num2, col2]] in combination:
-                                histogram[combination.index([[num1, 0], [num2, col2]])] += 1
+                                histogram[combination.index([[num1, 0], [num2, col2]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, 0], [num2, col2]])
                         else:
                             if [[num1, 0], [num2, 0]] in combination:
-                                histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                                histogram[combination.index([[num1, 0], [num2, 0]])] += prob
                                 continue
                             else:
-                                histogram.append(1)
+                                histogram.append(prob)
                                 combination.append([[num1, 0], [num2, 0]])
                     else:
                         if [[num1, 0], [num2, 0]] in combination:
-                            histogram[combination.index([[num1, 0], [num2, 0]])] += 1
+                            histogram[combination.index([[num1, 0], [num2, 0]])] += prob
                             continue
                         else:
-                            histogram.append(1)
+                            histogram.append(prob)
                             combination.append([[num1, 0], [num2, 0]])#}}}
     l = len(combination)
     fo_cache = [{} for i in xrange(l)]
@@ -476,9 +565,41 @@ def get_win_chance_table_river(stats, board):
     small_table = [range(l) for i in xrange(l)]#{{{
     for i in xrange(l):
         for j in xrange(i+1, l):
-            comb1 = combination[i]
-            comb2 = combination[j]
+            comb1 = [[0, 0], [0, 0]]
+            comb2 = [[0, 0], [0, 0]]
+            if combination[i][0][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[i][0][0], col] not in board:
+                        comb1[0] = [combination[i][0][0], col]
+                        break
+            else:
+                comb1[0] = combination[i][0]
+            if combination[i][1][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[i][1][0], col] not in board+[comb1[0]]:
+                        comb1[1] = [combination[i][1][0], col]
+                        break
+            else:
+                comb1[1] = combination[i][1]
+            if combination[j][0][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[j][0][0], col] not in board+comb1:
+                        comb2[0] = [combination[j][0][0], col]
+                        break
+            else:
+                comb2[0] = combination[j][0]
+            if combination[j][1][1] == 0:
+                for col in xrange(1, 5):
+                    if [combination[j][1][0], col] not in board+comb1+[comb2[0]]:
+                        comb2[1] = [combination[j][1][0], col]
+                        break
+            else:
+                comb2[1] = combination[j][1]
             if has_same(comb1+comb2):
+                small_table[i][j] = -1
+                small_table[j][i] = -1
+                continue
+            if [0, 0] in comb1+comb2:
                 small_table[i][j] = -1
                 small_table[j][i] = -1
                 continue
@@ -493,7 +614,9 @@ def get_win_chance_table_river(stats, board):
             else:
                 small_table[i][j] = 1
                 small_table[j][i] = 0#}}}
+    less_big_table = tree()
     big_table = tree()
+    super_big_table = tree()
     for num1 in xrange(2, 15):#{{{
         for col1 in xrange(1, 5):
             if has_same(board+[[num1, col1]]):
@@ -523,11 +646,20 @@ def get_win_chance_table_river(stats, board):
                             continue
                         if small_table[the_index][i] == -1:
                             continue
+                        card_i = combination[i]
+                        super_big_table[num1][col1][num2][col2]\
+                                [card_i[0][0]][card_i[0][1]][card_i[1][0]][card_i[1][1]]\
+                                = [small_table[the_index][i], histogram[i]]
                         wc += histogram[i] * small_table[the_index][i]
                         s += histogram[i]
                     wc /= s
+                    less_big_table[combination[the_index][0][0]]\
+                            [combination[the_index][0][1]]\
+                            [combination[the_index][1][0]]\
+                            [combination[the_index][1][1]]\
+                            = wc
                     big_table[num1][col1][num2][col2] = wc#}}}
-    return big_table#}}}
+    return less_big_table, big_table, super_big_table#}}}
 
 def color_make_different(cards):
     cols = [0, 0, 0, 0, 0]#{{{
@@ -869,13 +1001,13 @@ def show_can_beat_table(can_beat_table, outs_table):
     del_stdout_line(count/5+2)
     #}}}
     
-def show_win_chance_table(can_beat_table):
+def show_win_chance_table(win_chance_table):
     all_combo = list()#{{{
-    for n1 in can_beat_table:
-        for c1 in can_beat_table[n1]:
-            for n2 in can_beat_table[n1][c1]:
-                for c2 in can_beat_table[n1][c1][n2]:
-                    all_combo.append([round(can_beat_table[n1][c1][n2][c2], 2),\
+    for n1 in win_chance_table:
+        for c1 in win_chance_table[n1]:
+            for n2 in win_chance_table[n1][c1]:
+                for c2 in win_chance_table[n1][c1][n2]:
+                    all_combo.append([round(win_chance_table[n1][c1][n2][c2], 2),\
                             n1, c1, n2, c2])
     all_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
     p = len(all_combo) / 150
@@ -897,6 +1029,39 @@ def show_win_chance_table(can_beat_table):
             print
     raw_input('---press any key---')
     del_stdout_line(count/5+2)
+    #}}}
+    
+def show_win_chance_table_for_me(win_chance_table_specific, cards):
+    all_combo = list()#{{{
+    ma = max(cards[:2])
+    mi = min(cards[:2])
+    win_chance_table = win_chance_table_specific[mi[0]][mi[1]][ma[0]][ma[1]]
+    for n1 in win_chance_table:
+        for c1 in win_chance_table[n1]:
+            for n2 in win_chance_table[n1][c1]:
+                for c2 in win_chance_table[n1][c1][n2]:
+                    all_combo.append([round(win_chance_table[n1][c1][n2][c2][0], 2),\
+                            round(win_chance_table[n1][c1][n2][c2][1], 2), n1, c1, n2, c2])
+    all_combo = sorted(all_combo, key=lambda x:x[1], reverse=True)
+    p = len(all_combo) / 90
+    j = len(all_combo) % 90
+    for i in xrange(p):
+        count = 0
+        for combo in all_combo[i*90:i*90+90]:
+            count += 1
+            print combo, '  \t',
+            if count % 3 == 0:
+                print
+        raw_input('---press any key for next page---')
+        del_stdout_line(31)
+    count = 0
+    for combo in all_combo[-j:]:
+        count += 1
+        print combo, '\t',
+        if count % 3 == 0:
+            print
+    raw_input('---press any key---')
+    del_stdout_line(count/3+2)
     #}}}
     
 def show_stats(stats, i):

@@ -148,8 +148,8 @@ class GameDriver():
             self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
                 self.people_play, self.last_better)
-        if self.source != 'ps':
-            show_stats(self.stats_handler.stats, actor)
+#        if self.source != 'ps':
+#            show_stats(self.stats_handler.stats, actor)
         self.pot += value
         self.pot = round(self.pot, 2)
         self.stack[actor] -= value
@@ -227,10 +227,10 @@ class GameDriver():
         self.can_beat_table[self.stage], self.outs[self.stage]\
                 = get_can_beat_table(self.stage, self.power_rank[self.stage],\
                 self.stats_handler.stats, self.last_better, self.active)
-        if self.source != 'ps':
-            show_can_beat_table(self.can_beat_table[self.stage], self.outs[self.stage])
-        if self.source != 'ps':
-            show_stats(self.stats_handler.stats, actor)
+#        if self.source != 'ps':
+#            show_can_beat_table(self.can_beat_table[self.stage], self.outs[self.stage])
+#        if self.source != 'ps':
+#            show_stats(self.stats_handler.stats, actor)
         return []#}}}
 
     def preflop(self):

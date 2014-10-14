@@ -178,7 +178,6 @@ class DecisionMaker():
                     beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
-            win_chance_table = get_win_chance_table(stats[opponent], self.cards[2:])
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
@@ -188,7 +187,12 @@ class DecisionMaker():
             print 'Fold Chance', fold_chance
             print 'Range Fight Result:', range_fight_result
             print 'My Outs', my_outs
-            show_win_chance_table(win_chance_table)
+            print 'Starting Show Win Chance Table For Me, Wait'
+            smaller_win_chance_table, win_chance_table, win_chance_table_specific\
+                    = get_win_chance_table(stats[opponent], self.cards[2:])
+            show_win_chance_table_for_me(win_chance_table_specific, gd.cards)
+            print 'Done Show Win Chance Table For Me'
+            show_win_chance_table(smaller_win_chance_table)
             if max(self.betting) == 0: 
                 if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1][1] < 1.5:
                         #and not move_last(gd.active, gd.button):
