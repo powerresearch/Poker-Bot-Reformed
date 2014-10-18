@@ -5,7 +5,7 @@ import re
 import time
 from public import is_only_max
 from public import get_power_rank
-from public import get_can_beat_table
+from public import get_win_chance_table 
 from public import show_stats
 from public import get_board_wetness
 from public import show_can_beat_table
@@ -14,8 +14,8 @@ from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
 from pokerstars.controller import Controller
 from database.data_manager import DataManager
-from stats.stats_handler import StatsHandler
-from strategy.decision_maker import DecisionMaker
+from stats.stats_handler2 import StatsHandler
+from strategy.decision_maker2 import DecisionMaker
 
 class GameDriver():
 
@@ -224,9 +224,8 @@ class GameDriver():
             self.pot = round(self.pot, 2)
         self.stats_handler.postflop_update(actor, self.postflop_status,\
                 self.cards, self.stage)
-        self.can_beat_table[self.stage], self.outs[self.stage]\
-                = get_can_beat_table(self.stage, self.power_rank[self.stage],\
-                self.stats_handler.stats, self.last_better, self.active)
+        self.win_chance_table_small, self.win_chance_table, self.win_chance_table_specific\
+                = get_win_chance_table(self.stats_handler.stats[self.last_better], self.cards[2:])
 #        if self.source != 'ps':
 #            show_can_beat_table(self.can_beat_table[self.stage], self.outs[self.stage])
 #        if self.source != 'ps':
@@ -284,10 +283,31 @@ class GameDriver():
             
     def post_flop(self, stage):
         self.postflop_status = ['', '', '', '', '', '']#{{{
-        self.stats_handler.postflop_big_update()
-        self.power_rank[stage] = get_power_rank(self.cards[2:stage+4])
-        self.board_wetness[stage] = get_board_wetness(self.stats_handler.stats,\
-                self.power_rank[stage], self.active, self.cards)
+        self.stats_handler.postflop_big_update(self.cards, self.active)
+        self.win_chance_table_small, self.win_chance_table, self.win_chance_table_specific\
+                = get_win_chance_table(self.stats_handler.stats[self.last_better], self.cards[2:])
+#        for n1 in self.win_chance_table_small:
+#            for c1 in self.win_chance_table_small[n1]:
+#                for n2 in self.win_chance_table_small[n1][c1]:
+#                    for c2 in self.win_chance_table_small[n1][c1][n2]:
+#                        print n1, c1, n2, c2, self.win_chance_table_small[n1][c1][n2][c2]
+#        raw_input()
+#        for n1 in self.win_chance_table:
+#            for c1 in self.win_chance_table[n1]:
+#                for n2 in self.win_chance_table[n1][c1]:
+#                    for c2 in self.win_chance_table[n1][c1][n2]:
+#                        print n1, c1, n2, c2, self.win_chance_table[n1][c1][n2][c2]
+#        raw_input()
+#        for n1 in self.win_chance_table_specific:
+#            for c1 in self.win_chance_table_specific[n1]:
+#                for n2 in self.win_chance_table_specific[n1][c1]:
+#                    for c2 in self.win_chance_table_specific[n1][c1][n2]:
+#                        for n3 in self.win_chance_table_specific[n1][c1][n2][c2]:
+#                            for c3 in self.win_chance_table_specific[n1][c1][n2][c2][n3]:
+#                                for n4 in self.win_chance_table_specific[n1][c1][n2][c2][n3][c3]:
+#                                    for c4 in self.win_chance_table_specific[n1][c1][n2][c2][n3][c3][n4]:
+#                                        print n1, c1, n2, c2, n3, c3, n4, c4, self.win_chance_table_specific[n1][c1][n2][c2][n3][c3][n4][c4]
+#        raw_input()
         to_act = (self.button+1) % 6
         self.betting = [0, 0, 0, 0, 0, 0]
         self.last_mover = self.button
@@ -306,9 +326,6 @@ class GameDriver():
                 for action in actions:
                     if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
                         self.decision_maker.fast_fold(self)
-                    self.can_beat_table[stage] ,self.outs[stage] =\
-                            get_can_beat_table(self.stage, self.power_rank[self.stage],\
-                            self.stats_handler.stats, self.last_better, self.active)
                     indicator = self.handle_postflop_action(action)
                     if indicator:
                         return indicator
@@ -316,16 +333,10 @@ class GameDriver():
             else:#{{{
                 if len(actions) == 1:
                     action = actions[0]
-                    self.can_beat_table[stage] ,self.outs[stage] =\
-                            get_can_beat_table(self.stage, self.power_rank[self.stage],\
-                            self.stats_handler.stats, self.last_better, self.active)
                     indicator = self.handle_postflop_action(action)
                     if indicator:
                         return indicator
                 else:
-                    self.can_beat_table[stage] ,self.outs[stage] =\
-                            get_can_beat_table(self.stage, self.power_rank[self.stage],\
-                            self.stats_handler.stats, self.last_better, self.active)
                     action = actions[1]
                     if type(action[1]) == float:
                         self.betting[0] -= action[1]

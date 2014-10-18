@@ -19,25 +19,11 @@ def load_data(file_name):
     allX = list()
     allY = list()
     lines = raw_text.split('\n')[:-1]
-    stack_feature = list()
-    for line in lines:
-        features = line.split(',')
-        for i in xrange(len(features)-1):
-            if float(features[i]) > 2:
-                if not i in stack_feature:
-                    stack_feature.append(i)
     for line in lines:
         feature = line.split(',')
-        X = list()
-        for i in xrange(len(features)-1):
-            if i in stack_feature:
-                X.append(map_stack_data(float(features[i])))
-            else:
-                X.append(float(feature[i]))
+        X = [feature[3], feature[5]]#feature[1:-1]
         if float(feature[-1]) == -1:
             Y = -1
-        elif float(feature[-1]) == 0:
-            Y = 0
         else:
             Y = 1
         allX.append(X)
@@ -49,33 +35,25 @@ def main(training_n, allX, allY):
     random.shuffle(allY)
     Xt = allX[:training_n]
     Yt = allY[:training_n]
-    X = [999]*len(Xt[0])
-    Y = -1
-    Xt.append(X)
-    Yt.append(Y)
     Xv = allX[-500:]
     Yv = allY[-500:]
     clf = tree.DecisionTreeClassifier()
-    clf.max_depth = 30
-    clf.min_split = 10
+    clf.max_depth = 5 
+    clf.min_split = 5
     clf.fit(Xt, Yt)
     a = [0, 0]
     cost = 0
-    index_map = [-1, 0, 1]
-    Xt = Xt[:-1]
-    Yt = Yt[:-1]
+    index_map = [-1, 1]
     for xx,yy in zip(Xt, Yt):
 #       print xx
         h = clf.predict_proba(xx)[0]
         if h[0] == max(h):
             predict = -1
         elif h[1] == max(h):
-            predict = 0
-        else:
             predict = 1
 #       print yy,h
         a[predict==yy] += 1
-        cost += (1-h[0])*(yy==index_map[0])+(1-h[1])*(yy==index_map[1])+(1-h[2])*(yy==index_map[2])
+        cost += (1-h[0])*(yy==index_map[0])+(1-h[1])*(yy==index_map[1])
     print 'TrainingSetAccuracy: %f' % (1.0*a[1]/sum(a))
     print 'TrainingSetCost: %f' % (cost / training_n)
     a = [0, 0]
@@ -86,11 +64,9 @@ def main(training_n, allX, allY):
         if h[0] == max(h):
             predict = -1
         elif h[1] == max(h):
-            predict = 0
-        else:
             predict = 1
         a[predict==yy] += 1
-        cost += (1-h[0])*(yy==index_map[0])+(1-h[1])*(yy==index_map[1])+(1-h[2])*(yy==index_map[2])
+        cost += (1-h[0])*(yy==index_map[0])+(1-h[1])*(yy==index_map[1])
         if h[0] == 1:
             if yy == 1:
                 b[1] += 1

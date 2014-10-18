@@ -172,6 +172,7 @@ class ScreenScraper():
                     self.update()
 #               print 'stucking at getting cards'
                 fail = 1
+            cards[0], cards[1] = min(cards[:2]), max(cards[:2])
             fail = 0
 #            while not (type(player_name[0]) == unicode and type(player_name[1]) == unicode\
 #                    and type(player_name[3]) == unicode and type(player_name[4]) == unicode\
@@ -222,6 +223,7 @@ class ScreenScraper():
                 card01 = re.findall('Dealt to .+? \[(.+?)]', self.source)[0]
                 cards[0] = map_card_string_to_tuple(card01[:2])
                 cards[1] = map_card_string_to_tuple(card01[3:])
+                cards[0], cards[1] = min(cards[:2]), max(cards[:2])
             except:
                 cards[0] = [2,1]
                 cards[1] = [2,2]

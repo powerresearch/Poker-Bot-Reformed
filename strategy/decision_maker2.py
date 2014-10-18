@@ -72,7 +72,11 @@ class DecisionMaker():
         for i in xrange(1, 6):
             if gd.active[i] == 1:
                 opponent = i
-                break#}}}
+                break
+        value = how_much_can_value(gd.win_chance_table,\
+                gd.win_chance_table_specific[self.cards[0][0]][self.cards[0][1]]\
+                [self.cards[1][0]][self.cards[1][1]],\
+                stats[opponent])
         if self.game_driver.source == 'ps':#{{{
             if gd.fold:
                 print 'Bugged'
@@ -90,10 +94,7 @@ class DecisionMaker():
                     range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])
             my_outs = my_outs[0] - my_outs[1]
-            if sum(gd.active) == 2:
-                fold_chance = get_fold_chance(stats[opponent], pw, gd.cards) 
-            else:
-                fold_chance = 0
+            fold_chance = 0
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
@@ -168,110 +169,22 @@ class DecisionMaker():
                     self.controller.fold()#}}}
         else:#{{{
             beat_chance = 1
-            if sum(gd.active) == 2:
-                fold_chance = get_fold_chance(stats[opponent], pw, gd.cards) 
-            else:
-                fold_chance = 0
+            fold_chance = 0
             range_fight_result = 1
-            for i in xrange(1, 6):
-                if gd.active[i]:
-                    beat_chance = min([how_much_can_beat(stats, pw, gd.cards[:2], i), beat_chance])
-                    range_fight_result = min([range_fight(pw, stats[0], stats[i]), range_fight_result])
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
             print
             print 'Stage: ', gd.stage
             print 'Pot: ', self.game_driver.pot
-            print 'Board Wetness: ', gd.board_wetness[gd.stage]
             print 'My Combo: ', find_out(self.game_driver.cards[:self.game_driver.stage+4])
-            print 'My Win Chance: ', beat_chance
-            print 'Fold Chance', fold_chance
-            print 'Range Fight Result:', range_fight_result
-            print 'My Outs', my_outs
-            print 'Starting Show Win Chance Table For Me, Wait'
-            smaller_win_chance_table, win_chance_table, win_chance_table_specific\
-                    = get_win_chance_table(stats[opponent], self.cards[2:])
-            show_win_chance_table_for_me(win_chance_table_specific,\
-                    smaller_win_chance_table, gd.cards)
-            print 'Done Show Win Chance Table For Me'
-            show_win_chance_table(smaller_win_chance_table)
-            if max(self.betting) == 0: 
-                if beat_chance > 0.98 and gd.stage == 1 and gd.board_wetness[1][1] < 1.5:
-                        #and not move_last(gd.active, gd.button):
-                    print 'My Decision: Check'
-                elif beat_chance > 1 - (1-(gd.board_wetness[gd.stage][0]<2)*0.3)*gd.stage*0.1\
-                        and gd.stage < 3:
-                    print 'My Decision: ', 
-                    print 'Bet', round(self.pot*(0.6+gd.board_wetness[gd.stage][0]\
-                            *(3-gd.stage)*0.03), 2)
-                elif gd.stage == 3 and beat_chance > 0.8 and can_value(gd.cards):
-                    print 'My Decision: '
-                    print 'Bet', round(self.pot*(beat_chance-0.2), 2)
-                elif sum(self.betting) == 0 and gd.stage == 1 and ml and sum(gd.active) == 2\
-                        and beat_chance < 0.6 and range_fight_result > 0.5:
-                    print 'My Decision: '
-                    print 'Bet', round(self.pot*0.8, 2)
-                elif sum(self.betting) == 0 and gd.stage == 2 and ml and sum(gd.active) == 2\
-                        and beat_chance < 0.5 and range_fight_result > 0.6:
-                    print 'My Decision: '
-                    print 'Bet', round(self.pot*0.8, 2)
-                elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
-                        and gd.bet_round == 2 and sum(self.betting) == 0\
-                        and gd.board_wetness[gd.stage][0] < 3\
-                        and (self.data_manager.get_item(opponent, u'FLFCB') > 0 or\
-                        random.random() > 1):
-                    print 'Fold To CB: ', self.data_manager.get_item(opponent, u'FLFCB')
-                    print 'My Decision: ', 
-                    print 'Bet', round(self.pot*0.8, 2)
-                elif gd.last_better == 0 and gd.stage == 1 and sum(gd.active) == 2\
-                        and gd.bet_round == 2 and sum(self.betting) == 0\
-                        and max(gd.cards[2:5])[0] > 12:
-                    print 'High Card Appeared, CB'
-                    print 'My Decision: '
-                    print 'Bet', round(self.pot*0.8, 2)
-                elif fold_chance > 0.6:
-                    print 'Tend to fold'
-                    print 'My Decision: '
-                    print 'Bet', round(self.pot*0.8, 2)
-                else:
-                    print 'My Decision: ', 
-                    print 'Check'
-            else:
-                to_call = max(self.betting) - self.betting[0]
-                to_call = min(to_call, gd.stack[0])
-                ratio = to_call / (self.pot+to_call)
-                print 'Ratio: ', ratio, my_outs*0.02*(3-self.stage)
-                if beat_chance > 0.95 and gd.stage == 1 and gd.board_wetness[1][1] < 1:
-                    print 'High Beat Chance, Dry Board'
-                    print 'My Decision: Call'
-                elif beat_chance > 0.95-move_last(gd.active, gd.button)*0.05*(3-gd.stage)\
-                        -0.05*(gd.stage==2):
-                    if gd.board_wetness[gd.stage][0] > 2.5\
-                            or gd.board_wetness[gd.stage][1] > 1\
-                            or gd.stage == 3 or ratio < 0.2:
-                        print 'My Decision: '
-                        print 'Raise', round(self.pot*(0.75-0.15*(gd.stage==3))\
-                                +max(self.betting)*(1-0.25*(gd.stage==3)), 2)
-                    else:
-                        print 'My Decision: '
-                        print 'Call'
-                elif (self.stage == 1 and beat_chance > 0.6):
-                    print 'Enough Beat Chance'
-                    print 'My Decision: Call'
-                elif (self.stage == 2 and beat_chance > 0.7):
-                    print 'Enough Beat Chance'
-                    print 'My Decision: Call'
-                elif my_outs*0.02*(3-self.stage) > 0.8*ratio+(gd.stage==3):
-                    print 'Enough Buy Chance and not River'
-                    print 'My Decision: Call'
-                elif (self.stage == 3 and beat_chance > 0.8 * ratio - 0.1):
-                    print 'River, Enough Beat Chance'
-                    print 'My Decision: Call'
-                elif gd.stage <= 2 and my_outs*0.02*(3-gd.stage)+fold_chance > 0.75:
-                    print 'Semi bluff'
-                    print 'My Decision: Raise', round(self.pot*0.75+max(self.betting)*0.6, 2)
-                else:
-                    print 'My Decision: ', 
-                    print 'Fold'
+            print 'My Win Chance: ', gd.win_chance_table\
+                    [self.cards[0][0]][self.cards[0][1]][self.cards[1][0]][self.cards[1][1]]
+            bet_value = how_much_can_value(gd.win_chance_table, gd.win_chance_table_specific,\
+                    stats[opponent], gd.cards)
+#            print opponent
+#            show_win_chance_table(gd.win_chance_table, stats[opponent], self.cards)
+#            print 'Starting Show Win Chance Table For Me, Wait'
+#            show_win_chance_table_for_me(gd.win_chance_table_specific,\
+#                    gd.win_chance_table_small, gd.cards, stats[opponent])
             if self.game_driver.source != 'ps':
                 raw_input('---press any key---')
                 del_stdout_line(1)
@@ -579,7 +492,7 @@ class DecisionMaker():
             beat_chance = 1
             for i in xrange(1, 6):
                 if gd.active[i]:
-                    beat_chance *= how_much_can_beat(stats, pw, gd.cards[:2], i)
+                    beat_chance *= 1 
             my_outs = how_many_outs(gd.cards[2:], gd.cards[:2])[0]
             if max(self.betting) == 0:
                 pass

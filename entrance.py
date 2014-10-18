@@ -74,7 +74,7 @@ elif sys.argv[1] == 'makedata':
             if '9-max Seat' in test_file:
                 continue
         test_file = test_file.replace('\xe2\x82\xac', '$')
-        games = re.findall(r'PokerStars Zoom Hand \#.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
+        games = re.findall(r'PokerStars Zoom Hand \#.+?FLOP.+?\*\*\* SUMMARY \*\*\*', test_file, re.DOTALL)
         for game in games:
             if not 'Seat 6' in game:
                 continue
@@ -87,7 +87,7 @@ else:
     with open(sys.argv[1]) as f:
         test_file = f.read()
     games = re.findall(r'PokerStars Zoom Hand \#.+?PokerStars Zoom Hand', test_file, re.DOTALL)
-    random.shuffle(games)
+#   random.shuffle(games)
     for game in games:
         if re.findall(r'deoxy1909.*folded before Flop', game):
             continue
