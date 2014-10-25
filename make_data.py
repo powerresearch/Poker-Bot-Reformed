@@ -7,9 +7,6 @@ import json
 import re
 import time
 from public import is_only_max
-from public import get_win_chance_table 
-from public import get_board_texture
-from public import what_do_i_have
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher

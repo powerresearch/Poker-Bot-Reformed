@@ -4,18 +4,16 @@ import json
 import re
 import time
 from public import is_only_max
-from public import get_power_rank
 from public import get_win_chance_table 
 from public import show_stats
-from public import get_board_wetness
-from public import show_can_beat_table
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
 from pokerstars.controller import Controller
 from database.data_manager import DataManager
 from stats.stats_handler2 import StatsHandler
-from strategy.decision_maker2 import DecisionMaker
+from strategy.decision_maker2 import PreflopDecisionMaker
+from strategy.decision_maker2 import PostflopDecisionMaker
 
 class GameDriver():
 
@@ -33,7 +31,7 @@ class GameDriver():
             init_values = self.screen_scraper.get_init_values()
         self.stack          = init_values['stack'] 
         self.game_number    = init_values['game_number']
-        self.cards          = init_values['cards'] + ['', '', '', '', '']
+        self.cards          = init_values['cards'] 
         self.button         = init_values['button']
         self.player_name = init_values['player_name']
         if self.source != 'ps':
@@ -43,7 +41,7 @@ class GameDriver():
         self.data_manager   = DataManager(self.button)
         self.data_manager.load_data(self.player_name, self.button)
         self.stats_handler  = StatsHandler(self)
-        self.decision_maker = DecisionMaker(self)
+        self.decision_maker = PreflopDecisionMaker(self)
         self.betting        = [0, 0, 0, 0, 0, 0]
         self.pot            = SB+BB
         self.last_better    = -1
@@ -89,13 +87,12 @@ class GameDriver():
             return self.game_number
         print#}}}
         indicator = self.preflop()#{{{
+        self.decision_maker = PostflopDecisionMaker(self, self.stats_handler.stats)
         stages = ['PREFLOP', 'FLOP', 'TURN', 'RIVER']
-        self.stage = 1 
+        self.stage = 1
         if indicator == 'new game':
             return self.game_number
         for self.stage in xrange(1, 4):
-            with open('stats_snapshot.json', 'w') as f:
-                json.dump(self.stats_handler.stats, f)
             print '*** '+stages[self.stage]+' ***'
             print 'Pot: ', self.pot
             if self.stage == 1:
@@ -174,7 +171,7 @@ class GameDriver():
                     if self.active[i] == 1 and self.betting[i] != a:
                         not_even = 1
             if self.stage != 3 or not_even or a == 0:
-                self.decision_maker.make_decision(self)
+                self.decision_maker.make_decision()
                 time.sleep(0.5)
             return []
         actor, value = action
@@ -201,35 +198,26 @@ class GameDriver():
                     if max(self.betting) < self.pot*0.2 and self.stage != 3:
                         self.postflop_status[actor] = 'check'
                     elif self.last_better == actor:
-                        self.postflop_status[actor] = 'cb'
+                        self.postflop_status[actor] = 'bet'
                     else:
-                        self.postflop_status[actor] = 'dk'
+                        self.postflop_status[actor] = 'bet'
                 else:
                     if self.postflop_status[actor] == 'check':
-                        self.postflop_status[actor] = 'cr'
+                        self.postflop_status[actor] = 'check raise'
                     else:
                         self.postflop_status[actor] = 'raise'
                 self.last_better = actor
-                self.bet_round += 1
-                self.people_play = 1
             else:
-                self.people_play += 1
                 if self.postflop_status[actor] == 'check':
-                    self.postflop_status[actor] = 'checkcall'+\
-                            self.postflop_status[self.last_better]
+                    self.postflop_status[actor] = 'check call'
                 else:
-                    self.postflop_status[actor] = 'call'+\
+                    self.postflop_status[actor] = 'call '+\
                             self.postflop_status[self.last_better]
             self.pot += value
             self.pot = round(self.pot, 2)
-        self.stats_handler.postflop_update(actor, self.postflop_status,\
-                self.cards, self.stage)
-        self.win_chance_table_small, self.win_chance_table, self.win_chance_table_specific\
-                = get_win_chance_table(self.stats_handler.stats[self.last_better], self.cards[2:])
-#        if self.source != 'ps':
-#            show_can_beat_table(self.can_beat_table[self.stage], self.outs[self.stage])
-#        if self.source != 'ps':
-#            show_stats(self.stats_handler.stats, actor)
+        self.decision_maker.update_stats(actor, value)
+        self.decision_maker.update_wct()
+        self.decision_maker.get_dummy_action()
         return []#}}}
 
     def preflop(self):
@@ -283,40 +271,20 @@ class GameDriver():
             
     def post_flop(self, stage):
         self.postflop_status = ['', '', '', '', '', '']#{{{
-        self.stats_handler.postflop_big_update(self.cards, self.active)
-        self.win_chance_table_small, self.win_chance_table, self.win_chance_table_specific\
-                = get_win_chance_table(self.stats_handler.stats[self.last_better], self.cards[2:])
-#        for n1 in self.win_chance_table_small:
-#            for c1 in self.win_chance_table_small[n1]:
-#                for n2 in self.win_chance_table_small[n1][c1]:
-#                    for c2 in self.win_chance_table_small[n1][c1][n2]:
-#                        print n1, c1, n2, c2, self.win_chance_table_small[n1][c1][n2][c2]
-#        raw_input()
-#        for n1 in self.win_chance_table:
-#            for c1 in self.win_chance_table[n1]:
-#                for n2 in self.win_chance_table[n1][c1]:
-#                    for c2 in self.win_chance_table[n1][c1][n2]:
-#                        print n1, c1, n2, c2, self.win_chance_table[n1][c1][n2][c2]
-#        raw_input()
-#        for n1 in self.win_chance_table_specific:
-#            for c1 in self.win_chance_table_specific[n1]:
-#                for n2 in self.win_chance_table_specific[n1][c1]:
-#                    for c2 in self.win_chance_table_specific[n1][c1][n2]:
-#                        for n3 in self.win_chance_table_specific[n1][c1][n2][c2]:
-#                            for c3 in self.win_chance_table_specific[n1][c1][n2][c2][n3]:
-#                                for n4 in self.win_chance_table_specific[n1][c1][n2][c2][n3][c3]:
-#                                    for c4 in self.win_chance_table_specific[n1][c1][n2][c2][n3][c3][n4]:
-#                                        print n1, c1, n2, c2, n3, c3, n4, c4, self.win_chance_table_specific[n1][c1][n2][c2][n3][c3][n4][c4]
-#        raw_input()
         to_act = (self.button+1) % 6
         self.betting = [0, 0, 0, 0, 0, 0]
         self.last_mover = self.button
-        while self.last_mover != 1:
+        while self.active[self.last_mover] != 1:
             self.last_mover = (self.last_mover-1) % 6
         self.move_catcher.to_act = to_act
+        self.decision_maker.clean_stats()
+        self.decision_maker.compress_stats()
+        self.decision_maker.get_avg_stats()
+        self.decision_maker.update_wct()
+        self.decision_maker.get_dummy_action()
 #       move_catcher = MoveCatcher(to_act, self)#}}}
         while True:
-            if sum([self.active[j] == 1 for j in xrange(1, 6)]) == 0:
+            if sum([self.active[j] == 1 for j in xrange(6)]) <= 1:
                 return 'new game'
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
@@ -344,7 +312,7 @@ class GameDriver():
                     action = actions[0]
                     indicator = self.handle_postflop_action(action)
                     action = actions[1]
-                    self.handle_preflop_action(action)
+                    self.handle_postflop_action(action)
                     if type(action[1]) == float:
                         self.betting[0] += action[1]
                         self.betting[0] = round(self.betting[0], 2)

@@ -5,7 +5,6 @@ from pokerstars.config import BB
 from pokerstars.controller import Controller
 from strategy.config import preflop_move_ep
 from strategy.config import preflop_move_lp
-from pokerstars.controller import Controller
 from public import * 
 
 class DecisionMaker():

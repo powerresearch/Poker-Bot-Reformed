@@ -25,25 +25,29 @@ class MoveCatcher():
         self.screen_scraper = game_driver.screen_scraper#}}}
     
     def next_stage(self):
-        if self.cards[6]:#{{{
+        if len(self.cards) == 7:#{{{
             return False
-        elif self.cards[5]:
-            self.cards[6] = self.screen_scraper.get_card(6)
-            if self.cards[6]:
+        elif len(self.cards) == 6:
+            tmp_card = self.screen_scraper.get_card(6)
+            if tmp_card:
+                self.cards.append(tmp_card)
                 return self.cards
             else:
                 return False
-        elif self.cards[4]:
-            self.cards[5] = self.screen_scraper.get_card(5)
-            if self.cards[5]:
+        elif len(self.cards) == 5:
+            tmp_card = self.screen_scraper.get_card(5)
+            if tmp_card:
+                self.cards.append(tmp_card)
                 return self.cards
             else:
                 return False
         else:
-            self.cards[2] = self.screen_scraper.get_card(2)
-            self.cards[3] = self.screen_scraper.get_card(3)
-            self.cards[4] = self.screen_scraper.get_card(4)
-            if self.cards[2] and self.cards[3] and self.cards[4]:
+            tmp_card1, tmp_card2, tmp_card3 = \
+                    [self.screen_scraper.get_card(i) for i in xrange(2, 5)]
+            if tmp_card1 and tmp_card2 and tmp_card3:
+                self.cards.append(tmp_card1)
+                self.cards.append(tmp_card2)
+                self.cards.append(tmp_card3)
                 return self.cards
             else:
                 return False#}}}
@@ -218,17 +222,17 @@ class MoveCatcher():
                     return [['new game', 1]]
                 if instr.startswith('*** FLOP ***'):
                     cards234 = re.findall('\[(.*?)\]', instr)[0]
-                    cards[2] = map_card_string_to_tuple(cards234[:2])
-                    cards[3] = map_card_string_to_tuple(cards234[3:5])
-                    cards[4] = map_card_string_to_tuple(cards234[6:])
+                    cards.append(map_card_string_to_tuple(cards234[:2]))
+                    cards.append(map_card_string_to_tuple(cards234[3:5]))
+                    cards.append(map_card_string_to_tuple(cards234[6:]))
                     return [['new stage', cards]]
                 if instr.startswith('*** TURN ***'):
                     cards5 = re.findall('\[(.{2})\]', instr)[0]
-                    cards[5] = map_card_string_to_tuple(cards5)
+                    cards.append(map_card_string_to_tuple(cards5))
                     return [['new stage', cards]]
                 if instr.startswith('*** RIVER ***'):
                     cards6 = re.findall('\[(.{2})\]', instr)[0]
-                    cards[6] = map_card_string_to_tuple(cards6)
+                    cards.append(map_card_string_to_tuple(cards6))
                     return [['new stage', cards]]#}}}
         try:
             return actions
