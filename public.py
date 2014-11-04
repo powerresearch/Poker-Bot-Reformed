@@ -630,7 +630,7 @@ def most_probable(stats, n=100):
         for col1 in stats[num1]:
             for num2 in stats[num1][col1]:
                 for col2 in stats[num1][col1][num2]:
-                    if [num1, col1] < [num2, col2]:
+                    if [num1, col1] >= [num2, col2]:
                         continue
                     prob = stats[num1][col1][num2][col2]
                     b = 0

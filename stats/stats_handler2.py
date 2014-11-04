@@ -346,9 +346,9 @@ class StatsHandler():
     @staticmethod
     def get_preflop_prob(top_n, arg):
         if arg == 'close':#{{{
-            n1 = top_n * 0.85
+            n1 = top_n * 0.95
             n2 = top_n
-            n3 = top_n * 1.15
+            n3 = top_n * 1.05
             n = [n1, n2, n3]
         else:
             n = range(0, int(top_n)+1, 1)
@@ -361,7 +361,7 @@ class StatsHandler():
                 prob[c1][c2] = max(rr)
         for c1 in prob:
             for c2 in prob[c1]:
-                prob[c1][c2] = 0.2 + prob[c1][c2] * 0.8
+                prob[c1][c2] = 0 + prob[c1][c2] 
         return prob#}}}
 
     @staticmethod
@@ -373,7 +373,7 @@ class StatsHandler():
         cut_points = [0.5, 1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 45, 50, 100]
         coef = [0] * len(cut_points)
         for point_index in xrange(len(cut_points)-1, -1, -1):
-            coef[point_index] = 1.0 / (200+pow(abs(cut_points[point_index]-top_n), 2))
+            coef[point_index] = 1.0 / (100+pow(abs(cut_points[point_index]-top_n), 2))
 #           if cut_points[point_index] < top_n:
 #               break
         prob = {}

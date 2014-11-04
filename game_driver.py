@@ -92,7 +92,7 @@ class GameDriver():
         self.stage = 1
         if indicator == 'new game':
             return self.game_number
-        for self.stage in xrange(1, 4):
+        for self.stage in xrange(1, 2):
             print '*** '+stages[self.stage]+' ***'
             print 'Pot: ', self.pot
             if self.stage == 1:
@@ -216,8 +216,9 @@ class GameDriver():
             self.pot += value
             self.pot = round(self.pot, 2)
         self.decision_maker.update_stats(actor, value)
-        self.decision_maker.update_wct()
-        self.decision_maker.get_dummy_action()
+        self.decision_maker.compress_stats()
+        self.decision_maker.get_avg_stats()
+        self.decision_maker.update_betting()
         return []#}}}
 
     def preflop(self):
