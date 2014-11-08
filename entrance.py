@@ -4,6 +4,7 @@ from pokerstars.get_name_figure import get_name_figure
 from pokerstars.controller import Controller
 from pokerstars.screen_scraper import get_shift
 from public import del_stdout_line
+from public import change_terminal_color
 import pyscreenshot
 import sys
 import os
@@ -92,9 +93,12 @@ else:
     for game in games:
         if re.findall(r'deoxy1909.*folded before Flop', game):
             continue
-        print game
+        game = '\n'.join(game.split('\n')[:-3])
+        change_terminal_color('green')
+        print game.strip('\n')
 #       del_stdout_line(len(game.splitlines())+1)
-        print '####################\n\n\n\n\n'
+        print '####################\n'
+        change_terminal_color('blue')
         print '####################'
         print 'Starting New Game'
         game_driver = GameDriver(game)

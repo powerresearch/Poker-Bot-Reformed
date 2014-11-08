@@ -630,8 +630,6 @@ def most_probable(stats, n=100):
         for col1 in stats[num1]:
             for num2 in stats[num1][col1]:
                 for col2 in stats[num1][col1][num2]:
-                    if [num1, col1] >= [num2, col2]:
-                        continue
                     prob = stats[num1][col1][num2][col2]
                     b = 0
                     for i in xrange(1, 5):
@@ -683,6 +681,11 @@ def del_stdout_line(n):
     for i in xrange(n):
         print CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE
         #}}}
+
+def change_terminal_color(color=''):
+    color_map = {'black':'30', 'red':'31;1', 'green':'32;1', 'yellow;1':'33',\
+            'blue':'34;1', 'magenta':'35;1', 'cyan':'36;1', 'white':'37;1', '':'0'}
+    print '\x1b['+color_map[color]+'m'
 
 def show_win_chance_table(win_chance_table, stats):
     all_combo = list()#{{{
@@ -761,15 +764,16 @@ def show_win_chance_table_for_me(win_chance_table_specific, win_chance_table, ca
     #}}}
     
 def show_stats(stats, i):
-    all_combo = most_probable(stats[i], 169)#{{{
-    p = len(all_combo) / 150
-    j = len(all_combo) % 150
+    change_terminal_color('cyan')
+    all_combo = most_probable(stats[i], 1000)#{{{
+    p = len(all_combo) / 120
+    j = len(all_combo) % 120
     for ii in xrange(p):
         count = 0
-        for combo in all_combo[ii*150:ii*150+150]:
+        for combo in all_combo[ii*120:ii*120+120]:
             count += 1
             print combo, '\t',
-            if count % 5 == 0:
+            if count % 4 == 0:
                 print
         raw_input('---press any key for next page---')
         del_stdout_line(31)
@@ -777,12 +781,13 @@ def show_stats(stats, i):
     for combo in all_combo[-j:]:
         count += 1
         print combo, '\t',
-        if count % 5 == 0:
+        if count % 4 == 0:
             print
     print 'Player:', i
     raw_input('---press any key---')
-    del_stdout_line(count/5+2)
+    del_stdout_line(count/4+4)
     #}}}
+    change_terminal_color()
 
 def move_last(active, button):
     i = 1#{{{

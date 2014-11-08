@@ -6,6 +6,7 @@ import time
 from public import is_only_max
 from public import get_win_chance_table 
 from public import show_stats
+from public import change_terminal_color
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
@@ -85,6 +86,7 @@ class GameDriver():
             print 'Fold because my preflop move is 0'
             self.controller.fold()
             return self.game_number
+        change_terminal_color()
         print#}}}
         indicator = self.preflop()#{{{
         self.decision_maker = PostflopDecisionMaker(self, self.stats_handler.stats)
@@ -92,7 +94,8 @@ class GameDriver():
         self.stage = 1
         if indicator == 'new game':
             return self.game_number
-        for self.stage in xrange(1, 2):
+        for self.stage in xrange(1, 4):
+            change_terminal_color('blue')
             print '*** '+stages[self.stage]+' ***'
             print 'Pot: ', self.pot
             if self.stage == 1:
@@ -101,6 +104,7 @@ class GameDriver():
                 print 'Cards: ', self.cards[2:5], self.cards[5]
             elif self.stage == 3:
                 print 'Cards: ', self.cards[2:5], self.cards[5], self.cards[6]
+            change_terminal_color()
             indicator = self.post_flop(self.stage)
             if indicator == 'new game':
                 return self.game_number#}}}
@@ -216,7 +220,6 @@ class GameDriver():
             self.pot += value
             self.pot = round(self.pot, 2)
         self.decision_maker.update_stats(actor, value)
-        self.decision_maker.compress_stats()
         self.decision_maker.get_avg_stats()
         self.decision_maker.update_betting()
         return []#}}}
