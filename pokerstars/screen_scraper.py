@@ -83,8 +83,8 @@ def norm(l):
     return l#}}}
 
 def get_shift(im, last_i=0, last_j=0):
-    start_i = last_i+285#{{{
-    start_j = last_j+235
+    starti = last_i+285#{{{
+    startj = last_j+235
     fail = 0
     count = 0
     for i in xrange(215):
