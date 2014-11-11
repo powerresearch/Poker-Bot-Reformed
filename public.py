@@ -624,23 +624,22 @@ def has_same(cards):
                 return True
     return False#}}}
 
-def most_probable(stats, n=100):
+def most_probable(stats, stats_change, n=100):
     all_combo = list()#{{{
-    for num1 in stats:
-        for col1 in stats[num1]:
-            for num2 in stats[num1][col1]:
-                for col2 in stats[num1][col1][num2]:
-                    prob = stats[num1][col1][num2][col2]
-                    b = 0
-                    for i in xrange(1, 5):
-                        for j in xrange(1, 5):
-                            if [round(prob, 2), num1, i, num2, j] in all_combo:
-                                b = 1
-                                break
-                        if b:
-                            break
-                    if not b:
-                        all_combo.append([round(prob, 2), num1, col1, num2, col2])
+    for num1, col1, num2, col2, prob in nodes_of_tree(stats, 4):
+        if prob < 0.05:
+            continue
+        sc = stats_change[num1][col1][num2][col2]
+        b = 0
+        for i in xrange(1, 5):
+            for j in xrange(1, 5):
+                if [round(prob, 2), round(sc, 2), num1, i, num2, j] in all_combo:
+                    b = 1
+                    break
+            if b:
+                break
+        if not b:
+            all_combo.append([round(prob, 2), round(sc, 2), num1, col1, num2, col2])
     sorted_combo = sorted(all_combo, key=lambda x:x[0], reverse=True)
     return sorted_combo#print_stats(sorted_combo, n)#}}}
 
@@ -763,17 +762,17 @@ def show_win_chance_table_for_me(win_chance_table_specific, win_chance_table, ca
     del_stdout_line(count/3+2)
     #}}}
     
-def show_stats(stats, i):
+def show_stats(stats, stats_change, i):
     change_terminal_color('cyan')
-    all_combo = most_probable(stats[i], 1000)#{{{
-    p = len(all_combo) / 120
-    j = len(all_combo) % 120
+    all_combo = most_probable(stats[i], stats_change, 1000)#{{{
+    p = len(all_combo) / 90
+    j = len(all_combo) % 90
     for ii in xrange(p):
         count = 0
-        for combo in all_combo[ii*120:ii*120+120]:
+        for combo in all_combo[ii*90:ii*90+90]:
             count += 1
-            print combo, '\t',
-            if count % 4 == 0:
+            print combo, '  \t',
+            if count % 3 == 0:
                 print
         raw_input('---press any key for next page---')
         del_stdout_line(31)
@@ -781,11 +780,11 @@ def show_stats(stats, i):
     for combo in all_combo[-j:]:
         count += 1
         print combo, '\t',
-        if count % 4 == 0:
+        if count % 3 == 0:
             print
     print 'Player:', i
     raw_input('---press any key---')
-    del_stdout_line(count/4+4)
+    del_stdout_line(count/3+4)
     #}}}
     change_terminal_color()
 

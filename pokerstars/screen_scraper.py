@@ -82,8 +82,23 @@ def norm(l):
         l[index][1] = l[index][1] - miny
     return l#}}}
 
-def get_shift(im):
-    for starti in xrange(im.size[0]-215):#{{{
+def get_shift(im, last_i=0, last_j=0):
+    start_i = last_i+285#{{{
+    start_j = last_j+235
+    fail = 0
+    count = 0
+    for i in xrange(215):
+        for j in xrange(50):
+            pix = im.getpixel((starti+i, startj+j))
+            if pix[0] != logo[count][0] or pix[1] != logo[count][1] or pix[2] != logo[count][2]:
+                fail = 1
+                break
+            count += 1
+        if fail:
+            break
+    if not fail:
+        return [starti-285, startj-235]
+    for starti in xrange(im.size[0]-215):
         for startj in xrange(im.size[1]-50):
             fail = 0
             count = 0

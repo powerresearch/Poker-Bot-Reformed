@@ -26,6 +26,11 @@ if sys.argv[1] == 'ps':
         shift = get_shift(im) 
     c = Controller(1, shift)
     while True:
+        shift = []
+        while not shift:
+            im = pyscreenshot.grab()
+            shift = get_shift(im, shift[0], shift[1]) 
+        c = Controller(1, shift)
 #        if time.time() - starting_time > session_length:
 #            print 'Rest for a while', rest_length
 #            c.rest(rest_length)
@@ -103,4 +108,5 @@ else:
         print 'Starting New Game'
         game_driver = GameDriver(game)
         game_driver.game_stream(-1)
+        print game.split('SUMMARY ***\n')[1]
         raw_input('---ENDING GAME---')

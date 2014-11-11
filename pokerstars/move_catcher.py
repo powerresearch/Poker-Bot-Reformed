@@ -1,5 +1,6 @@
 from pokerstars.screen_scraper import ScreenScraper
 from public import map_card_string_to_tuple
+from public import change_terminal_color
 import re
 import time
 import json
@@ -55,13 +56,22 @@ class MoveCatcher():
     def next_game(self):
         new_game_number = self.screen_scraper.get_game_number()#{{{
         all_fold = 1
-        if self.screen_scraper.get_card(0) != self.cards[0]\
-                or self.screen_scraper.get_card(1) != self.cards[1]:
-                    return new_game_number 
+        c1, c2 = self.screen_scraper.get_card(0), self.screen_scraper.get_card(1)
+        c1, c2 = min([c1, c2]), max([c1, c2])
+        if c1 != self.cards[0] or c2 != self.cards[1]:
+            change_terminal_color('green')
+            print 'game over because my cards are changed'
+            print 'new card:', c1, c2
+            print 'old card:', self.cards[0], self.cards[1]
+            change_terminal_color()
+            return new_game_number 
         for i in xrange(1, 6):
             if not self.screen_scraper.has_fold(i):
                 all_fold = 0
         if new_game_number != self.game_number or all_fold:
+            change_terminal_color('green')
+            print 'game over because new game number is', new_game_number
+            change_terminal_color()
             return new_game_number
         else:
             return False#}}}

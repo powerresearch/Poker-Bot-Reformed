@@ -68,6 +68,9 @@ class GameDriver():
     def game_stream(self, last_game):
         print 'Game Number:', self.game_number
         if self.game_number == last_game:
+            change_terminal_color('green')
+            print 'game over because game_number == last_game'
+            change_terminal_color()
             return last_game
         print 'Stack:', self.stack#{{{
         print 'Button:', self.button
@@ -79,11 +82,13 @@ class GameDriver():
                         (self.player_name[i], self.data_manager.get_item(i, u'HANDS'),\
                         self.data_manager.get_item(i, u'pfr'), self.data_manager.get_item(i, u'F3B'),\
                         self.data_manager.get_item(i, u'BSA'))
-        if self.stack[0] > 300*SB and self.decision_maker.get_preflop_move(self.cards) == 0:
+        if self.stack[0] > 400*SB and self.decision_maker.get_preflop_move(self.cards) == 0:
             self.controller.sit_out()
             return self.game_number
         if self.source == 'ps' and self.decision_maker.get_preflop_move(self.cards) == 0 and self.button != 4 and self.button != 0:
+            change_terminal_color('green')
             print 'Fold because my preflop move is 0'
+            change_terminal_color()
             self.controller.fold()
             return self.game_number
         change_terminal_color()
@@ -93,6 +98,9 @@ class GameDriver():
         stages = ['PREFLOP', 'FLOP', 'TURN', 'RIVER']
         self.stage = 1
         if indicator == 'new game':
+            change_terminal_color('green')
+            print 'game over because preflop return so'
+            change_terminal_color()
             return self.game_number
         for self.stage in xrange(1, 4):
             change_terminal_color('blue')
@@ -146,6 +154,8 @@ class GameDriver():
                     self.bet_round += 1
             self.people_play = 1
         else:
+            if self.last_better == -1:
+                self.last_better = actor
             self.people_play += 1
         self.stats_handler.preflop_update(action, self.betting, self.bet_round,\
                 self.people_play, self.last_better)
@@ -221,6 +231,7 @@ class GameDriver():
             self.pot = round(self.pot, 2)
         self.decision_maker.update_stats(actor, value)
         self.decision_maker.get_avg_stats()
+        self.decision_maker.get_opponent()
         self.decision_maker.update_betting()
         return []#}}}
 
@@ -235,11 +246,17 @@ class GameDriver():
 #       move_catcher = MoveCatcher(to_act, self)#}}}
         while True:
             if sum([self.active[j] == 1 for j in xrange(1, 6)]) == 0:
+                change_terminal_color('green')
+                print 'game over because no active opponent'
+                change_terminal_color()
                 return 'new game'
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:
                     if action[0] == 'new game':
+                        change_terminal_color('green')
+                        print 'game over because move catcher say so'
+                        change_terminal_color()
                         return 'new game' 
                 if not actions:
                     if self.button == 0 and\
@@ -264,6 +281,9 @@ class GameDriver():
                             self.decision_maker.fast_fold(self)
                     indicator = self.handle_preflop_action(action)
                     if indicator:
+                        change_terminal_color('green')
+                        print 'game over because handle_preflop_action say so'
+                        change_terminal_color()
                         return indicator
                 to_act = self.move_catcher.to_act#}}}
             else:#{{{
@@ -284,6 +304,7 @@ class GameDriver():
         self.decision_maker.clean_stats()
         self.decision_maker.compress_stats()
         self.decision_maker.get_avg_stats()
+        self.decision_maker.get_opponent()
         self.decision_maker.update_wct()
         self.decision_maker.get_dummy_action()
 #       move_catcher = MoveCatcher(to_act, self)#}}}
@@ -297,7 +318,7 @@ class GameDriver():
                         return 'new game' 
                 for action in actions:
                     if action[0] in [1,2,3,4,5] and self.betting[0] < max(self.betting):
-                        self.decision_maker.fast_fold(self)
+                        self.decision_maker.fast_fold()
                     indicator = self.handle_postflop_action(action)
                     if indicator:
                         return indicator
