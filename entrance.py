@@ -26,7 +26,6 @@ if sys.argv[1] == 'ps':
         shift = get_shift(im) 
     c = Controller(1, shift)
     while True:
-        shift = []
         while not shift:
             im = pyscreenshot.grab()
             shift = get_shift(im, shift[0], shift[1]) 
