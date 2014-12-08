@@ -668,9 +668,14 @@ class PostflopDecisionMaker():#{{{
                 cc2 = 0
             else:
                 cc2 = c2
-            if self.last_mover == actor:
-                if action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]:
+            if self.last_mover != actor:
+                if action_name not in ['reraise', 'call reraise']\
+                        and action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 0
+                elif action_name in ['reraise', 'call reraise']\
+                        and action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]\
+                        and 'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.5
                 elif action_name == 'check' and\
                         'check raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 0.3
@@ -686,8 +691,13 @@ class PostflopDecisionMaker():#{{{
                 some_history_junk[n1][cc1][n2][cc2] = stats_change
                 self.stats[actor][n1][c1][n2][c2] *= stats_change
             else:
-                if action_name not in self.dummy_action_lp[n1][cc1][n2][cc2]:
+                if action_name not in ['reraise', 'call reraise']\
+                        and action_name not in self.dummy_action_lp[n1][cc1][n2][cc2]:
                     stats_change = 0
+                elif action_name in ['reraise', 'call reraise']\
+                        and action_name not in self.dummy_action_lp[n1][cc1][n2][cc2]\
+                        and 'raise' in self.dummy_action_lp[n1][cc1][n2][cc2]:
+                    stats_change = 0.5
                 elif action_name == 'check' and\
                         'check raise' in self.dummy_action_lp[n1][cc1][n2][cc2]:
                     stats_change = 0.3
@@ -748,6 +758,15 @@ class PostflopDecisionMaker():#{{{
                     self.small_stats[player][n1][cc1][n2][cc2] = prob#}}}
 
     def clean_stats(self):#{{{
+        for i in xrange(6):
+            if self.active[i] != 1:
+                continue
+            to_del = list()
+            for n1,c1,n2,c2,p in nodes_of_tree(self.stats[i], 4):
+                if p == 0:
+                    to_del.append([n1,c1,n2,c2])
+            for combo in to_del:
+                del self.stats[i][combo[0]][combo[1]][combo[2]][combo[3]]
         cards = self.cards
         if self.stage == 1:
             for i in xrange(6):
@@ -801,14 +820,20 @@ class PostflopDecisionMaker():#{{{
         if l == 0:
             return
         self.stats.append(list())
-        self.stats[6] = copy.deepcopy(self.stats[players[0]])
-        self.small_stats[6] = copy.deepcopy(self.small_stats[players[0]])
+        self.stats[6] = tree() 
+        self.small_stats[6] = tree() 
         for i in players[1:]:
             for n1, c1, n2, c2, prob in nodes_of_tree(self.stats[i], 4):
-                self.stats[6][n1][c1][n2][c2] += prob
+                try:
+                    self.stats[6][n1][c1][n2][c2] += prob
+                except:
+                    self.stats[6][n1][c1][n2][c2] = prob
         for i in players[1:]:
             for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[i], 4):
-                self.small_stats[6][n1][c1][n2][c2] += prob
+                try:
+                    self.small_stats[6][n1][c1][n2][c2] += prob
+                except:
+                    self.small_stats[6][n1][c1][n2][c2] = prob
         for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[6], 4):
             self.small_stats[6][n1][c1][n2][c2] /= l
         for n1, c1, n2, c2, prob in nodes_of_tree(self.stats[6], 4):
@@ -1331,18 +1356,18 @@ class PostflopDecisionMaker():#{{{
                 dummy_action_lp[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.5:
+            if w50 > 0.5 or w25 > 0.25:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
-            if w100 > 0.8 or w50 > 0.5 or w25 > 0.3:
+            if w100 > 0.7 or w50 > 0.4 or w25 > 0.25:
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
             if w100 > 0.4 or w50 > 0.3 or w25 > 0.2:
                 dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
-            if w50 > 0.3 or w100 > 0.5 or w25 > 0.25:
+            if w50 > 0.3 or w100 > 0.5 or w25 > 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.4 or w100 > 0.6 or w25 > 0.3:
+            if w50 > 0.35 or w100 > 0.55 or w25 > 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
@@ -1402,17 +1427,17 @@ class PostflopDecisionMaker():#{{{
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
             if w100 > 0.6 or w50 > 0.3 or w25 > 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
-            if w50 > 0.3 or w100 > 0.55 or w25 > 0.2:
+            if w50 > 0.3 or w100 > 0.5 or w25 > 0.15:
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.25 or w100 > 0.5 or w25 > 0.2:
+            if w50 > 0.2 or w100 > 0.4 or w25 > 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.8 and w50 <= 0.6 and w25 <= 0.3:
+            if w100 <= 0.7 and w50 <= 0.6 and w25 <= 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.6 and w50 <= 0.4 and w25 <= 0.25:
+            if w100 <= 0.6 and w50 <= 0.3 and w25 <= 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.5 and w50 <= 0.3 and w25 <= 0.2:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
@@ -1451,22 +1476,22 @@ class PostflopDecisionMaker():#{{{
             w100 = wctaa100[n1][c1][n2][c2]
             w50 = wctaa50[n1][c1][n2][c2]
             w25 = wctaa25[n1][c1][n2][c2]
-            if w100 > 0.85:
+            if w100 > 0.75:
                 dummy_action_ep[n1][c1][n2][c2]['reraise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['reraise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call reraise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['call reraise'] = 1
-            if w100 > 0.75:
+            if w100 > 0.6:
                 dummy_action_ep[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 > 0.7:
+            if w100 > 0.6:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
-            if w100 > 0.6:
+            if w100 > 0.5:
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
             if w100 > 0.5:
@@ -1476,10 +1501,10 @@ class PostflopDecisionMaker():#{{{
                 dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.6:
+            if w100 <= 0.5:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.6:
+            if w100 <= 0.5:
                 dummy_action_ep[n1][c1][n2][c2]['check fold'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['fold'] = 1
