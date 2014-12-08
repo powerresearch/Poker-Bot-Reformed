@@ -122,6 +122,16 @@ class Controller():
         amount = round(amount/SB)*SB
         if self.game_driver.stack[0] == 0 or amount / self.game_driver.stack[0] > 0.8:
             amount = int(self.game_driver.stack[0]) + 1
+        oppo = -1
+        for i in xrange(1, 6):
+            if self.game_driver.active[i] == 1:
+                if oppo != -1:
+                    oppo = -1
+                    break
+                oppo = i
+        if oppo != -1 and self.game_driver.stack[oppo] > 0 and amount / self.game_driver.stack[oppo] > 0.8:
+            amount = int(self.game_driver.stack[0]) + 1
+        print self.game_driver.stack[oppo]
         m = pymouse.PyMouse()
         k = pykeyboard.PyKeyboard()
         lxp = label_position[0]

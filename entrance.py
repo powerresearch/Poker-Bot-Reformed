@@ -11,6 +11,7 @@ import os
 import time
 import re
 import random
+import pickle
 
 if sys.argv[1] == 'ps':
     game_number = 0
@@ -95,17 +96,20 @@ else:
     print len(games)
     random.shuffle(games)
     for game in games:
-        if re.findall(r'deoxy1909.*folded before Flop', game):
-            continue
-        game = '\n'.join(game.split('\n')[:-3])
-        change_terminal_color('green')
-        print game.strip('\n')
+        while True:
+            if re.findall(r'deoxy1909.*folded before Flop', game):
+                break
+            game = '\n'.join(game.split('\n')[:-3])
+            change_terminal_color('green')
+            print game.strip('\n')
 #       del_stdout_line(len(game.splitlines())+1)
-        print '####################\n'
-        change_terminal_color('blue')
-        print '####################'
-        print 'Starting New Game'
-        game_driver = GameDriver(game)
-        game_driver.game_stream(-1)
-        print game.split('SUMMARY ***\n')[1]
-        raw_input('---ENDING GAME---')
+            print '####################\n'
+            change_terminal_color('blue')
+            print '####################'
+            print 'Starting New Game'
+            game_driver = GameDriver(game)
+            game_driver.game_stream(-1)
+            print game.split('SUMMARY ***\n')[1]
+            a = raw_input('---ENDING GAME---')
+            if not a:
+                break

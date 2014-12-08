@@ -22,6 +22,17 @@ def nodes_of_tree(t, depth):
                     for l4 in t[l1][l2][l3]:
                         yield [l1, l2, l3, l4, t[l1][l2][l3][l4]]#}}}
 
+def not_possible(cards):
+    if has_same(cards):
+        return True 
+    count = [0] * 15
+    for c in cards:
+        count[c[0]] += 1
+    for i in xrange(2, 15):
+        if count[i] > 4:
+            return True 
+    return False
+
 def enum_cards(n):
     if n == 1:#{{{
         for num in xrange(2, 15):
@@ -607,13 +618,13 @@ def get_win_chance_table_river(stats, board):
                     big_table[num1][col1][num2][col2] = wc#}}}
     return less_big_table, big_table, super_big_table#}}}
 
-def color_make_different(cards):
+def color_make_different(stage, cards):
     cols = [0, 0, 0, 0, 0]#{{{
     result = list()
     for c in cards:
         cols[c[1]] += 1
     for i in xrange(1, 5):
-        if cols[i] >= 4:
+        if cols[i] >= 4 + (stage==3):
             result.append(i)
     return result#}}}
 
@@ -630,6 +641,8 @@ def most_probable(stats, stats_change, n=100):
         if prob < 0.05:
             continue
         sc = stats_change[num1][col1][num2][col2]
+        if not sc:
+            sc = 0
         b = 0
         for i in xrange(1, 5):
             for j in xrange(1, 5):

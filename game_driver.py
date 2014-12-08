@@ -185,7 +185,7 @@ class GameDriver():
                     if self.active[i] == 1 and self.betting[i] != a:
                         not_even = 1
             if self.stage != 3 or not_even or a == 0:
-                self.decision_maker.make_decision()
+#               self.decision_maker.make_decision()
                 time.sleep(0.5)
             return []
         actor, value = action
@@ -216,10 +216,15 @@ class GameDriver():
                     else:
                         self.postflop_status[actor] = 'bet'
                 else:
-                    if self.postflop_status[actor] == 'check':
-                        self.postflop_status[actor] = 'check raise'
+                    if self.postflop_status[self.last_better] in ['raise', 'reraise', 'check raise']:
+                        self.postflop_status[actor] = 'reraise'
+                    elif self.postflop_status[self.last_better] == 'check':
+                        self.postflop_status[actor] = 'bet'
                     else:
-                        self.postflop_status[actor] = 'raise'
+                        if self.postflop_status[actor] == 'check':
+                            self.postflop_status[actor] = 'check raise'
+                        else:
+                            self.postflop_status[actor] = 'raise'
                 self.last_better = actor
             else:
                 if self.postflop_status[actor] == 'check':
@@ -229,6 +234,7 @@ class GameDriver():
                             self.postflop_status[self.last_better]
             self.pot += value
             self.pot = round(self.pot, 2)
+        self.decision_maker.update_status()
         self.decision_maker.update_stats(actor, value)
         self.decision_maker.get_avg_stats()
         self.decision_maker.get_opponent()
@@ -245,11 +251,11 @@ class GameDriver():
         self.move_catcher.to_act = to_act
 #       move_catcher = MoveCatcher(to_act, self)#}}}
         while True:
-            if sum([self.active[j] == 1 for j in xrange(1, 6)]) == 0:
-                change_terminal_color('green')
-                print 'game over because no active opponent'
-                change_terminal_color()
-                return 'new game'
+#            if sum([self.active[j] == 1 for j in xrange(1, 6)]) == 0:
+#                change_terminal_color('green')
+#                print 'game over because no active opponent'
+#                change_terminal_color()
+#                return 'new game'
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:
@@ -301,16 +307,19 @@ class GameDriver():
         while self.active[self.last_mover] != 1:
             self.last_mover = (self.last_mover-1) % 6
         self.move_catcher.to_act = to_act
+        self.decision_maker.update_status()
         self.decision_maker.clean_stats()
         self.decision_maker.compress_stats()
+        print 'PROB LEFT: ', self.decision_maker.prob_left()
+        raw_input('----press any key----')
         self.decision_maker.get_avg_stats()
         self.decision_maker.get_opponent()
         self.decision_maker.update_wct()
-        self.decision_maker.get_dummy_action()
+        self.decision_maker.get_dummy_action_table()
 #       move_catcher = MoveCatcher(to_act, self)#}}}
         while True:
-            if sum([self.active[j] == 1 for j in xrange(6)]) <= 1:
-                return 'new game'
+#            if sum([self.active[j] == 1 for j in xrange(6)]) <= 1:
+#                return 'new game'
             actions = self.move_catcher.get_action()
             if self.source == 'ps':#{{{
                 for action in actions:

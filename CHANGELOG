@@ -1,15 +1,24 @@
 -----------------------------
+VERSION 2.1
 
-x 重写stats handler
+o 现在按照dummy_action来更新对手的stats，效果还不错
 
-- 加入判断对手弃牌率的分类器
-- Flop, Turn, River上的多次raise相比一次raise代表更厉害的牌力
-- Turn River出现危险牌（高张、买中），前位如果check，后位就别开枪了。其实还是依赖判断对手弃牌率的分类器
-- 不要拿着有showdown价值的牌去尝试打掉对手
-- 干燥面上拿着second nuts控池
-- 加入考虑河牌下注可能是破产的听牌的bluff
-- Preflop面对button miniraise可以考虑3Bet
-- Preflop面对mini 3Bet可以考虑用边缘牌去Call
+x 提速
+x 重写strategy
+
+-----------------------------
+VERSION 2.0
+
+o 改bug，美化输出
+o 调整对stats改变的算法
+
+-----------------------------
+VERSION 1.1
+
+o 加入了Simulate_Value功能，从而可以智能做出决定以及判断对手动作的概率。不过从实践上来看效果不好。
+o 人工规定了一个dummy，假设对手进行动作时的对象是dummy，效果一般。
+
+T 大约6000手，EV-10
 
 -----------------------------
 VERSION 1.0

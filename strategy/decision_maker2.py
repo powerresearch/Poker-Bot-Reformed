@@ -2,10 +2,11 @@ import json
 import time
 import random
 from math import exp
-from pokerstars.config import BB
+from pokerstars.config import SB, BB
 from pokerstars.controller import Controller
 from strategy.config import preflop_move_ep
 from strategy.config import preflop_move_lp
+from strategy.config import preflop_move_co
 from public import * 
 
 class PreflopDecisionMaker():#{{{
@@ -28,11 +29,17 @@ class PreflopDecisionMaker():#{{{
             suited = 1
         else:
             suited = 0
-        if self.button == 0 or self.button == 1 or ml:
+        if self.button == 0 or ml\
+                or (self.button == 5 and self.game_driver.bet_round == 1 and self.game_driver.people_play == 1):
             if suited:
                 my_move = preflop_move_lp[small_card][big_card]
             else:
                 my_move = preflop_move_lp[big_card][small_card]
+        elif self.button == 1:
+            if suited:
+                my_move = preflop_move_co[small_card][big_card]
+            else:
+                my_move = preflop_move_co[big_card][small_card]
         else:
             if suited:
                 my_move = preflop_move_ep[small_card][big_card]
@@ -313,7 +320,7 @@ class PreflopDecisionMaker():#{{{
                 else:
                     self.controller.fold()
                     return#}}}
-            if my_move == 3:
+            if my_move == 2.5:
                 if people_bet == 1:#{{{
                     self.controller.rais((people_play+2)*BB)
                     return
@@ -330,14 +337,22 @@ class PreflopDecisionMaker():#{{{
                         print 'Fold To 4 Bet: '+str(fold_chance)
                         self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
                         return 
-                    else:
-                        self.controller.call()
-                        return
+                self.controller.fold()
+                return#}}}
+            if my_move == 3:
+                if people_bet == 1:#{{{
+                    self.controller.rais((people_play+2)*BB)
+                    return
+                if people_bet == 2:
+                    self.controller.rais(max(betting)*(1.8+people_play*0.6)+2*BB)
+                    return
+                if people_bet == 3:
+                    self.controller.rais(max(betting)*(people_play+1.6))
                 self.controller.fold()
                 return#}}}
             if my_move == 4:
                 if people_bet >= 3:#{{{
-                    self.controller.rais(max(betting)*(people_play+2), 5)
+                    self.controller.rais(max(betting)*(people_play+1.6), 3)
                 else:
                     self.controller.rais(max(betting)*(people_play+2))
                 return#}}}
@@ -553,65 +568,97 @@ class PreflopDecisionMaker():#{{{
                 return#}}}
 #}}}
 
-class PostflopDecisionMaker():
+class PostflopDecisionMaker():#{{{
     def __init__(self, game_driver, stats):
         self.stats          = stats#{{{
         self.game_driver    = game_driver
-        self.betting        = [0, 0, 0, 0, 0, 0]
         self.controller     = Controller(game_driver, game_driver.shift)
-        self.source         = game_driver.source#}}}
+        self.source         = game_driver.source
+        self.button         = game_driver.button
+        self.update_status()
+    #}}}
+    
+    def update_status(self):#{{{
+        self.stage          = self.game_driver.stage
+        self.betting        = self.game_driver.betting
+        self.pot            = self.game_driver.pot
+        self.cards          = self.game_driver.cards
+        self.active         = self.game_driver.active
+        self.last_better    = self.game_driver.last_better
+        self.stack          = self.game_driver.stack
+        self.last_mover     = self.game_driver.last_mover
+    #}}}
 
     def update_stats(self, actor, action):#{{{
         if self.source != 'ps':
             raw_input()
-        stats_change = tree()
-        if self.game_driver.stage == 1:
-            if actor != 0:
-                vdt = self.get_value_dummy_table_flop(actor, action)
-            else:
-                vdt = self.vdt
-        elif self.game_driver.stage == 2:
-            if actor != 0:
-                vdt = self.get_value_dummy_table_turn(actor, action)
-            else:
-                vdt = self.vdt
-        else:
-            if actor != 0:
-                vdt = self.get_value_dummy_table_river(actor, action)
-            else:
-                vdt = self.vdt
-        if action == 0:
+        some_history_junk = tree() 
+#        if self.stage == 1:
+#            if actor != 0:
+#                vdt = self.get_value_dummy_table_flop(actor, action)
+#            else:
+#                vdt = self.flop_vdt
+#        elif self.stage == 2:
+#            if actor != 0:
+#                vdt = self.get_value_dummy_table_turn(actor, action)
+#            else:
+#                vdt = self.turn_vdt
+#        else:
+#            if actor != 0:
+#                vdt = self.get_value_dummy_table_river(actor, action)
+#            else:
+#                vdt = self.river_vdt
+        if action < SB:
             action_name = 'check'
-        elif sum(self.game_driver.betting) == action:
-            action_name = 'bet'
-        elif is_only_max(self.game_driver.betting, actor):
-            action_name = 'raise'
+        elif sum(self.betting) == action:
+            if self.betting[actor] / self.pot < 0.2 and self.stage != 3:
+                action_name = 'check'
+            else:
+                action_name = 'bet'
+        elif is_only_max(self.betting, actor):
+            if self.game_driver.postflop_status[self.game_driver.last_better] == 'bet': 
+                action_name = 'bet'
+            elif self.game_driver.postflop_status[self.game_driver.last_better] in ['raise', 'check raise']: 
+                action_name = 'raise'
+            else:
+                action_name = 'reraise'
         else:
-            action_name = 'call'
+            if self.game_driver.postflop_status[self.game_driver.last_better] == 'bet': 
+                action_name = 'call bet'
+            elif self.game_driver.postflop_status[self.game_driver.last_better] == 'check':
+                action_name = 'check'
+            elif self.game_driver.postflop_status[self.game_driver.last_better] in ['check raise', 'raise']: 
+                action_name = 'call raise'
+            else:
+                action_name = 'call reraise'
+#        action_name = 'his action'
+        print action_name
         max_change = 0
-        for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[actor], 4):
-            total_value = 0 
-            for action_name2 in vdt:
-                total_value += max(0, vdt[action_name2][n1][c1][n2][c2])
-            for action_name2 in vdt:
-                if action_name2 == 'call' and total_value < 0.5:
-                    vdt[action_name2][n1][c1][n2][c2] += 0.2
-                    total_value += 0.2
-                if action_name2 == 'raise' and total_value < 1.5:
-                    total_value += min([0.8, 1.5-total_value])
-            try:
-                stats_change[n1][c1][n2][c2] = vdt[action_name][n1][c1][n2][c2] / total_value
-            except:
-                print n1, c1, n2, c2
-                print vdt[action_name]
-            if stats_change[n1][c1][n2][c2] < 0:
-                stats_change[n1][c1][n2][c2] = 0
-            stats_change[n1][c1][n2][c2] = pow(stats_change[n1][c1][n2][c2], 3)
-            max_change = max(max_change, stats_change[n1][c1][n2][c2])
-        for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[actor], 4):
-            stats_change[n1][c1][n2][c2] /= max_change
+#        for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[actor], 4):
+#            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+#                continue
+#            total_value = 0 
+#            for action_name2 in vdt:
+#                total_value += max(0, vdt[action_name2][n1][c1][n2][c2])
+#            for action_name2 in vdt:
+#                if action_name2 == 'call' and total_value < 0.5:
+#                    vdt[action_name2][n1][c1][n2][c2] += 0.2
+#                    total_value += 0.2
+#                if action_name2 == 'raise' and total_value < 1.5:
+#                    total_value += min([0.6, 1.5-total_value])
+#            stats_change[n1][c1][n2][c2] = vdt[action_name][n1][c1][n2][c2] / total_value
+#            if stats_change[n1][c1][n2][c2] < 0:
+#                stats_change[n1][c1][n2][c2] = 0
+#            max_change = max(max_change, stats_change[n1][c1][n2][c2])
+#        for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[actor], 4):
+#            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+#                continue
+##           stats_change[n1][c1][n2][c2] /= max_change
+#            stats_change[n1][c1][n2][c2] = pow(stats_change[n1][c1][n2][c2], 2)
         for n1,c1,n2,c2,p in nodes_of_tree(self.stats[actor], 4):
-            the_color = color_make_different(self.game_driver.cards[2:self.game_driver.stage+4]\
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
+            the_color = color_make_different(self.stage, self.cards[2:self.stage+4]\
                     +[[n1, c1], [n2, c2]])
             if not c1 in the_color:
                 cc1 = 0
@@ -621,32 +668,72 @@ class PostflopDecisionMaker():
                 cc2 = 0
             else:
                 cc2 = c2
-            try:
-                self.stats[actor][n1][c1][n2][c2] *= stats_change[n1][cc1][n2][cc2]
-            except:
-                print stats_change
-                print n1, cc1, n2, cc2
+            if self.last_mover == actor:
+                if action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0
+                elif action_name == 'check' and\
+                        'check raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.3
+                elif action_name == 'call bet' and\
+                        ('raise' in self.dummy_action_ep[n1][cc1][n2][cc2] or\
+                        'fold' in self.dummy_action_ep[n1][cc1][n2][cc2]):
+                    stats_change = 0.7
+                elif action_name == 'raise' and\
+                        'call bet' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.7
+                else:
+                    stats_change = 1
+                some_history_junk[n1][cc1][n2][cc2] = stats_change
+                self.stats[actor][n1][c1][n2][c2] *= stats_change
+            else:
+                if action_name not in self.dummy_action_lp[n1][cc1][n2][cc2]:
+                    stats_change = 0
+                elif action_name == 'check' and\
+                        'check raise' in self.dummy_action_lp[n1][cc1][n2][cc2]:
+                    stats_change = 0.3
+                elif action_name == 'call bet' and\
+                        ('raise' in self.dummy_action_lp[n1][cc1][n2][cc2] or\
+                        'fold' in self.dummy_action_lp[n1][cc1][n2][cc2]):
+                    stats_change = 0.7
+                elif action_name == 'raise' and\
+                        'call bet' in self.dummy_action_lp[n1][cc1][n2][cc2]:
+                    stats_change = 0.7
+                else:
+                    stats_change = 1
+                some_history_junk[n1][cc1][n2][cc2] = stats_change
+                self.stats[actor][n1][c1][n2][c2] *= stats_change
         self.compress_stats()
         if self.source != 'ps':
-            show_stats(self.small_stats, stats_change, actor)
+            show_stats(self.small_stats, some_history_junk, actor)
 #}}}
 
+    def prob_left(self):
+        active_player_number = 0
+        summation = 0
+        for i in xrange(6):
+            if self.active[i] != 1:
+                continue
+            active_player_number += 1
+            for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[i], 4):
+                summation += p
+        return summation / active_player_number
+
     def update_wct(self):
-        if self.game_driver.stage == 1:#{{{
+        if self.stage == 1:#{{{
             self.get_win_chance_table_flop()
-        if self.game_driver.stage == 2:
+        if self.stage == 2:
             self.get_win_chance_table_turn()
-        if self.game_driver.stage == 3:
+        if self.stage == 3:
             self.get_win_chance_table_river()
         self.get_win_chance_against()#}}}
 
     def compress_stats(self):
         self.small_stats = tree()#{{{
         for player in xrange(6):
-            if not self.game_driver.active[player]:
+            if not self.active[player]:
                 continue
             for n1, c1, n2, c2, prob in nodes_of_tree(self.stats[player], 4):
-                the_color = color_make_different(self.game_driver.cards[2:]+[[n1, c1], [n2, c2]])
+                the_color = color_make_different(self.stage, self.cards[2:]+[[n1, c1], [n2, c2]])
                 if not c1 in the_color:
                     cc1 = 0
                 else:
@@ -661,39 +748,25 @@ class PostflopDecisionMaker():
                     self.small_stats[player][n1][cc1][n2][cc2] = prob#}}}
 
     def clean_stats(self):#{{{
-        cards = self.game_driver.cards
-        if self.game_driver.stage == 1:
+        cards = self.cards
+        if self.stage == 1:
             for i in xrange(6):
-                if self.game_driver.active[i] != 1:
+                if self.active[i] != 1:
                     continue
-                try:
-                    del self.stats[i][cards[2][0]][cards[2][1]]
-                except:
-                    pass
-                try:
-                    del self.stats[i][cards[3][0]][cards[3][1]]
-                except:
-                    pass
-                try:
-                    del self.stats[i][cards[4][0]][cards[4][1]]
-                except:
-                    pass
+                for index in xrange((i==0)*2,5):
+                    try:
+                        del self.stats[i][cards[index][0]][cards[index][1]]
+                    except:
+                        pass
                 for n1, c1, t in nodes_of_tree(self.stats[i], 2):
-                    try:
-                        del t[cards[2][0]][cards[2][1]]
-                    except:
-                        pass
-                    try:
-                        del t[cards[3][0]][cards[3][1]]
-                    except:
-                        pass
-                    try:
-                        del t[cards[4][0]][cards[4][1]]
-                    except:
-                        pass
-        if self.game_driver.stage == 2:
+                    for index in xrange((i==0)*2,5):
+                        try:
+                            del t[cards[index][0]][cards[index][1]]
+                        except:
+                            pass
+        if self.stage == 2:
             for i in xrange(6):
-                if self.game_driver.active[i] != 1:
+                if self.active[i] != 1:
                     continue
                 try:
                     del self.stats[i][cards[5][0]][cards[5][1]]
@@ -704,9 +777,9 @@ class PostflopDecisionMaker():
                         del t[cards[5][0]][cards[5][1]]
                     except:
                         pass
-        if self.game_driver.stage == 3:
+        if self.stage == 3:
             for i in xrange(6):
-                if self.game_driver.active[i] != 1:
+                if self.active[i] != 1:
                     continue
                 try:
                     del self.stats[i][cards[6][0]][cards[6][1]]
@@ -721,10 +794,12 @@ class PostflopDecisionMaker():
     def get_avg_stats(self):
         players = list()#{{{
         for i in xrange(6):
-            if self.game_driver.active[i] == 1:
+            if self.active[i] == 1:
                 players.append(i)
         self.players = players
         l = len(players)
+        if l == 0:
+            return
         self.stats.append(list())
         self.stats[6] = copy.deepcopy(self.stats[players[0]])
         self.small_stats[6] = copy.deepcopy(self.small_stats[players[0]])
@@ -742,20 +817,23 @@ class PostflopDecisionMaker():
     def get_opponent(self):
         self.opponent = [0, 0, 0, 0, 0, 0]#{{{
         for i in xrange(6):
-            if not self.game_driver.active[i] == 1:
+            if not self.active[i] == 1:
                 continue
-            if i != self.game_driver.last_better:
-                self.opponent[i] = self.game_driver.last_better
+            if i != self.last_better:
+                self.opponent[i] = self.last_better
             else:
                 for j in xrange(6):
-                    if self.game_driver.active[j] == 1 and j != self.game_driver.last_better:
+                    if self.active[j] == 1 and j != self.last_better:
                         self.opponent[i] = j#}}}
                             
     def get_win_chance_table_flop(self): # Win chance table of two specific hands
-        board = copy.deepcopy(self.game_driver.cards[2:])#{{{
+        board = copy.deepcopy(self.cards[2:])#{{{
         # Get fo_cache{{{
         fo_cache = tree()
-        for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[0], 4):
+        danger_cards = tree()
+        for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[6], 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             fo_cache[n1][c1][n2][c2][0] = find_out(board+[[n1, c1], [n2, c2]])
             for num3, col3 in enum_cards(1):
                 fo_cache[n1][c1][n2][c2][num3][col3]\
@@ -764,6 +842,8 @@ class PostflopDecisionMaker():
         wcts = tree()
         wctaa100 = tree()
         for n1, c1, n2, c2, prob1 in nodes_of_tree(self.small_stats[6], 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             prob_accumulation = 0
             win_chance_accumulation = 0
             if [n1, c1] in board or [n2, c2] in board:
@@ -902,15 +982,18 @@ class PostflopDecisionMaker():
                 win_chance_accumulation += wcts[n1][c1][n2][c2][n3][c3][n4][c4][0] * prob2
                 prob_accumulation += prob2
             wctaa100[n1][c1][n2][c2] = win_chance_accumulation / prob_accumulation#}}}
+        self.flop_danger_cards = danger_cards
         self.flop_fo_cache = fo_cache
-        self.wcts = wcts
-        self.wctaa100 = wctaa100#}}}
+        self.flop_wcts = wcts
+        self.flop_wctaa100 = wctaa100#}}}
 
     def get_win_chance_table_turn(self): # Win chance table of two specific hands
-        board = copy.deepcopy(self.game_driver.cards[2:])#{{{
+        board = copy.deepcopy(self.cards[2:])#{{{
         # Get fo_cache{{{
         fo_cache = tree()
-        for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[0], 4):
+        for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[6], 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             fo_cache[n1][c1][n2][c2][0] = find_out(board+[[n1, c1], [n2, c2]])
             for num3, col3 in enum_cards(1):
                 fo_cache[n1][c1][n2][c2][num3][col3]\
@@ -919,6 +1002,8 @@ class PostflopDecisionMaker():
         wcts = tree()
         wctaa100 = tree()
         for n1, c1, n2, c2, prob1 in nodes_of_tree(self.small_stats[6], 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             prob_accumulation = 0
             win_chance_accumulation = 0
             if [n1, c1] in board or [n2, c2] in board:
@@ -1058,19 +1143,23 @@ class PostflopDecisionMaker():
                 prob_accumulation += prob2
             wctaa100[n1][c1][n2][c2] = win_chance_accumulation / prob_accumulation#}}}
         self.turn_fo_cache = fo_cache
-        self.wcts = wcts
-        self.wctaa100 = wctaa100#}}}
+        self.turn_wcts = wcts
+        self.turn_wctaa100 = wctaa100#}}}
 
     def get_win_chance_table_river(self): # Win chance table of two specific hands
-        board = copy.deepcopy(self.game_driver.cards[2:])#{{{
+        board = copy.deepcopy(self.cards[2:])#{{{
         # Get fo_cache{{{
         fo_cache = tree()
-        for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[0], 4):
+        for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[6], 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             fo_cache[n1][c1][n2][c2][0] = find_out(board+[[n1, c1], [n2, c2]])#}}}
         #Get win_chance_table_small{{{
         wcts = tree()
         wctaa100 = tree()
         for n1, c1, n2, c2, prob1 in nodes_of_tree(self.small_stats[6], 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             prob_accumulation = 0
             win_chance_accumulation = 0
             if [n1, c1] in board or [n2, c2] in board:
@@ -1144,62 +1233,98 @@ class PostflopDecisionMaker():
                 prob_accumulation += prob2
             wctaa100[n1][c1][n2][c2] = win_chance_accumulation / prob_accumulation#}}}
         self.flop_fo_cache = fo_cache
-        self.wcts = wcts
-        self.wctaa100 = wctaa100#}}}
+        self.river_wcts = wcts
+        self.river_wctaa100 = wctaa100#}}}
 
     def get_win_chance_against(self):# Get win chance against top25%/50% cards. (use avg stats as opponent)#{{{
-        l = sorted([[wc, n1, c1, n2, c2] for n1, c1, n2, c2, wc in nodes_of_tree(self.wctaa100, 4)],\
+        if self.stage == 1:
+            wctaa100 = self.flop_wctaa100
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wcts = self.river_wcts
+        l = sorted([[wc, n1, c1, n2, c2] for n1, c1, n2, c2, wc in nodes_of_tree(wctaa100, 4)],\
                 key=lambda x:x[0], reverse=True)
         wctaa25 = tree()
         wctaa50 = tree()
         total_prob = 0
         for comb in l:
             total_prob += self.small_stats[6][comb[1]][comb[2]][comb[3]][comb[4]]
-        for n1, c1, n2, c2, wc in nodes_of_tree(self.wctaa100, 4):
+        for n1, c1, n2, c2, wc in nodes_of_tree(wctaa100, 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
             current_prob50 = 0
             current_prob25 = 0
             wctaa50[n1][c1][n2][c2] = 0
             wctaa25[n1][c1][n2][c2] = 0
             for comb in l:
                 n3, c3, n4, c4 = comb[1:]
+                if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                    continue
                 current_prob50 += self.small_stats[6][n3][c3][n4][c4]
                 if current_prob50 > 0.5 * total_prob:
                     wctaa50[n1][c1][n2][c2] /= current_prob50
                     wctaa25[n1][c1][n2][c2] /= current_prob25
                     break
                 if current_prob50 < 0.25 * total_prob:
-                    try:
-                        wctaa25[n1][c1][n2][c2] += self.small_stats[6][n3][c3][n4][c4]\
-                                * self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
-                    except:
-                        pass
-                try:
-                    wctaa50[n1][c1][n2][c2] += self.small_stats[6][n3][c3][n4][c4]\
-                            * self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
-                except:
-                    current_prob50 -= self.small_stats[6][n3][c3][n4][c4]
+                    wctaa25[n1][c1][n2][c2] += self.small_stats[6][n3][c3][n4][c4]\
+                            * wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
+                wctaa50[n1][c1][n2][c2] += self.small_stats[6][n3][c3][n4][c4]\
+                        * wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
                 if current_prob25 == 0 and current_prob50 > 0.25 * total_prob:
                     current_prob25 = current_prob50
-        self.wctaa25 = wctaa25
-        self.wctaa50 = wctaa50#}}}
+        if self.stage == 1:
+            self.flop_wctaa25 = wctaa25
+            self.flop_wctaa50 = wctaa50
+        elif self.stage == 2:
+            self.turn_wctaa25 = wctaa25
+            self.turn_wctaa50 = wctaa50
+        else:
+            self.river_wctaa25 = wctaa25
+            self.river_wctaa50 = wctaa50#}}}
 
-    def get_dummy_action(self):#{{{
-        if self.game_driver.stage == 1:
+    def get_dummy_action_table(self):#{{{
+        if self.stage == 1:
             self.get_dummy_action_flop()
-        if self.game_driver.stage == 2:
+        if self.stage == 2:
             self.get_dummy_action_turn()
-        if self.game_driver.stage == 3:
+        if self.stage == 3:
             self.get_dummy_action_river()#}}}
             
     def get_dummy_action_flop(self):# Set some naive strategy decided by win chance against avg stats.
         dummy_action_ep = tree()#{{{
         dummy_action_lp = tree()
-        player_number = sum([self.game_driver.active[i] != 0 for i in xrange(6)])
-        for n1, c1, n2, c2, wc in nodes_of_tree(self.wctaa100, 4):
-            w100 = self.wctaa100[n1][c1][n2][c2]
-            w50 = self.wctaa50[n1][c1][n2][c2]
-            w25 = self.wctaa25[n1][c1][n2][c2]
-            if w50 > 0.6 and w25 > 0.4:
+        if self.stage == 1:
+            wctaa100 = self.flop_wctaa100
+            wctaa50 = self.flop_wctaa50
+            wctaa25 = self.flop_wctaa25
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        player_number = sum([self.active[i] != 0 for i in xrange(6)])
+        for n1, c1, n2, c2, wc in nodes_of_tree(wctaa100, 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
+            w100 = wctaa100[n1][c1][n2][c2]
+            w50 = wctaa50[n1][c1][n2][c2]
+            w25 = wctaa25[n1][c1][n2][c2]
+            if w50 > 0.75 or w25 > 0.5:
+                dummy_action_ep[n1][c1][n2][c2]['reraise'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['reraise'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['call reraise'] = 1
+                dummy_action_ep[n1][c1][n2][c2]['call reraise'] = 1
+            if w50 > 0.55 or w25 > 0.35:
                 dummy_action_ep[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check raise'] = 1
@@ -1209,19 +1334,19 @@ class PostflopDecisionMaker():
             if w50 > 0.5:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
-            if w100 > 0.7 or w50 > 0.4 or w25 > 0.25:
+            if w100 > 0.8 or w50 > 0.5 or w25 > 0.3:
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
-            if w100 > 0.5 or w50 > 0.3 or w25 > 0.2:
+            if w100 > 0.4 or w50 > 0.3 or w25 > 0.2:
                 dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
-            if w50 > 0.25 or w100 > 0.5 or w25 > 0.15:
+            if w50 > 0.3 or w100 > 0.5 or w25 > 0.25:
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.35 or w100 > 0.5 or w25 > 0.2:
+            if w50 > 0.4 or w100 > 0.6 or w25 > 0.3:
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
-            if w100 <= 0.6 and w50 <= 0.3 and w25 <= 0.25:
+            if w100 <= 0.5 and w50 <= 0.3 and w25 <= 0.25:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.6 and w50 <= 0.4:
@@ -1236,35 +1361,63 @@ class PostflopDecisionMaker():
     def get_dummy_action_turn(self):# Set some naive strategy decided by win chance against avg stats.
         dummy_action_ep = tree()#{{{
         dummy_action_lp = tree()
-        player_number = sum([self.game_driver.active[i] != 0 for i in xrange(6)])
-        for n1, c1, n2, c2, wc in nodes_of_tree(self.wctaa100, 4):
-            w100 = self.wctaa100[n1][c1][n2][c2]
-            w50 = self.wctaa50[n1][c1][n2][c2]
-            w25 = self.wctaa25[n1][c1][n2][c2]
-            if w50 > 0.5 and w25 > 0.2:
+        if self.stage == 1:
+            wctaa100 = self.flop_wctaa100
+            wctaa50 = self.flop_wctaa50
+            wctaa25 = self.flop_wctaa25
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        player_number = sum([self.active[i] != 0 for i in xrange(6)])
+        for n1, c1, n2, c2, wc in nodes_of_tree(wctaa100, 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
+            w100 = wctaa100[n1][c1][n2][c2]
+            w50 = wctaa50[n1][c1][n2][c2]
+            w25 = wctaa25[n1][c1][n2][c2]
+            if w50 > 0.75 and w25 > 0.5:
+                dummy_action_ep[n1][c1][n2][c2]['reraise'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['reraise'] = 1
+                dummy_action_ep[n1][c1][n2][c2]['call reraise'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['call reraise'] = 1
+            if w50 > 0.6 and w25 > 0.4:
                 dummy_action_ep[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.2 or w100 > 0.5:
+            if w50 > 0.5:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
-            if w100 > 0.7 or w50 > 0.5 or w25 > 0.3:
+            if w100 > 0.7 or w50 > 0.5 or w25 > 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
+            if w100 > 0.6 or w50 > 0.3 or w25 > 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
-            if w50 > 0.3 or w100 > 0.45 or w25 > 0.2:
+            if w50 > 0.3 or w100 > 0.55 or w25 > 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
+            if w50 > 0.25 or w100 > 0.5 or w25 > 0.2:
+                dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.5 and w50 <= 0.3 and w25 <= 0.25:
+            if w100 <= 0.8 and w50 <= 0.6 and w25 <= 0.3:
+                dummy_action_ep[n1][c1][n2][c2]['check'] = 1
+            if w100 <= 0.6 and w50 <= 0.4 and w25 <= 0.25:
+                dummy_action_lp[n1][c1][n2][c2]['check'] = 1
+            if w100 <= 0.5 and w50 <= 0.3 and w25 <= 0.2:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.5 and w50 <= 0.3:
+            if w100 <= 0.65 and w50 <= 0.4:
                 dummy_action_ep[n1][c1][n2][c2]['check fold'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['fold'] = 1
@@ -1276,11 +1429,33 @@ class PostflopDecisionMaker():
     def get_dummy_action_river(self):# Set some naive strategy decided by win chance against avg stats.
         dummy_action_ep = tree()#{{{
         dummy_action_lp = tree()
-        player_number = sum([self.game_driver.active[i] != 0 for i in xrange(6)])
-        for n1, c1, n2, c2, wc in nodes_of_tree(self.wctaa100, 4):
-            w100 = self.wctaa100[n1][c1][n2][c2]
-            w50 = self.wctaa50[n1][c1][n2][c2]
-            w25 = self.wctaa25[n1][c1][n2][c2]
+        if self.stage == 1:
+            wctaa100 = self.flop_wctaa100
+            wctaa50 = self.flop_wctaa50
+            wctaa25 = self.flop_wctaa25
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        player_number = sum([self.active[i] != 0 for i in xrange(6)])
+        for n1, c1, n2, c2, wc in nodes_of_tree(wctaa100, 4):
+            if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                continue
+            w100 = wctaa100[n1][c1][n2][c2]
+            w50 = wctaa50[n1][c1][n2][c2]
+            w25 = wctaa25[n1][c1][n2][c2]
+            if w100 > 0.85:
+                dummy_action_ep[n1][c1][n2][c2]['reraise'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['reraise'] = 1
+                dummy_action_ep[n1][c1][n2][c2]['call reraise'] = 1
+                dummy_action_lp[n1][c1][n2][c2]['call reraise'] = 1
             if w100 > 0.75:
                 dummy_action_ep[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['raise'] = 1
@@ -1301,10 +1476,10 @@ class PostflopDecisionMaker():
                 dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.5:
+            if w100 <= 0.6:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.5:
+            if w100 <= 0.6:
                 dummy_action_ep[n1][c1][n2][c2]['check fold'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['fold'] = 1
@@ -1316,20 +1491,50 @@ class PostflopDecisionMaker():
     def get_value_dummy_table_flop(self, actor, action):# Suppose there are only two players left.
         bet = 0.8#{{{
         vdt = tree()
-        the_color = color_make_different(self.game_driver.cards)
-        mn1, mc1 = min(self.game_driver.cards[:2])
-        mn2, mc2 = max(self.game_driver.cards[:2])
+        if self.stage == 1:
+            wctaa100 = self.flop_wctaa100
+            wctaa50 = self.flop_wctaa50
+            wctaa25 = self.flop_wctaa25
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        the_color = color_make_different(self.stage, self.cards)
+        mn1, mc1 = min(self.cards[:2])
+        mn2, mc2 = max(self.cards[:2])
         if mc1 not in the_color:
             mc1 = 0
         if mc2 not in the_color:
             mc2 = 0
-        if self.game_driver.last_mover == actor:
+        commited_player = 0
+        for opponent in xrange(1, 6):
+            if self.active[opponent]:
+                if self.active[opponent] == 0.5:
+                    commited_player = 1
+                    break
+                if self.pot_commited(opponent):
+                    commited_player = 1
+                    break
+        if self.last_mover == actor:
             if max(self.betting) == self.betting[actor]:#{{{
+                amount = action / (self.pot - action - sum(self.betting))
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['bet'][n1][c1][n2][c2] = 0
                     vdt['check'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
                         if 'fold' in self.dummy_action_ep[n3][c3][n4][c4]:
                             numerator = 1
                             denominator = 1
@@ -1340,12 +1545,13 @@ class PostflopDecisionMaker():
                             denominator += 1
                         if 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            fold_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_ep[n3][c3][n4][c4]
-                            raise Exception
+                        if denominator == 0:
+                            denominator = 1
+                        fold_chance = 1.0 * numerator / denominator
+                        active_players = sum([item!=0 for item in self.active[1:]])
+                        fold_chance = pow(fold_chance, active_players)
+                        if commited_player:
+                            fold_chance = 0
                         if 'bet' in self.dummy_action_ep[n3][c3][n4][c4]:
                             numerator = self.dummy_action_ep[n3][c3][n4][c4]['bet']
                             denominator = self.dummy_action_ep[n3][c3][n4][c4]['bet']
@@ -1354,38 +1560,39 @@ class PostflopDecisionMaker():
                             denominator = 0
                         if 'check' in self.dummy_action_ep[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            bet_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_ep[n3][c3][n4][c4]
-                            raise Exception
-                        try:
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
-                            vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
-                                    + (1 - fold_chance) * v) 
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'bet  \t', round(prob2, 2), '\t', \
-                                        n3, c3, n4, c4, '\t',\
-                                        round(fold_chance, 2), round(v, 2),\
-                                        round(fold_chance + (1 - fold_chance)*v, 2)
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
-                            if v < 0:
-                                v = 0
-                            vdt['check'][n1][c1][n2][c2] += prob2 * v
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'check\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except:
-                            continue
+                        if denominator == 0:
+                            denominator = 1
+                        bet_chance = 1.0 * numerator / denominator
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
+                        vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                + (1 - fold_chance) * v) 
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'bet  \t', round(prob2, 2), '\t', \
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(fold_chance, 2), round(v, 2),\
+#                                    round(fold_chance + (1 - fold_chance)*v, 2)
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
+                        if v < 0:
+                            v = 0
+                        vdt['check'][n1][c1][n2][c2] += prob2 * v
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'check\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=amount, rais=0)
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                    + (1 - fold_chance) * v)
+                        prob_accumulation += prob2
                     vdt['bet'][n1][c1][n2][c2] /= prob_accumulation
                     vdt['check'][n1][c1][n2][c2] /= prob_accumulation
-                    if self.source != 'ps' and actor != 0:
-                        print n1, c1, n2, c2, '\t',\
-                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
-                                round(vdt['check'][n1][c1][n2][c2], 2)
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2] > 0.1:
+#                        print n1, c1, n2, c2, '\t',\
+#                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['check'][n1][c1][n2][c2], 2)
                     vdt['check'][n1][c1][n2][c2] = max(0.4, vdt['check'][n1][c1][n2][c2])
                 try:
                     del vdt['check1']
@@ -1395,68 +1602,84 @@ class PostflopDecisionMaker():
                 return vdt#}}}
             else:#{{{
                 to_call = max(self.betting) - self.betting[actor]
-                to_call /= (self.game_driver.pot - action - sum(self.betting))
+                to_call = min(self.stack[actor], to_call)
+                to_call /= (self.pot - action - sum(self.betting))
+                amount = action / (self.pot - action - sum(self.betting))
+                amount -= to_call
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['call'][n1][c1][n2][c2] = 0
                     vdt['raise'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     value_from_fold = 0
                     value_from_call = 0
                     fold_prob = 0
                     call_prob = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
-                        try:
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if 'call raise' in self.dummy_action_ep[n3][c3][n4][c4]\
+                                or 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * v
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                            value_from_call += prob2 * v 
+                            call_prob += prob2 
+                        else:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
+                            value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                            fold_prob += prob2
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
+                        vdt['call'][n1][c1][n2][c2] += prob2 * v
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=amount)
                             if 'call raise' in self.dummy_action_ep[n3][c3][n4][c4]\
                                     or 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * v
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                                value_from_call += prob2 * v 
-                                call_prob += prob2 
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * v
                             else:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
-                                value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                fold_prob += prob2
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
-                            vdt['call'][n1][c1][n2][c2] += prob2 * v
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except Exception as e:
-                            continue
-                    try:
-                        value_from_fold /= (fold_prob+call_prob)
-                        value_from_call /= (fold_prob+call_prob)
-                        fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
-                                call_prob / (fold_prob+call_prob)
-                        vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
-                        vdt['call'][n1][c1][n2][c2] /= prob_accumulation
-                        if self.source != 'ps' and actor != 0:
-                            print n1, c1, n2, c2, '\t', round(self.wctaa50[n1][c1][n2][c2], 2), '\t',\
-                                    round(fold_prob, 2), round(call_prob, 2), '\t',\
-                                    round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
-                                    round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
-                                    round(value_from_fold, 2), round(value_from_call, 2)
-                    except Exception as e:
-                        print e
-                        print n1, c1, n2, c2
-                        if self.source != 'ps':
-                            raw_input()
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                        prob_accumulation += prob2
+                    value_from_fold /= (fold_prob+call_prob)
+                    value_from_call /= (fold_prob+call_prob)
+                    fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
+                            call_prob / (fold_prob+call_prob)
+                    vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['call'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2] > 0.1:
+#                        print n1, c1, n2, c2, '\t', round(wctaa50[n1][c1][n2][c2], 2), '\t',\
+#                                round(fold_prob, 2), round(call_prob, 2), '\t',\
+#                                round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
+#                                round(value_from_fold, 2), round(value_from_call, 2)
                 return vdt#}}}
         else:
             if max(self.betting) == self.betting[actor]:#{{{
+                amount = action / (self.pot - action - sum(self.betting))
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['check1'][n1][c1][n2][c2] = 0
                     vdt['check2'][n1][c1][n2][c2] = 0
+                    vdt['check'][n1][c1][n2][c2] = 0
                     vdt['bet'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
                         if 'fold' in self.dummy_action_lp[n3][c3][n4][c4]:
                             numerator = 1
                             denominator = 1
@@ -1467,12 +1690,14 @@ class PostflopDecisionMaker():
                             denominator += 1
                         if 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            fold_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_lp[n3][c3][n4][c4]
-                            raise Exception
+                        if denominator == 0:
+                            denominator = 1
+                        fold_chance = 1.0 * numerator / denominator
+                        active_players = sum([item!=0 for item in self.active[1:]])
+                        fold_chance = pow(fold_chance, active_players)
+                        fold_chance *= 0.5
+                        if commited_player:
+                            fold_chance = 0
                         if 'bet' in self.dummy_action_lp[n3][c3][n4][c4]:
                             numerator = self.dummy_action_lp[n3][c3][n4][c4]['bet'] 
                             denominator = self.dummy_action_lp[n3][c3][n4][c4]['bet']
@@ -1481,47 +1706,49 @@ class PostflopDecisionMaker():
                             denominator = 0
                         if 'check' in self.dummy_action_lp[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            bet_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_lp[n3][c3][n4][c4]
-                            raise Exception
-                        try:
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
-                            vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                        if denominator == 0:
+                            denominator = 1
+                        bet_chance = 1.0 * numerator / denominator
+                        if amount > 0:
+                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=amount, rais=0)
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * (fold_chance\
                                     + (1 - fold_chance) * v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'bet       \t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(fold_chance, 2), round(v, 2),\
-                                        round(fold_chance + (1-fold_chance)*v, 2)
-                            v2 = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
-                            if v2 < 0:
-                                v2 = 0
-                            vdt['check1'][n1][c1][n2][c2] += prob2 * ((1-bet_chance) * v2)
-                            vdt['check2'][n1][c1][n2][c2] += prob2 * ((1-bet_chance)*v2 + bet_chance*v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'check fold\t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(bet_chance, 2), round(v2, 2),\
-                                        round((1-bet_chance) * v2, 2)
-                                print 'check call\t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(bet_chance, 2), round(v, 2),\
-                                        round((1-bet_chance)*v2 + bet_chance*v, 2)
-                            prob_accumulation += prob2
-                        except:
-                            continue
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
+                        vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                + (1 - fold_chance) * v)
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'bet       \t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(fold_chance, 2), round(v, 2),\
+#                                    round(fold_chance + (1-fold_chance)*v, 2)
+                        v2 = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
+                        if v2 < 0:
+                            v2 = 0
+                        vdt['check1'][n1][c1][n2][c2] += prob2 * ((1-bet_chance) * v2)
+                        vdt['check2'][n1][c1][n2][c2] += prob2 * ((1-bet_chance)*v2 + bet_chance*v)
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'check fold\t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(bet_chance, 2), 0,\
+#                                    round((1-bet_chance) * v2, 2)
+#                            print 'check call\t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(bet_chance, 2), round(v2, 2),\
+#                                    round((1-bet_chance)*v2 + bet_chance*v, 2)
+                        prob_accumulation += prob2
                     vdt['bet'][n1][c1][n2][c2] /= prob_accumulation
                     vdt['check'][n1][c1][n2][c2] = max(vdt['check1'][n1][c1][n2][c2],\
                             vdt['check2'][n1][c1][n2][c2]) / prob_accumulation
-                    if self.source != 'ps' and actor != 0:
-                        print n1, c1, n2, c2, '\t',\
-                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
-                                round(vdt['check'][n1][c1][n2][c2], 2)
+                    if amount > 0:
+                        vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+                    else:
+                        vdt['his action'][n1][c1][n2][c2] = vdt['check'][n1][c1][n2][c2]
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2]:
+#                        print n1, c1, n2, c2, '\t',\
+#                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['check'][n1][c1][n2][c2], 2)
                     vdt['check'][n1][c1][n2][c2] = max(0.4, vdt['check'][n1][c1][n2][c2])
                 try:
                     del vdt['check1']
@@ -1531,80 +1758,118 @@ class PostflopDecisionMaker():
                 return vdt#}}}
             else:#{{{
                 to_call = max(self.betting) - self.betting[actor]
-                to_call /= (self.game_driver.pot - action - sum(self.betting))
-                rais = 1 + to_call
+                to_call = min(self.stack[actor], to_call)
+                to_call /= (self.pot - action - sum(self.betting))
+                amount = action / (self.pot - action - sum(self.betting))
+                amount -= to_call
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['call'][n1][c1][n2][c2] = 0
                     vdt['raise'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     value_from_fold = 0
                     value_from_call = 0
                     fold_prob = 0
                     call_prob = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
-                        try:
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if 'call raise' in self.dummy_action_lp[n3][c3][n4][c4]\
+                                or 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * v
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                            value_from_call += prob2 * v 
+                            call_prob += prob2 
+                        else:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
+                            value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
+                            fold_prob += prob2
+                        v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
+                        vdt['call'][n1][c1][n2][c2] += prob2 * v 
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=amount)
                             if 'call raise' in self.dummy_action_lp[n3][c3][n4][c4]\
                                     or 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * v
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                                value_from_call += prob2 * v 
-                                call_prob += prob2 
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * v
                             else:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
-                                value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                fold_prob += prob2
-                            v = self.simulate_value_flop(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
-                            vdt['call'][n1][c1][n2][c2] += prob2 * v 
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except Exception as e:
-                            continue
-                    try:
-                        value_from_fold /= (fold_prob+call_prob)
-                        value_from_call /= (call_prob+fold_prob)
-                        fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
-                                call_prob / (fold_prob+call_prob)
-                        vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
-                        vdt['call'][n1][c1][n2][c2] /= prob_accumulation
-                        if self.source != 'ps' and actor != 0:
-                            print n1, c1, n2, c2, '\t', round(self.wctaa50[n1][c1][n2][c2], 2), '\t',\
-                                    round(fold_prob, 2), round(call_prob, 2), '\t',\
-                                    round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
-                                    round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
-                                    round(value_from_fold, 2), round(value_from_call, 2)
-                    except Exception as e:
-                        print e
-                        print n1, c1, n2, c2
-                        if self.source != 'ps':
-                            raw_input()
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                        prob_accumulation += prob2
+                    value_from_fold /= (fold_prob+call_prob)
+                    value_from_call /= (call_prob+fold_prob)
+                    fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
+                            call_prob / (fold_prob+call_prob)
+                    vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['call'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2]:
+#                        print n1, c1, n2, c2, '\t', round(wctaa50[n1][c1][n2][c2], 2), '\t',\
+#                                round(fold_prob, 2), round(call_prob, 2), '\t',\
+#                                round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
+#                                round(value_from_fold, 2), round(value_from_call, 2)
                 return vdt#}}}
 #}}}
 
     def get_value_dummy_table_turn(self, actor, action):# Suppose there are only two players left.
         bet = 0.8#{{{
         vdt = tree()
-        the_color = color_make_different(self.game_driver.cards)
-        mn1, mc1 = min(self.game_driver.cards[:2])
-        mn2, mc2 = max(self.game_driver.cards[:2])
+        if self.stage == 1:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        the_color = color_make_different(self.stage, self.cards)
+        mn1, mc1 = min(self.cards[:2])
+        mn2, mc2 = max(self.cards[:2])
         if mc1 not in the_color:
             mc1 = 0
         if mc2 not in the_color:
             mc2 = 0
-        if self.game_driver.last_mover == actor:
+        commited_player = 0
+        for opponent in xrange(1, 6):
+            if self.active[opponent]:
+                if self.active[opponent] == 0.5:
+                    commited_player = 1
+                    break
+                if self.pot_commited(opponent):
+                    commited_player = 1
+                    break
+        if self.last_mover == actor:
             if max(self.betting) == self.betting[actor]:#{{{
+                amount = action / (self.pot - action - sum(self.betting))
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['bet'][n1][c1][n2][c2] = 0
                     vdt['check'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
                         if 'fold' in self.dummy_action_ep[n3][c3][n4][c4]:
                             numerator = 1
                             denominator = 1
@@ -1615,12 +1880,13 @@ class PostflopDecisionMaker():
                             denominator += 1
                         if 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            fold_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_ep[n3][c3][n4][c4]
-                            raise Exception
+                        if denominator == 0:
+                            denominator = 1
+                        fold_chance = 1.0 * numerator / denominator
+                        active_players = sum([item!=0 for item in self.active[1:]])
+                        fold_chance = pow(fold_chance, active_players)
+                        if commited_player:
+                            fold_chance = 0
                         if 'bet' in self.dummy_action_ep[n3][c3][n4][c4]:
                             numerator = self.dummy_action_ep[n3][c3][n4][c4]['bet']
                             denominator = self.dummy_action_ep[n3][c3][n4][c4]['bet']
@@ -1629,39 +1895,40 @@ class PostflopDecisionMaker():
                             denominator = 0
                         if 'check' in self.dummy_action_ep[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            bet_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_ep[n3][c3][n4][c4]
-                            raise Exception
-                        try:
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
-                            vdt['bet'][n1][c1][n2][c2] += prob2 * (0.8*fold_chance\
-                                    + 0.2*fold_chance*min([v, 1])\
+                        if denominator == 0:
+                            denominator = 1
+                        bet_chance = 1.0 * numerator / denominator
+                        fold_chance *= 0.75
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
+                        vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                + (1 - fold_chance) * v) 
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'bet  \t', round(prob2, 2), '\t', \
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(fold_chance, 2), round(v, 2),\
+#                                    round(fold_chance + (1 - fold_chance)*v, 2)
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
+                        if v < 0:
+                            v = 0
+                        vdt['check'][n1][c1][n2][c2] += prob2 * v
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'check\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=amount, rais=0)
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * (fold_chance\
                                     + (1 - fold_chance) * v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'bet  \t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(fold_chance, 2), round(v, 2),\
-                                        round(fold_chance + (1 - fold_chance)*v, 2)
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
-                            if v < 0:
-                                v = 0
-                            vdt['check'][n1][c1][n2][c2] += prob2 * v
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'check\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except:
-                            continue
+                        prob_accumulation += prob2
                     vdt['bet'][n1][c1][n2][c2] /= prob_accumulation
                     vdt['check'][n1][c1][n2][c2] /= prob_accumulation
-                    if self.source != 'ps' and actor != 0:
-                        print n1, c1, n2, c2, '\t',\
-                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
-                                round(vdt['check'][n1][c1][n2][c2], 2)
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2] > 0.1:
+#                        print n1, c1, n2, c2, '\t',\
+#                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['check'][n1][c1][n2][c2], 2)
                     vdt['check'][n1][c1][n2][c2] = max(0.4, vdt['check'][n1][c1][n2][c2])
                 try:
                     del vdt['check1']
@@ -1671,68 +1938,84 @@ class PostflopDecisionMaker():
                 return vdt#}}}
             else:#{{{
                 to_call = max(self.betting) - self.betting[actor]
-                to_call /= (self.game_driver.pot - action - sum(self.betting))
+                to_call = min(self.stack[actor], to_call)
+                to_call /= (self.pot - action - sum(self.betting))
+                amount = action / (self.pot - action - sum(self.betting))
+                amount -= to_call
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['call'][n1][c1][n2][c2] = 0
                     vdt['raise'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     value_from_fold = 0
                     value_from_call = 0
                     fold_prob = 0
                     call_prob = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
-                        try:
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if 'call raise' in self.dummy_action_ep[n3][c3][n4][c4]\
+                                or 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * v
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                            value_from_call += prob2 * v 
+                            call_prob += prob2 
+                        else:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
+                            value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                            fold_prob += prob2
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
+                        vdt['call'][n1][c1][n2][c2] += prob2 * v
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=amount)
                             if 'call raise' in self.dummy_action_ep[n3][c3][n4][c4]\
                                     or 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * v
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                                value_from_call += prob2 * v 
-                                call_prob += prob2 
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * v
                             else:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
-                                value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                fold_prob += prob2
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
-                            vdt['call'][n1][c1][n2][c2] += prob2 * v
-                            if actor == 0 and self.source != 'ps'\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except Exception as e:
-                            continue
-                    try:
-                        value_from_fold /= (fold_prob+call_prob)
-                        value_from_call /= (fold_prob+call_prob)
-                        fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
-                                call_prob / (fold_prob+call_prob)
-                        vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
-                        vdt['call'][n1][c1][n2][c2] /= prob_accumulation
-                        if self.source != 'ps' and actor != 0:
-                            print n1, c1, n2, c2, '\t', round(self.wctaa50[n1][c1][n2][c2], 2), '\t',\
-                                    round(fold_prob, 2), round(call_prob, 2), '\t',\
-                                    round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
-                                    round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
-                                    round(value_from_fold, 2), round(value_from_call, 2)
-                    except Exception as e:
-                        print e
-                        print n1, c1, n2, c2
-                        if self.source != 'ps':
-                            raw_input()
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                        prob_accumulation += prob2
+                    value_from_fold /= (fold_prob+call_prob)
+                    value_from_call /= (fold_prob+call_prob)
+                    fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
+                            call_prob / (fold_prob+call_prob)
+                    vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['call'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2] > 0.1:
+#                        print n1, c1, n2, c2, '\t', round(wctaa50[n1][c1][n2][c2], 2), '\t',\
+#                                round(fold_prob, 2), round(call_prob, 2), '\t',\
+#                                round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
+#                                round(value_from_fold, 2), round(value_from_call, 2)
                 return vdt#}}}
         else:
             if max(self.betting) == self.betting[actor]:#{{{
+                amount = action / (self.pot - action - sum(self.betting))
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['check1'][n1][c1][n2][c2] = 0
                     vdt['check2'][n1][c1][n2][c2] = 0
+                    vdt['check'][n1][c1][n2][c2] = 0
                     vdt['bet'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
                         if 'fold' in self.dummy_action_lp[n3][c3][n4][c4]:
                             numerator = 1
                             denominator = 1
@@ -1743,12 +2026,14 @@ class PostflopDecisionMaker():
                             denominator += 1
                         if 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            fold_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_lp[n3][c3][n4][c4]
-                            raise Exception
+                        if denominator == 0:
+                            denominator = 1
+                        fold_chance = 1.0 * numerator / denominator
+                        active_players = sum([item!=0 for item in self.active[1:]])
+                        fold_chance = pow(fold_chance, active_players)
+                        fold_chance *= 0.5
+                        if commited_player:
+                            fold_chance = 0
                         if 'bet' in self.dummy_action_lp[n3][c3][n4][c4]:
                             numerator = self.dummy_action_lp[n3][c3][n4][c4]['bet'] 
                             denominator = self.dummy_action_lp[n3][c3][n4][c4]['bet']
@@ -1757,48 +2042,49 @@ class PostflopDecisionMaker():
                             denominator = 0
                         if 'check' in self.dummy_action_lp[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            bet_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_lp[n3][c3][n4][c4]
-                            raise Exception
-                        try:
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
-                            vdt['bet'][n1][c1][n2][c2] += prob2 * (0.7*fold_chance\
-                                    + 0.3*fold_chance*min([1, v])\
+                        if denominator == 0:
+                            denominator = 1
+                        bet_chance = 1.0 * numerator / denominator
+                        if amount > 0:
+                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=amount, rais=0)
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * (fold_chance\
                                     + (1 - fold_chance) * v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'bet       \t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(fold_chance, 2), round(v, 2),\
-                                        round(fold_chance + (1-fold_chance)*v, 2)
-                            v2 = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
-                            if v2 < 0:
-                                v2 = 0
-                            vdt['check1'][n1][c1][n2][c2] += prob2 * ((1-bet_chance) * v2)
-                            vdt['check2'][n1][c1][n2][c2] += prob2 * ((1-bet_chance)*v2 + bet_chance*v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'check fold\t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(bet_chance, 2), round(v2, 2),\
-                                        round((1-bet_chance) * v2, 2)
-                                print 'check call\t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(bet_chance, 2), round(v2, 2),\
-                                        round((1-bet_chance)*v2 + bet_chance*v, 2)
-                            prob_accumulation += prob2
-                        except:
-                            continue
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
+                        vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                + (1 - fold_chance) * v)
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'bet       \t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(fold_chance, 2), round(v, 2),\
+#                                    round(fold_chance + (1-fold_chance)*v, 2)
+                        v2 = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
+                        if v2 < 0:
+                            v2 = 0
+                        vdt['check1'][n1][c1][n2][c2] += prob2 * ((1-bet_chance) * v2)
+                        vdt['check2'][n1][c1][n2][c2] += prob2 * ((1-bet_chance)*v2 + bet_chance*v)
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'check fold\t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(bet_chance, 2), 0,\
+#                                    round((1-bet_chance) * v2, 2)
+#                            print 'check call\t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(bet_chance, 2), round(v, 2),\
+#                                    round((1-bet_chance)*v2 + bet_chance*v, 2)
+                        prob_accumulation += prob2
                     vdt['bet'][n1][c1][n2][c2] /= prob_accumulation
                     vdt['check'][n1][c1][n2][c2] = max(vdt['check1'][n1][c1][n2][c2],\
                             vdt['check2'][n1][c1][n2][c2]) / prob_accumulation
-                    if self.source != 'ps' and actor != 0:
-                        print n1, c1, n2, c2, '\t',\
-                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
-                                round(vdt['check'][n1][c1][n2][c2], 2)
+                    if amount > 0:
+                        vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+                    else:
+                        vdt['his action'][n1][c1][n2][c2] = vdt['check'][n1][c1][n2][c2]
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2]:
+#                        print n1, c1, n2, c2, '\t',\
+#                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['check'][n1][c1][n2][c2], 2)
                     vdt['check'][n1][c1][n2][c2] = max(0.4, vdt['check'][n1][c1][n2][c2])
                 try:
                     del vdt['check1']
@@ -1808,80 +2094,118 @@ class PostflopDecisionMaker():
                 return vdt#}}}
             else:#{{{
                 to_call = max(self.betting) - self.betting[actor]
-                to_call /= (self.game_driver.pot - action - sum(self.betting))
-                rais = 1 + to_call
+                to_call = min(self.stack[actor], to_call)
+                to_call /= (self.pot - action - sum(self.betting))
+                amount = action / (self.pot - action - sum(self.betting))
+                amount -= to_call
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['call'][n1][c1][n2][c2] = 0
                     vdt['raise'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     value_from_fold = 0
                     value_from_call = 0
                     fold_prob = 0
                     call_prob = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
-                        try:
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if 'call raise' in self.dummy_action_lp[n3][c3][n4][c4]\
+                                or 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * v
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                            value_from_call += prob2 * v 
+                            call_prob += prob2 
+                        else:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.4+v*0.6]))
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
+                            value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
+                            fold_prob += prob2
+                        v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
+                        vdt['call'][n1][c1][n2][c2] += prob2 * v 
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=amount)
                             if 'call raise' in self.dummy_action_lp[n3][c3][n4][c4]\
                                     or 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * v
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                                value_from_call += prob2 * v 
-                                call_prob += prob2 
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * v
                             else:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
-                                value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                fold_prob += prob2
-                            v = self.simulate_value_turn(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
-                            vdt['call'][n1][c1][n2][c2] += prob2 * v 
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except Exception as e:
-                            continue
-                    try:
-                        value_from_fold /= (fold_prob+call_prob)
-                        value_from_call /= (call_prob+fold_prob)
-                        fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
-                                call_prob / (fold_prob+call_prob)
-                        vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
-                        vdt['call'][n1][c1][n2][c2] /= prob_accumulation
-                        if self.source != 'ps' and actor != 0:
-                            print n1, c1, n2, c2, '\t', round(self.wctaa50[n1][c1][n2][c2], 2), '\t',\
-                                    round(fold_prob, 2), round(call_prob, 2), '\t',\
-                                    round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
-                                    round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
-                                    round(value_from_fold, 2), round(value_from_call, 2)
-                    except Exception as e:
-                        print e
-                        print n1, c1, n2, c2
-                        if self.source != 'ps':
-                            raw_input()
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                        prob_accumulation += prob2
+                    value_from_fold /= (fold_prob+call_prob)
+                    value_from_call /= (call_prob+fold_prob)
+                    fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
+                            call_prob / (fold_prob+call_prob)
+                    vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['call'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2]:
+#                        print n1, c1, n2, c2, '\t', round(wctaa50[n1][c1][n2][c2], 2), '\t',\
+#                                round(fold_prob, 2), round(call_prob, 2), '\t',\
+#                                round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
+#                                round(value_from_fold, 2), round(value_from_call, 2)
                 return vdt#}}}
 #}}}
 
     def get_value_dummy_table_river(self, actor, action):# Suppose there are only two players left.
         bet = 0.8#{{{
         vdt = tree()
-        the_color = color_make_different(self.game_driver.cards)
-        mn1, mc1 = min(self.game_driver.cards[:2])
-        mn2, mc2 = max(self.game_driver.cards[:2])
+        if self.stage == 1:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
+        the_color = color_make_different(self.stage, self.cards)
+        mn1, mc1 = min(self.cards[:2])
+        mn2, mc2 = max(self.cards[:2])
         if mc1 not in the_color:
             mc1 = 0
         if mc2 not in the_color:
             mc2 = 0
-        if self.game_driver.last_mover == actor:
+        commited_player = 0
+        for opponent in xrange(1, 6):
+            if self.active[opponent]:
+                if self.active[opponent] == 0.5:
+                    commited_player = 1
+                    break
+                if self.pot_commited(opponent):
+                    commited_player = 1
+                    break
+        if self.last_mover == actor:
             if max(self.betting) == self.betting[actor]:#{{{
+                amount = action / (self.pot - action - sum(self.betting))
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['bet'][n1][c1][n2][c2] = 0
                     vdt['check'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
                         if 'fold' in self.dummy_action_ep[n3][c3][n4][c4]:
                             numerator = 1
                             denominator = 1
@@ -1892,12 +2216,14 @@ class PostflopDecisionMaker():
                             denominator += 1
                         if 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            fold_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_ep[n3][c3][n4][c4]
-                            raise Exception
+                        if denominator == 0:
+                            denominator = 1
+                        fold_chance = 1.0 * numerator / denominator
+                        active_players = sum([item!=0 for item in self.active[1:]])
+                        fold_chance = pow(fold_chance, active_players)
+                        fold_chance *= 0.8
+                        if commited_player:
+                            fold_chance = 0
                         if 'bet' in self.dummy_action_ep[n3][c3][n4][c4]:
                             numerator = self.dummy_action_ep[n3][c3][n4][c4]['bet']
                             denominator = self.dummy_action_ep[n3][c3][n4][c4]['bet']
@@ -1906,39 +2232,39 @@ class PostflopDecisionMaker():
                             denominator = 0
                         if 'check' in self.dummy_action_ep[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            bet_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_ep[n3][c3][n4][c4]
-                            raise Exception
-                        try:
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
-                            vdt['bet'][n1][c1][n2][c2] += prob2 * (0.7*fold_chance\
-                                    + 0.3*fold_chance*min([1, v])\
-                                    + (1 - fold_chance) * v) 
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'bet  \t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(fold_chance, 2), round(v, 2),\
-                                        round(fold_chance + (1 - fold_chance)*v, 2)
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
-                            if v < 0:
-                                v = 0
-                            vdt['check'][n1][c1][n2][c2] += prob2 * v
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'check \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except:
-                            continue
+                        if denominator == 0:
+                            denominator = 1
+                        bet_chance = 1.0 * numerator / denominator
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
+                        vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                + (1 - fold_chance) * v) 
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'bet  \t', round(prob2, 2), '\t', \
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(fold_chance, 2), round(v, 2),\
+#                                    round(fold_chance + (1 - fold_chance)*v, 2)
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
+                        if v < 0:
+                            v = 0
+                        vdt['check'][n1][c1][n2][c2] += prob2 * v
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'check\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=amount, rais=0)
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                    + (1 - fold_chance) * v)
+                        prob_accumulation += prob2
                     vdt['bet'][n1][c1][n2][c2] /= prob_accumulation
                     vdt['check'][n1][c1][n2][c2] /= prob_accumulation
-                    if self.source != 'ps' and actor != 0:
-                        print n1, c1, n2, c2, '\t',\
-                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
-                                round(vdt['check'][n1][c1][n2][c2], 2)
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2] > 0.1:
+#                        print n1, c1, n2, c2, '\t',\
+#                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['check'][n1][c1][n2][c2], 2)
                     vdt['check'][n1][c1][n2][c2] = max(0.4, vdt['check'][n1][c1][n2][c2])
                 try:
                     del vdt['check1']
@@ -1948,68 +2274,84 @@ class PostflopDecisionMaker():
                 return vdt#}}}
             else:#{{{
                 to_call = max(self.betting) - self.betting[actor]
-                to_call /= (self.game_driver.pot - action - sum(self.betting))
+                to_call = min(self.stack[actor], to_call)
+                to_call /= (self.pot - action - sum(self.betting))
+                amount = action / (self.pot - action - sum(self.betting))
+                amount -= to_call
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['call'][n1][c1][n2][c2] = 0
                     vdt['raise'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     value_from_fold = 0
                     value_from_call = 0
                     fold_prob = 0
                     call_prob = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
-                        try:
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if 'call raise' in self.dummy_action_ep[n3][c3][n4][c4]\
+                                or 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * v
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                            value_from_call += prob2 * v 
+                            call_prob += prob2 
+                        else:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
+                            value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                            fold_prob += prob2
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
+                        vdt['call'][n1][c1][n2][c2] += prob2 * v
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=amount)
                             if 'call raise' in self.dummy_action_ep[n3][c3][n4][c4]\
                                     or 'raise' in self.dummy_action_ep[n3][c3][n4][c4]:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * v
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                                value_from_call += prob2 * v 
-                                call_prob += prob2 
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * v
                             else:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
-                                value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                fold_prob += prob2
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
-                            vdt['call'][n1][c1][n2][c2] += prob2 * v
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except Exception as e:
-                            continue
-                    try:
-                        value_from_fold /= (fold_prob+call_prob)
-                        value_from_call /= (fold_prob+call_prob)
-                        fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
-                                call_prob / (fold_prob+call_prob)
-                        vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
-                        vdt['call'][n1][c1][n2][c2] /= prob_accumulation
-                        if self.source != 'ps' and actor != 0:
-                            print n1, c1, n2, c2, '\t', round(self.wctaa50[n1][c1][n2][c2], 2), '\t',\
-                                    round(fold_prob, 2), round(call_prob, 2), '\t',\
-                                    round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
-                                    round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
-                                    round(value_from_fold, 2), round(value_from_call, 2)
-                    except Exception as e:
-                        print e
-                        print n1, c1, n2, c2
-                        if self.source != 'ps':
-                            raw_input()
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                        prob_accumulation += prob2
+                    value_from_fold /= (fold_prob+call_prob)
+                    value_from_call /= (fold_prob+call_prob)
+                    fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
+                            call_prob / (fold_prob+call_prob)
+                    vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['call'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2] > 0.1:
+#                        print n1, c1, n2, c2, '\t', round(wctaa50[n1][c1][n2][c2], 2), '\t',\
+#                                round(fold_prob, 2), round(call_prob, 2), '\t',\
+#                                round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
+#                                round(value_from_fold, 2), round(value_from_call, 2)
                 return vdt#}}}
         else:
             if max(self.betting) == self.betting[actor]:#{{{
+                amount = action / (self.pot - action - sum(self.betting))
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['check1'][n1][c1][n2][c2] = 0
                     vdt['check2'][n1][c1][n2][c2] = 0
+                    vdt['check'][n1][c1][n2][c2] = 0
                     vdt['bet'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
                         if 'fold' in self.dummy_action_lp[n3][c3][n4][c4]:
                             numerator = 1
                             denominator = 1
@@ -2020,12 +2362,13 @@ class PostflopDecisionMaker():
                             denominator += 1
                         if 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            fold_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_lp[n3][c3][n4][c4]
-                            raise Exception
+                        if denominator == 0:
+                            denominator = 1
+                        fold_chance = 1.0 * numerator / denominator
+                        active_players = sum([item!=0 for item in self.active[1:]])
+                        fold_chance = pow(fold_chance, active_players)
+                        if commited_player:
+                            fold_chance = 0
                         if 'bet' in self.dummy_action_lp[n3][c3][n4][c4]:
                             numerator = self.dummy_action_lp[n3][c3][n4][c4]['bet'] 
                             denominator = self.dummy_action_lp[n3][c3][n4][c4]['bet']
@@ -2034,48 +2377,49 @@ class PostflopDecisionMaker():
                             denominator = 0
                         if 'check' in self.dummy_action_lp[n3][c3][n4][c4]:
                             denominator += 1
-                        try:
-                            bet_chance = 1.0 * numerator / denominator
-                        except:
-                            print numerator, denominator
-                            print self.dummy_action_lp[n3][c3][n4][c4]
-                            raise Exception
-                        try:
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
-                            vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance*0.8\
-                                    + fold_chance*0.2*min([1,v])\
+                        if denominator == 0:
+                            denominator = 1
+                        bet_chance = 1.0 * numerator / denominator
+                        if amount > 0:
+                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=amount, rais=0)
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * (fold_chance\
                                     + (1 - fold_chance) * v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'bet       \t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(fold_chance, 2), round(v, 2),\
-                                        round(fold_chance + (1-fold_chance)*v, 2)
-                            v2 = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
-                            if v2 < 0:
-                                v2 = 0
-                            vdt['check1'][n1][c1][n2][c2] += prob2 * ((1-bet_chance) * v2)
-                            vdt['check2'][n1][c1][n2][c2] += prob2 * ((1-bet_chance)*v2 + bet_chance*v)
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'check fold\t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(bet_chance, 2), round(v2, 2),\
-                                        round((1-bet_chance) * v2, 2)
-                                print 'check call\t', round(prob2, 2), '\t',\
-                                        n3, c3, n4, c4, '\t',\
-                                        round(bet_chance, 2), round(v2, 2),\
-                                        round((1-bet_chance)*v2 + bet_chance*v, 2)
-                            prob_accumulation += prob2
-                        except:
-                            continue
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, rais=0)
+                        vdt['bet'][n1][c1][n2][c2] += prob2 * (fold_chance\
+                                + (1 - fold_chance) * v)
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'bet       \t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(fold_chance, 2), round(v, 2),\
+#                                    round(fold_chance + (1-fold_chance)*v, 2)
+                        v2 = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=0, rais=0)
+                        if v2 < 0:
+                            v2 = 0
+                        vdt['check1'][n1][c1][n2][c2] += prob2 * ((1-bet_chance) * v2)
+                        vdt['check2'][n1][c1][n2][c2] += prob2 * ((1-bet_chance)*v2 + bet_chance*v)
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'check fold\t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(bet_chance, 2), round(v2, 2),\
+#                                    round((1-bet_chance) * v2, 2)
+#                            print 'check call\t', round(prob2, 2), '\t',\
+#                                    n3, c3, n4, c4, '\t',\
+#                                    round(bet_chance, 2), 0,\
+#                                    round((1-bet_chance)*v2 + bet_chance*v, 2)
+                        prob_accumulation += prob2
                     vdt['bet'][n1][c1][n2][c2] /= prob_accumulation
                     vdt['check'][n1][c1][n2][c2] = max(vdt['check1'][n1][c1][n2][c2],\
                             vdt['check2'][n1][c1][n2][c2]) / prob_accumulation
-                    if self.source != 'ps' and actor != 0:
-                        print n1, c1, n2, c2, '\t',\
-                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
-                                round(vdt['check'][n1][c1][n2][c2], 2)
+                    if amount > 0:
+                        vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+                    else:
+                        vdt['his action'][n1][c1][n2][c2] = vdt['check'][n1][c1][n2][c2]
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2]:
+#                        print n1, c1, n2, c2, '\t',\
+#                                round(vdt['bet'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['check'][n1][c1][n2][c2], 2)
                     vdt['check'][n1][c1][n2][c2] = max(0.4, vdt['check'][n1][c1][n2][c2])
                 try:
                     del vdt['check1']
@@ -2085,83 +2429,98 @@ class PostflopDecisionMaker():
                 return vdt#}}}
             else:#{{{
                 to_call = max(self.betting) - self.betting[actor]
-                to_call /= (self.game_driver.pot - action - sum(self.betting))
-                rais = 1 + to_call
+                to_call = min(self.stack[actor], to_call)
+                to_call /= (self.pot - action - sum(self.betting))
+                amount = action / (self.pot - action - sum(self.betting))
+                amount -= to_call
                 for n1, c1, n2, c2, prob in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
+                    if not_possible(self.cards[2:]+[[n1,c1],[n2,c2]]):
+                        continue
                     vdt['call'][n1][c1][n2][c2] = 0
                     vdt['raise'][n1][c1][n2][c2] = 0
+                    vdt['his action'][n1][c1][n2][c2] = 0
                     prob_accumulation = 0
                     value_from_fold = 0
                     value_from_call = 0
                     fold_prob = 0
                     call_prob = 0
                     for n3, c3, n4, c4, prob2 in nodes_of_tree(self.small_stats[self.opponent[actor]], 4):
-                        try:
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if not_possible(self.cards[2:]+[[n1,c1],[n2,c2],[n3,c3],[n4,c4]]):
+                            continue
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call)
+                        if 'call raise' in self.dummy_action_lp[n3][c3][n4][c4]\
+                                or 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * v
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                            value_from_call += prob2 * v 
+                            call_prob += prob2 
+                        else:
+                            vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+#                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                                print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
+                            value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
+                            fold_prob += prob2
+                        v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
+                        vdt['call'][n1][c1][n2][c2] += prob2 * v 
+#                        if actor == 0 and self.source != 'ps' and prob2 > 0.1\
+#                                and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
+#                            print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
+                        if amount == 0:
+                            vdt['his action'][n1][c1][n2][c2] += prob2 * v
+                        else:
+                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=amount)
                             if 'call raise' in self.dummy_action_lp[n3][c3][n4][c4]\
                                     or 'raise' in self.dummy_action_lp[n3][c3][n4][c4]:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * v
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                                value_from_call += prob2 * v 
-                                call_prob += prob2 
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * v
                             else:
-                                vdt['raise'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                        and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                    print 'raise\t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round((to_call+1), 2)
-                                value_from_fold += prob2 * (min([(to_call+1), (to_call+1)*0.5+v*0.5]))
-                                fold_prob += prob2
-                            v = self.simulate_value_river(n1,c1,n2,c2,n3,c3,n4,c4, bet=to_call, rais=0)
-                            vdt['call'][n1][c1][n2][c2] += prob2 * v 
-                            if actor == 0 and self.source != 'ps' and prob2 > 0.1\
-                                    and mn1 == n1 and mc1 == c1 and mn2 == n2 and mc2 == c2:
-                                print 'call \t', round(prob2, 2), '\t', n3, c3, n4, c4, '\t', round(v, 2)
-                            prob_accumulation += prob2
-                        except Exception as e:
-                            continue
-                    try:
-                        value_from_fold /= (fold_prob+call_prob)
-                        value_from_call /= (call_prob+fold_prob)
-                        fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
-                                call_prob / (fold_prob+call_prob)
-                        vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
-                        vdt['call'][n1][c1][n2][c2] /= prob_accumulation
-                        if self.source != 'ps' and actor != 0:
-                            print n1, c1, n2, c2, '\t', round(self.wctaa50[n1][c1][n2][c2], 2), '\t',\
-                                    round(fold_prob, 2), round(call_prob, 2), '\t',\
-                                    round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
-                                    round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
-                                    round(value_from_fold, 2), round(value_from_call, 2)
-                    except Exception as e:
-                        print e
-                        print n1, c1, n2, c2
-                        if self.source != 'ps':
-                            raw_input()
+                                vdt['his action'][n1][c1][n2][c2] += prob2 * (min([(to_call+1), (to_call+1)*0.7+v*0.3]))
+                        prob_accumulation += prob2
+                    value_from_fold /= (fold_prob+call_prob)
+                    value_from_call /= (call_prob+fold_prob)
+                    fold_prob, call_prob = fold_prob / (fold_prob+call_prob),\
+                            call_prob / (fold_prob+call_prob)
+                    vdt['raise'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['call'][n1][c1][n2][c2] /= prob_accumulation
+                    vdt['his action'][n1][c1][n2][c2] /= prob_accumulation
+#                    if self.source != 'ps' and self.small_stats[actor][n1][c1][n2][c2]:
+#                        print n1, c1, n2, c2, '\t', round(wctaa50[n1][c1][n2][c2], 2), '\t',\
+#                                round(fold_prob, 2), round(call_prob, 2), '\t',\
+#                                round(vdt['raise'][n1][c1][n2][c2], 2), '\t',\
+#                                round(vdt['call'][n1][c1][n2][c2], 2), '\t',\
+#                                round(value_from_fold, 2), round(value_from_call, 2)
                 return vdt#}}}
 #}}}
+
 
     def simulate_value_flop(self, n1, c1, n2, c2, n3, c3, n4, c4, bet=0.8111, rais=2):#{{{
         if self.flop_fo_cache[n1][c1][n2][c2][0]\
                 > self.flop_fo_cache[n3][c3][n4][c4][0]:
-            w = self.wcts[n3][c3][n4][c4][n1][c1][n2][c2][0]
-            ww = self.wcts[n3][c3][n4][c4][n1][c1][n2][c2][1]
+            w = self.flop_wcts[n3][c3][n4][c4][n1][c1][n2][c2][0]
+            ww = self.flop_wcts[n3][c3][n4][c4][n1][c1][n2][c2][1]
+        elif  self.flop_fo_cache[n1][c1][n2][c2][0]\
+                == self.flop_fo_cache[n3][c3][n4][c4][0]:
+            return (1+bet+rais) * 0.5
         else:
-            w = self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
-            ww = self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][1]
+            w = self.flop_wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
+            ww = self.flop_wcts[n1][c1][n2][c2][n3][c3][n4][c4][1]
         if type(ww) != float:
             ww = 0
+        ww = 0
         v = 0
         v -= bet + rais
         v += w/2 * (1-ww) * ((1+2*bet+2*rais) * 7.0/3)
-        v -= w/2 * ww * (1+2*bet+2*rais) * 4.0/3
-        v -= w/2 * ww * (1+2*bet+2*rais) * 7.0/3 * 4.0/3
+        v -= w/2 * ww * (1+2*bet+2*rais) * 6.0/3
+        v -= w/2 * ww * (1+2*bet+2*rais) * 7.0/3 * 6.0/3
         if w/2 * 7.0/3 * 4.0/3 > 2.0/3: 
             v -= (1 - w/2) * (1+2*bet+2*rais) * 2.0/3
             v += (1 - w/2) * w/2 * (1+2*bet+2*rais) * 7.0/3 * 7.0/3
         if self.flop_fo_cache[n1][c1][n2][c2][0]\
                 > self.flop_fo_cache[n3][c3][n4][c4][0]:
+            if v < 0:
+                v = 0
             if bet != 0 and bet != 0.8111:
                 return 1+bet-v
             else:
@@ -2172,11 +2531,11 @@ class PostflopDecisionMaker():
     def simulate_value_turn(self, n1, c1, n2, c2, n3, c3, n4, c4, bet=0.8111, rais=2):#{{{
         if self.turn_fo_cache[n1][c1][n2][c2][0]\
                 > self.turn_fo_cache[n3][c3][n4][c4][0]:
-            w = self.wcts[n3][c3][n4][c4][n1][c1][n2][c2][0]
-            ww = self.wcts[n3][c3][n4][c4][n1][c1][n2][c2][1]
+            w = self.turn_wcts[n3][c3][n4][c4][n1][c1][n2][c2][0]
+            ww = self.turn_wcts[n3][c3][n4][c4][n1][c1][n2][c2][1]
         else:
-            w = self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
-            ww = self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][1]
+            w = self.turn_wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
+            ww = self.turn_wcts[n1][c1][n2][c2][n3][c3][n4][c4][1]
         if type(ww) != float:
             ww = 0
         v = 0
@@ -2184,6 +2543,8 @@ class PostflopDecisionMaker():
         v += w * ((1+2*bet+2*rais) * 5.0/3)
         if self.turn_fo_cache[n1][c1][n2][c2][0]\
                 > self.turn_fo_cache[n3][c3][n4][c4][0]:
+            if v < 0:
+                v = 0
             if bet != 0 and bet != 0.8111:
                 return 1+bet-v
             else:
@@ -2192,7 +2553,7 @@ class PostflopDecisionMaker():
             return v#}}}
     
     def simulate_value_river(self, n1, c1, n2, c2, n3, c3, n4, c4, bet=0.8111, rais=2):#{{{
-        w = self.wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
+        w = self.river_wcts[n1][c1][n2][c2][n3][c3][n4][c4][0]
         v = 0
         v -= bet + rais
         v += w*(1+2*bet+2*rais)
@@ -2213,26 +2574,41 @@ class PostflopDecisionMaker():
             del_stdout_line(len(to_print)+1)#}}}
 
     def show_dummy_action(self):
+        if self.stage == 1:
+            wctaa100 = self.flop_wctaa100
+            wctaa50 = self.flop_wctaa50
+            wctaa25 = self.flop_wctaa25
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wctaa100 = self.turn_wctaa100
+            wctaa50 = self.turn_wctaa50
+            wctaa25 = self.turn_wctaa25
+            wcts = self.turn_wcts
+        else:
+            wctaa100 = self.river_wctaa100
+            wctaa50 = self.river_wctaa50
+            wctaa25 = self.river_wctaa25
+            wcts = self.river_wcts
         for n1, c1, n2, c2, actions in nodes_of_tree(self.dummy_action_ep, 4):
-            print n1, c1, n2, c2, '\t',
+            print "%2.0d %2.0d %2.0d %2.0d" % (n1, c1, n2, c2), 
             print '%0.2f %0.2f %0.2f' % (\
-                    round(self.wctaa100[n1][c1][n2][c2], 2),\
-                    round(self.wctaa50[n1][c1][n2][c2], 2),\
-                    round(self.wctaa25[n1][c1][n2][c2], 2)),\
-                    '  \t:',
+                    round(wctaa100[n1][c1][n2][c2], 2),\
+                    round(wctaa50[n1][c1][n2][c2], 2),\
+                    round(wctaa25[n1][c1][n2][c2], 2)),\
+                    ':',
             for action in actions:
-                print action, '/',
+                print str(action)+'/',
             print
         raw_input('press any key')
         for n1, c1, n2, c2, actions in nodes_of_tree(self.dummy_action_lp, 4):
-            print n1, c1, n2, c2, '\t',
+            print "%2.0d %2.0d %2.0d %2.0d" % (n1, c1, n2, c2), 
             print '%0.2f %0.2f %0.2f' % (\
-                    round(self.wctaa100[n1][c1][n2][c2], 2),\
-                    round(self.wctaa50[n1][c1][n2][c2], 2),\
-                    round(self.wctaa25[n1][c1][n2][c2], 2)),\
-                    '  \t:',
+                    round(wctaa100[n1][c1][n2][c2], 2),\
+                    round(wctaa50[n1][c1][n2][c2], 2),\
+                    round(wctaa25[n1][c1][n2][c2], 2)),\
+                    ':',
             for action in actions:
-                print action, '/',
+                print str(action)+'/',
             print
         raw_input('press any key')
 
@@ -2257,19 +2633,105 @@ class PostflopDecisionMaker():
         del_stdout_line(2)#}}}
 
     def make_decision(self):#{{{
-       if self.game_driver.stage == 1:
+       if self.stage == 1:
            self.flop_strategy()
-       if self.game_driver.stage == 2:
+       if self.stage == 2:
            self.turn_strategy()
-       if self.game_driver.stage == 3:
+       if self.stage == 3:
            self.river_strategy()#}}}
 
     def flop_strategy(self):#{{{
         vdt = self.get_value_dummy_table_flop(0, 0)
-        self.vdt = vdt
-        n1, c1 = min(self.game_driver.cards[0], self.game_driver.cards[1])
-        n2, c2 = max(self.game_driver.cards[0], self.game_driver.cards[1])
-        the_color = color_make_different(self.game_driver.cards)
+        self.flop_vdt = vdt
+        n1, c1 = min(self.cards[0], self.cards[1])
+        n2, c2 = max(self.cards[0], self.cards[1])
+        the_color = color_make_different(self.stage, self.cards)
+        if not c1 in the_color:
+            c1 = 0
+        if not c2 in the_color:
+            c2 = 0
+        if self.last_mover == 0:
+            value = 0.3
+        else:
+            value = 0.4
+        best_action = 'fold'
+        for action in vdt:
+            if action == 'his action':
+                continue
+            if vdt[action][n1][c1][n2][c2] * pow(1, action == 'bet') * pow(0.85, action == 'call') > value:
+                value = vdt[action][n1][c1][n2][c2] * pow(1, action == 'bet') * pow(0.85, action == 'call')
+                best_action = action
+            if best_action == 'fold' and action == 'check':
+                best_action = 'check'
+        change_terminal_color('red')
+        if self.source == 'ps':
+            if best_action == 'fold':
+                if self.never_fold_set():
+                    self.controller.call()
+                else:
+                    self.controller.fold()
+            if best_action == 'check':
+                self.controller.call()
+            if best_action == 'call':
+                self.controller.call()
+            if best_action == 'bet':
+                self.controller.rais(0.75*self.pot)
+            if best_action == 'raise':
+                self.controller.rais(0.65*(sum(self.betting)+self.pot)+0.55*max(self.betting))
+        print 'My Decision:', best_action
+        print 'Value:', value
+        change_terminal_color()#}}}
+
+    def turn_strategy(self):#{{{
+        vdt = self.get_value_dummy_table_turn(0, 0)
+        self.turn_vdt = vdt
+        n1, c1 = min(self.cards[0], self.cards[1])
+        n2, c2 = max(self.cards[0], self.cards[1])
+        the_color = color_make_different(self.stage, self.cards)
+        if not c1 in the_color:
+            c1 = 0
+        if not c2 in the_color:
+            c2 = 0
+        if self.last_mover == 0:
+            value = 0.3
+        else:
+            value = 0.4
+        best_action = 'fold'
+        for action in vdt:
+            if action == 'his action':
+                continue
+            if vdt[action][n1][c1][n2][c2] * pow(0.85, action == 'call') > value:
+                if action == 'raise' and vdt[action][n1][c1][n2][c2] < 0.85:
+                    continue
+                value = vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call')
+                best_action = action
+            if best_action == 'fold' and action == 'check':
+                best_action = 'check'
+        change_terminal_color('red')
+        if self.source == 'ps':
+            if best_action == 'fold':
+                if self.never_fold_set():
+                    self.controller.call()
+                else:
+                    self.controller.fold()
+            if best_action == 'check':
+                self.controller.call()
+            if best_action == 'call':
+                self.controller.call()
+            if best_action == 'bet':
+                self.controller.rais(0.75*self.pot)
+            if best_action == 'raise':
+                self.controller.rais(0.65*(sum(self.betting)+self.pot)+0.55*max(self.betting))
+        print 'My Decision:', best_action
+        print 'Value:', value
+        change_terminal_color()#}}}
+
+    def river_strategy(self):#{{{
+        vdt = self.get_value_dummy_table_river(0, 0)
+        self.river_vdt = vdt
+        n1, c1 = min(self.cards[0], self.cards[1])
+        n2, c2 = max(self.cards[0], self.cards[1])
+        the_color = color_make_different(self.stage, self.cards)
         if not c1 in the_color:
             c1 = 0
         if not c2 in the_color:
@@ -2277,91 +2739,28 @@ class PostflopDecisionMaker():
         value = 0.3
         best_action = 'fold'
         for action in vdt:
-            if vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call') > value:
-                value = vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call')
+            if action == 'his action':
+                continue
+            if vdt[action][n1][c1][n2][c2] * pow(1, action == 'bet') > value:
+                value = vdt[action][n1][c1][n2][c2] * pow(1, action == 'bet')
                 best_action = action
             if best_action == 'fold' and action == 'check':
                 best_action = 'check'
         change_terminal_color('red')
         if self.source == 'ps':
             if best_action == 'fold':
-                self.controller.fold()
+                if self.never_fold_set():
+                    self.controller.call()
+                else:
+                    self.controller.fold()
             if best_action == 'check':
                 self.controller.call()
             if best_action == 'call':
                 self.controller.call()
             if best_action == 'bet':
-                self.controller.rais(0.75*self.game_driver.pot)
+                self.controller.rais(0.75*self.pot)
             if best_action == 'raise':
-                self.controller.rais(0.65*(sum(self.game_driver.betting)+self.game_driver.pot)+0.55*max(self.game_driver.betting))
-        print 'My Decision:', best_action
-        print 'Value:', value
-        change_terminal_color()#}}}
-
-    def turn_strategy(self):#{{{
-        vdt = self.get_value_dummy_table_turn(0, 0)
-        self.vdt = vdt
-        n1, c1 = min(self.game_driver.cards[0], self.game_driver.cards[1])
-        n2, c2 = max(self.game_driver.cards[0], self.game_driver.cards[1])
-        the_color = color_make_different(self.game_driver.cards)
-        if not c1 in the_color:
-            c1 = 0
-        if not c2 in the_color:
-            c2 = 0
-        value = 0.4
-        best_action = 'fold'
-        for action in vdt:
-            if vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call') > value:
-                value = vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call')
-                best_action = action
-            if best_action == 'fold' and action == 'check':
-                best_action = 'check'
-        change_terminal_color('red')
-        if self.source == 'ps':
-            if best_action == 'fold':
-                self.controller.fold()
-            if best_action == 'check':
-                self.controller.call()
-            if best_action == 'call':
-                self.controller.call()
-            if best_action == 'bet':
-                self.controller.rais(0.75*self.game_driver.pot)
-            if best_action == 'raise':
-                self.controller.rais(0.65*(sum(self.game_driver.betting)+self.game_driver.pot)+0.55*max(self.game_driver.betting))
-        print 'My Decision:', best_action
-        print 'Value:', value
-        change_terminal_color()#}}}
-
-    def river_strategy(self):#{{{
-        vdt = self.get_value_dummy_table_river(0, 0)
-        self.vdt = vdt
-        n1, c1 = min(self.game_driver.cards[0], self.game_driver.cards[1])
-        n2, c2 = max(self.game_driver.cards[0], self.game_driver.cards[1])
-        the_color = color_make_different(self.game_driver.cards)
-        if not c1 in the_color:
-            c1 = 0
-        if not c2 in the_color:
-            c2 = 0
-        value = 0.2
-        best_action = 'fold'
-        for action in vdt:
-            if vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call') > value:
-                value = vdt[action][n1][c1][n2][c2] * pow(0.75, action == 'call')
-                best_action = action
-            if best_action == 'fold' and action == 'check':
-                best_action = 'check'
-        change_terminal_color('red')
-        if self.source == 'ps':
-            if best_action == 'fold':
-                self.controller.fold()
-            if best_action == 'check':
-                self.controller.call()
-            if best_action == 'call':
-                self.controller.call()
-            if best_action == 'bet':
-                self.controller.rais(0.75*self.game_driver.pot)
-            if best_action == 'raise':
-                self.controller.rais(0.65*(sum(self.game_driver.betting)+self.game_driver.pot)+0.55*max(self.game_driver.betting))
+                self.controller.rais(0.65*(sum(self.betting)+self.pot)+0.55*max(self.betting))
         print 'My Decision:', best_action
         print 'Value:', value
         change_terminal_color()#}}}
@@ -2371,5 +2770,23 @@ class PostflopDecisionMaker():
 
     def update_betting(self):
         for i in xrange(6):
-            self.betting[i] = self.game_driver.betting[i]
+            self.betting[i] = self.betting[i]
 
+    def never_fold_set(self):
+        if color_make_different(self.stage, self.cards[2:]+[[1,1],[1,2],[1,3],[1,4]]*2):
+            return False
+        if self.cards[0][0] != self.cards[1][0]:
+            return False
+        fo = find_out(self.cards)
+        if fo[0] == 3:
+            return True
+        if fo[0] == 6 and fo[1] == self.cards[0][0]:
+            return True
+        return False
+            
+    def pot_commited(self, player):
+        if self.stack[player] < self.pot:
+            return True
+        else:
+            return False
+#}}}
