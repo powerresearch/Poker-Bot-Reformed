@@ -177,6 +177,9 @@ class GameDriver():
 #           print 'new stage'
             self.cards = action[1]
             return 'new stage'
+        if action[0] == self.last_mover and action[1] == 'check' and self.stage == 3:
+            print 'stage', self.stage
+            return 'new game'
         if action[0] == 'my move':
             if self.stage == 3:
                 a = self.betting[0]
@@ -185,7 +188,7 @@ class GameDriver():
                     if self.active[i] == 1 and self.betting[i] != a:
                         not_even = 1
             if self.stage != 3 or not_even or a == 0:
-#               self.decision_maker.make_decision()
+                self.decision_maker.make_decision()
                 time.sleep(0.5)
             return []
         actor, value = action
@@ -234,6 +237,21 @@ class GameDriver():
                             self.postflop_status[self.last_better]
             self.pot += value
             self.pot = round(self.pot, 2)
+        if sum([self.active[i] == 1 for i in xrange(6)]) <= 1:
+            print 'stage', self.stage
+            print 'active', self.active
+            return 'new game'
+        all_even = 1
+        for i in xrange(6):
+            if not self.active[i] == 1:
+                continue
+            if self.betting[i] != max(self.betting):
+                all_even = 0
+                break
+        if all_even and max(self.betting) > 0 and self.stage == 3:
+            print 'stage', self.stage
+            print 'active', self.active
+            return 'new game'
         self.decision_maker.update_status()
         self.decision_maker.update_stats(actor, value)
         self.decision_maker.get_avg_stats()
@@ -291,6 +309,11 @@ class GameDriver():
                         print 'game over because handle_preflop_action say so'
                         change_terminal_color()
                         return indicator
+                if sum([self.active[i] == 1 for i in xrange(6)]) <= 1:
+                    change_terminal_color('green')
+                    print 'game over because there is no active player'
+                    change_terminal_color()
+                    return 'new game'
                 to_act = self.move_catcher.to_act#}}}
             else:#{{{
                 action = actions[0]
@@ -310,8 +333,6 @@ class GameDriver():
         self.decision_maker.update_status()
         self.decision_maker.clean_stats()
         self.decision_maker.compress_stats()
-        print 'PROB LEFT: ', self.decision_maker.prob_left()
-        raw_input('----press any key----')
         self.decision_maker.get_avg_stats()
         self.decision_maker.get_opponent()
         self.decision_maker.update_wct()
@@ -331,6 +352,11 @@ class GameDriver():
                     indicator = self.handle_postflop_action(action)
                     if indicator:
                         return indicator
+                if sum([self.active[i] == 1 for i in xrange(6)]) <= 1:
+                    change_terminal_color('green')
+                    print 'game over because there is no active player'
+                    change_terminal_color()
+                    return 'new game'
                 to_act = self.move_catcher.to_act#}}}
             else:#{{{
                 if len(actions) == 1:

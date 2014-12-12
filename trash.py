@@ -1,3 +1,4 @@
+from collections import defaultdict
 
 def rand_card():
     n = random.randint(2,14)#{{{
@@ -92,9 +93,20 @@ def how_much_can_beat(stats, power_rank, hole_cards, opponent):
             lose_chance2 += 0.1
     return win_chance / (win_chance+lose_chance)#, win_chance2 / (win_chance2+lose_chance2))#}}}
 
-def straight_outs(cards, fo):
-    if fo[0] >= 4:#{{{
-        return 0
+def straight_outs(cards):
+    number_count = {}#{{{
+    color_count = {}
+    for c in cards[2:]:
+        if c[0] in number_count:
+            return 0
+        else:
+            number_count[c[0]] = 1
+        if c[1] in color_count:
+            color_count[c[1]] += 1
+            if color_count[c[1]] > 2:
+                return 0
+        else:
+            color_count[c[1]] = 1
     nums = set()
     outs = set()
     for c in cards:
@@ -122,9 +134,13 @@ def straight_outs(cards, fo):
             outs.add(num+1)
     return len(outs)*4#}}}
 
-def flush_outs(cards, fo):
-    if fo[0] >= 5:#{{{
-        return 0
+def flush_outs(cards):
+    number_count = {}#{{{
+    for c in cards[2:]:
+        if c[0] in number_count:
+            return 0
+        else:
+            number_count[c[0]] = 1
     col = [0, 0, 0, 0, 0]
     for c in cards:
         col[c[1]] += 1

@@ -177,6 +177,8 @@ class ScreenScraper():
                     if fail > 200:
                         if self.has_fold(1) and self.has_fold(2) and self.has_fold(3)\
                                 and self.has_fold(4) and self.has_fold(5):
+                            if stack[0] == '':
+                                return 'sit out'
                             return 'get back'
 #               print 'stucking at getting stack'
             fail = 0

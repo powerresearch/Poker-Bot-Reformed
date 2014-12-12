@@ -5,6 +5,7 @@ o 现在按照dummy_action来更新对手的stats，效果还不错
 o 提速
 
 x 重写strategy
+x 为每个人都搞一个win chance table，而不是用平均数据来替代
 
 -----------------------------
 VERSION 2.0
