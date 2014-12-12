@@ -237,7 +237,8 @@ class GameDriver():
                             self.postflop_status[self.last_better]
             self.pot += value
             self.pot = round(self.pot, 2)
-        if sum([self.active[i] == 1 for i in xrange(6)]) <= 1:
+        if sum([self.active[i] == 1 for i in xrange(6)]) <= 1\
+                and (self.active[0] != 1 or self.betting[0] == max(self.betting)):
             print 'stage', self.stage
             print 'active', self.active
             return 'new game'
@@ -309,7 +310,8 @@ class GameDriver():
                         print 'game over because handle_preflop_action say so'
                         change_terminal_color()
                         return indicator
-                if sum([self.active[i] == 1 for i in xrange(6)]) <= 1:
+                if sum([self.active[i] == 1 for i in xrange(6)]) <= 1\
+                        and (self.active[0] != 1 or self.betting[0] == max(self.betting)):
                     change_terminal_color('green')
                     print 'game over because there is no active player'
                     change_terminal_color()
@@ -352,7 +354,8 @@ class GameDriver():
                     indicator = self.handle_postflop_action(action)
                     if indicator:
                         return indicator
-                if sum([self.active[i] == 1 for i in xrange(6)]) <= 1:
+                if sum([self.active[i] == 1 for i in xrange(6)]) <= 1\
+                        and (self.active[0] != 1 or self.betting[0] == max(self.betting)):
                     change_terminal_color('green')
                     print 'game over because there is no active player'
                     change_terminal_color()

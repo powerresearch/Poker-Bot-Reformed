@@ -4,7 +4,7 @@ import json
 hhpath = '/Users/zw/Library/Application Support/PokerStars/HandHistory/'
 
 # Const
-BB = 0.02 
+BB = 0.02
 SB = 0.01
 
 # Position

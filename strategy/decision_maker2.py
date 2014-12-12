@@ -338,7 +338,7 @@ class PreflopDecisionMaker():#{{{
                         print 'Fold To 4 Bet: '+str(fold_chance)
                         self.controller.rais((people_play*0.8+1.8)*max(betting)+2*BB)
                         return 
-                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.33\
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.28\
                         and self.cards[0][0] == self.cards[1][0]:
                     self.controller.call()
                     return
@@ -353,6 +353,10 @@ class PreflopDecisionMaker():#{{{
                     return
                 if people_bet == 3:
                     self.controller.rais(max(betting)*(people_play+1.6))
+                    return
+                if (max(betting)-betting[0]) / (sum(betting[1:])+max(betting)) < 0.28\
+                        and self.cards[0][0] == self.cards[1][0]:
+                    self.controller.call()
                     return
                 self.controller.fold()
                 return#}}}
@@ -621,11 +625,9 @@ class PostflopDecisionMaker():#{{{
                 action_name = 'check'
             elif self.betting[actor] / self.pot < 0.1 and self.pot > SB*30:
                 action_name = 'check'
-            elif self.betting[actor] / self.pot > 1.8:
+            elif self.betting[actor] / self.pot > 1.5:
                 action_name = 'reraise'
-            elif self.betting[actor] / self.pot > 1 and self.stack[actor] != 0:
-                action_name = 'raise'
-            elif self.betting[actor] / self.pot > 1.25 and self.stack[actor] == 0:
+            elif self.betting[actor] / self.pot > 1:
                 action_name = 'raise'
             else:
                 action_name = 'bet'
@@ -1608,11 +1610,11 @@ class PostflopDecisionMaker():#{{{
             v = vdt[action]\
                 +(action=='bet' and self.last_better==0)*0\
                 +(action=='bet' and self.last_mover==0)*0\
-                -(action=='bet' and self.last_mover!=0)*0.15\
-                +(action=='call' and my_outs >= 8)*0.1\
+                -(action=='bet' and self.last_mover!=0)*0.2\
+                +(action=='call' and my_outs >= 8)*0.3\
                 -(action=='call' and self.last_mover==0)*0.1\
-                -(action=='call' and self.last_mover!=0)*0.25\
-                -(action=='check call' and self.last_mover!=0)*0.25\
+                -(action=='call' and self.last_mover!=0)*0.2\
+                -(action=='check call' and self.last_mover!=0)*0.2\
                 -(action=='raise')*0.2
             if v > best_value:
                 best_move = action
@@ -1721,7 +1723,7 @@ class PostflopDecisionMaker():#{{{
                     -(action=='bet')*0.15\
                     +(action=='bet' and self.last_better==0)*0\
                     +(action=='bet' and self.last_mover==0)*0\
-                    +(action=='call' and my_outs >= 8)*0.1\
+                    +(action=='call' and my_outs >= 8)*0.25\
                     +(action=='call' and self.last_mover!=0)*0.05\
                     -(action=='raise')*0.5
                 if v > best_value:
@@ -1824,7 +1826,7 @@ class PostflopDecisionMaker():#{{{
                     -(action=='bet')*0\
                     +(action=='bet' and self.last_better==0)*0\
                     +(action=='bet' and self.last_mover==0)*0.1\
-                    +(action=='call' and self.last_mover!=0)*0.1\
+                    +(action=='call' and self.last_mover!=0)*0\
                     -(action=='raise')*0.3
                 if v > best_value:
                     best_move = action
