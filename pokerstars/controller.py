@@ -1,3 +1,9 @@
+import pymouse
+import pyscreenshot
+import pykeyboard
+import random
+import time
+import json
 from pokerstars.config import fold_position
 from pokerstars.config import call_position
 from pokerstars.config import raise_position
@@ -5,12 +11,7 @@ from pokerstars.config import label_position
 from pokerstars.config import window_close, sitout_confirm, join_game, entry_position
 from pokerstars.config import BB, SB
 from pokerstars.screen_scraper import ScreenScraper
-import pymouse
-import pyscreenshot
-import pykeyboard
-import random
-import time
-import json
+from pokerstars.screen_scraper import get_shift
 
 class Controller():
     def __init__(self, game_driver, shift):
@@ -29,7 +30,12 @@ class Controller():
         m.click(round(entry_position[0]+200*(random.random()-0.5)),
                 round(entry_position[1]+10*(random.random()-0.5)), 1)
         m.click(round(join_game[0]+100*(random.random()-0.5)),\
-                round(join_game[1]+10*(random.random()-0.5)), 1)#}}}
+                round(join_game[1]+10*(random.random()-0.5)), 1)
+        while True:
+            im = pyscreenshot.grab()
+            if get_shift(im, self.shift[0], self.shift[1]) == self.shift:
+                break
+        #}}}
 
     def rest(self, rest_time):
         m = self.m#{{{

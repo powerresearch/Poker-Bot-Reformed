@@ -685,49 +685,49 @@ class PostflopDecisionMaker():#{{{
             else:
                 cc2 = c2
             if self.last_mover != actor:
-                if action_name not in ['reraise', 'call reraise']\
-                        and action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]:
-                    stats_change = 0
-                elif action_name in ['reraise', 'call reraise']\
+                if action_name in ['reraise', 'call reraise']\
                         and action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]\
                         and 'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 0.5
                 elif action_name == 'check' and\
                         'check raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
-                    stats_change = 0.3
-                elif action_name == 'call bet' and\
-                        ('raise' in self.dummy_action_ep[n1][cc1][n2][cc2] or\
-                        'fold' in self.dummy_action_ep[n1][cc1][n2][cc2]):
-                    stats_change = 0.7
-                elif action_name == 'raise' and\
-                        'call bet' in self.dummy_action_ep[n1][cc1][n2][cc2]:
-                    stats_change = 0.7
-                else:
-                    stats_change = 1
-                some_history_junk[n1][cc1][n2][cc2] = stats_change
-                self.stats[actor][n1][c1][n2][c2] *= stats_change
-            else:
-                if action_name not in ['reraise', 'call reraise']\
-                        and action_name not in self.dummy_action_lp[n1][cc1][n2][cc2]:
-                    stats_change = 0
-                elif action_name in ['reraise', 'call reraise']\
-                        and action_name not in self.dummy_action_lp[n1][cc1][n2][cc2]\
-                        and 'raise' in self.dummy_action_lp[n1][cc1][n2][cc2]:
                     stats_change = 0.5
-                elif action_name == 'check' and\
-                        'check raise' in self.dummy_action_lp[n1][cc1][n2][cc2]:
-                    stats_change = 0.15
                 elif action_name == 'call bet' and\
-                        ('raise' in self.dummy_action_lp[n1][cc1][n2][cc2] or\
-                        'fold' in self.dummy_action_lp[n1][cc1][n2][cc2]):
+                        'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 0.7
-                elif action_name == 'raise' and\
-                        'call bet' in self.dummy_action_lp[n1][cc1][n2][cc2]:
-                    stats_change = 0.7
-                else:
+                elif action_name == 'call bet' and\
+                        'fold' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.5
+#                elif action_name == 'raise' and\
+#                        'call bet' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+#                    stats_change = 0.7
+                elif action_name in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 1
-                some_history_junk[n1][cc1][n2][cc2] = stats_change
-                self.stats[actor][n1][c1][n2][c2] *= stats_change
+                else:
+                    stats_change = 0
+            else:
+                if action_name in ['reraise', 'call reraise']\
+                        and action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]\
+                        and 'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.15
+                elif action_name == 'check' and\
+                        'check raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.7
+                elif action_name == 'call bet' and\
+                        'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.7
+                elif action_name == 'call bet' and\
+                        'fold' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 0.5
+#                elif action_name == 'raise' and\
+#                        'call bet' in self.dummy_action_ep[n1][cc1][n2][cc2]:
+#                    stats_change = 0.7
+                elif action_name in self.dummy_action_ep[n1][cc1][n2][cc2]:
+                    stats_change = 1
+                else:
+                    stats_change = 0
+            some_history_junk[n1][cc1][n2][cc2] = stats_change
+            self.stats[actor][n1][c1][n2][c2] *= stats_change
         self.compress_stats()
         if self.source != 'ps':
             show_stats(self.small_stats, some_history_junk, actor)
@@ -1388,8 +1388,8 @@ class PostflopDecisionMaker():#{{{
                 dummy_action_ep[n1][c1][n2][c2]['fold'] = 1
         self.dummy_action_ep = dummy_action_ep
         self.dummy_action_lp = dummy_action_lp#}}}
-#        if self.source != 'ps':
-#            self.show_dummy_action()
+        if self.source != 'ps':
+            self.show_dummy_action()
 
     def get_dummy_action_turn(self):# Set some naive strategy decided by win chance against avg stats.
         dummy_action_ep = tree()#{{{
@@ -1416,19 +1416,19 @@ class PostflopDecisionMaker():#{{{
             w100 = wctaa100[n1][c1][n2][c2]
             w50 = wctaa50[n1][c1][n2][c2]
             w25 = wctaa25[n1][c1][n2][c2]
-            if w50 > 0.6 and w25 > 0.5:
+            if w50 > 0.4 and w25 > 0.25:
                 dummy_action_ep[n1][c1][n2][c2]['reraise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['reraise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call reraise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['call reraise'] = 1
-            if w50 > 0.25 and w25 > 0.2:
+            if w50 > 0.35 and w25 > 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.3:
+            if w50 > 0.4:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
             if w100 > 0.6 or w50 > 0.4 or w25 > 0.12:
@@ -1441,18 +1441,14 @@ class PostflopDecisionMaker():#{{{
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
             if w50 > 0.2 or w100 > 0.3 or w25 > 0.1:
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.7 and w50 <= 0.6 and w25 <= 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.6 and w50 <= 0.3 and w25 <= 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.4 and w50 <= 0.25 and w25 <= 0.1:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.4 and w50 <= 0.25:
                 dummy_action_ep[n1][c1][n2][c2]['check fold'] = 1
-                dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['fold'] = 1
         self.dummy_action_ep = dummy_action_ep
         self.dummy_action_lp = dummy_action_lp#}}}
@@ -1484,7 +1480,7 @@ class PostflopDecisionMaker():#{{{
             w100 = wctaa100[n1][c1][n2][c2]
             w50 = wctaa50[n1][c1][n2][c2]
             w25 = wctaa25[n1][c1][n2][c2]
-            if w100 > 0.75:
+            if w100 > 0.6:
                 dummy_action_ep[n1][c1][n2][c2]['reraise'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['reraise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call reraise'] = 1
@@ -1499,20 +1495,18 @@ class PostflopDecisionMaker():#{{{
             if w100 > 0.6:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
-            if w100 > 0.5 or w100 < 0.15:
+            if w100 > 0.65 or w100 < 0.15:
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
+            if w100 > 0.6 or w100 < 0.15:
                 dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
             if w100 > 0.4:
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
-                dummy_action_ep[n1][c1][n2][c2]['check'] = 1
-                dummy_action_lp[n1][c1][n2][c2]['check'] = 1
             if w100 <= 0.5:
                 dummy_action_lp[n1][c1][n2][c2]['fold'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w100 <= 0.5:
+            if w100 <= 0.7:
                 dummy_action_ep[n1][c1][n2][c2]['check fold'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['fold'] = 1
@@ -1533,7 +1527,7 @@ class PostflopDecisionMaker():#{{{
         oppo_stats = tree()
         total_prob = [0,0,0,0,0,0]
         for i in xrange(1,6):
-            if self.active[i] != 1:
+            if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                 continue
             for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[i], 4):
                 total_prob[i] += p
@@ -1542,7 +1536,7 @@ class PostflopDecisionMaker():#{{{
                 if 'bet' in actions:
                     oppo_stats[n1][c1][n2][c2] = 0
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] =\
@@ -1553,7 +1547,7 @@ class PostflopDecisionMaker():#{{{
                 else:
                     oppo_stats[n1][c1][n2][c2] = 1
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] *= self.small_stats[i][n1][c1][n2][c2]/total_prob[i]
@@ -1564,7 +1558,7 @@ class PostflopDecisionMaker():#{{{
                 if 'bet' in actions:
                     oppo_stats[n1][c1][n2][c2] = 0
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] =\
@@ -1575,12 +1569,13 @@ class PostflopDecisionMaker():#{{{
                 else:
                     oppo_stats[n1][c1][n2][c2] = 1
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] *= self.small_stats[i][n1][c1][n2][c2]/total_prob[i]
                         except:
                             oppo_stats[n1][c1][n2][c2] = 0
+        self.oppo_stats = oppo_stats
         my_outs = flush_outs(self.cards) + straight_outs(self.cards)
         prob_accu = 0
         wc_accu = 0
@@ -1604,7 +1599,7 @@ class PostflopDecisionMaker():#{{{
         best_move = 'fold'
         best_value = 0.1
         for action in vdt:
-            if action in ['check call', 'check fold'] and best_move == 'fold':
+            if action in ['check', 'check call', 'check fold'] and best_move == 'fold':
                 best_move = 'check'
             print action, vdt[action], my_outs
             v = vdt[action]\
@@ -1615,7 +1610,8 @@ class PostflopDecisionMaker():#{{{
                 -(action=='call' and self.last_mover==0)*0.1\
                 -(action=='call' and self.last_mover!=0)*0.2\
                 -(action=='check call' and self.last_mover!=0)*0.2\
-                -(action=='raise')*0.2
+                -(action=='raise')*0.2\
+                -(action=='raise' and 'call' in vdt and vdt['call'] < 0.5)*1
             if v > best_value:
                 best_move = action
                 best_value = v
@@ -1626,9 +1622,9 @@ class PostflopDecisionMaker():#{{{
             elif best_move in ['check', 'check call', 'check fold']:
                 self.controller.call()
             elif best_move in ['bet', 'bet fold', 'bet call']:
-                self.controller.rais(self.pot*0.75)
+                self.controller.rais(self.pot*0.85)
             elif best_move in ['raise', 'raise fold', 'raise call']:
-                self.controller.rais(self.pot*0.7 + max(self.betting)*1.7)
+                self.controller.rais(self.pot*0.85 + max(self.betting)*1.8)
             elif best_move == 'call':
                 self.controller.call()
         change_terminal_color()#}}}
@@ -1637,7 +1633,7 @@ class PostflopDecisionMaker():#{{{
         oppo_stats = tree()
         total_prob = [0,0,0,0,0,0]
         for i in xrange(1,6):
-            if self.active[i] != 1:
+            if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                 continue
             for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[i], 4):
                 total_prob[i] += p
@@ -1646,7 +1642,7 @@ class PostflopDecisionMaker():#{{{
                 if 'bet' in actions:
                     oppo_stats[n1][c1][n2][c2] = 0
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] =\
@@ -1657,7 +1653,7 @@ class PostflopDecisionMaker():#{{{
                 else:
                     oppo_stats[n1][c1][n2][c2] = 1
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] *= self.small_stats[i][n1][c1][n2][c2]/total_prob[i]
@@ -1668,7 +1664,7 @@ class PostflopDecisionMaker():#{{{
                 if 'bet' in actions:
                     oppo_stats[n1][c1][n2][c2] = 0
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] =\
@@ -1679,12 +1675,13 @@ class PostflopDecisionMaker():#{{{
                 else:
                     oppo_stats[n1][c1][n2][c2] = 1
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] *= self.small_stats[i][n1][c1][n2][c2]/total_prob[i]
                         except:
                             oppo_stats[n1][c1][n2][c2] = 0
+        self.oppo_stats = oppo_stats
         my_outs = flush_outs(self.cards) + straight_outs(self.cards)
         prob_accu = 0
         wc_accu = 0
@@ -1702,13 +1699,7 @@ class PostflopDecisionMaker():#{{{
             except:
                 print mn1,mc1,mn2,mc2,n1,c1,n2,c2
                 pass
-        try:
-            print 'My Win Chance:', wc_accu / prob_accu
-        except:
-            for n1,c1,n2,c2,t in nodes_of_tree(self.turn_wcts, 4):
-                for n3,c3,n4,c4,wc in nodes_of_tree(t, 4):
-                    print n1,c1,n2,c2,n3,c3,n4,c4,wc
-            raise Exception
+        print 'My Win Chance:', wc_accu / prob_accu
         print 'Ratio:', (max(self.betting)-self.betting[0])\
                 / (self.pot+(max(self.betting)-self.betting[0]))
         vdt = self.get_value_turn(oppo_stats)
@@ -1720,11 +1711,11 @@ class PostflopDecisionMaker():#{{{
                     best_move = 'check'
                 print action, vdt[action]
                 v = vdt[action]\
-                    -(action=='bet')*0.15\
+                    -(action=='bet')*0.35\
                     +(action=='bet' and self.last_better==0)*0\
                     +(action=='bet' and self.last_mover==0)*0\
-                    +(action=='call' and my_outs >= 8)*0.25\
-                    +(action=='call' and self.last_mover!=0)*0.05\
+                    +(action=='call' and my_outs >= 8)*0.2\
+                    -(action=='call' and self.last_mover!=0)*0.05\
                     -(action=='raise')*0.5
                 if v > best_value:
                     best_move = action
@@ -1747,7 +1738,7 @@ class PostflopDecisionMaker():#{{{
         oppo_stats = tree()
         total_prob = [0,0,0,0,0,0]
         for i in xrange(1,6):
-            if self.active[i] != 1:
+            if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                 continue
             for n1,c1,n2,c2,p in nodes_of_tree(self.small_stats[i], 4):
                 total_prob[i] += p
@@ -1756,7 +1747,7 @@ class PostflopDecisionMaker():#{{{
                 if 'bet' in actions:
                     oppo_stats[n1][c1][n2][c2] = 0
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] =\
@@ -1767,7 +1758,7 @@ class PostflopDecisionMaker():#{{{
                 else:
                     oppo_stats[n1][c1][n2][c2] = 1
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] *= self.small_stats[i][n1][c1][n2][c2]/total_prob[i]
@@ -1778,7 +1769,7 @@ class PostflopDecisionMaker():#{{{
                 if 'bet' in actions:
                     oppo_stats[n1][c1][n2][c2] = 0
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] =\
@@ -1789,12 +1780,13 @@ class PostflopDecisionMaker():#{{{
                 else:
                     oppo_stats[n1][c1][n2][c2] = 1
                     for i in xrange(1, 6):
-                        if self.active[i] != 1:
+                        if self.active[i] != 1 and (self.betting[i] == 0 or self.betting[i] != max(self.betting)):
                             continue
                         try:
                             oppo_stats[n1][c1][n2][c2] *= self.small_stats[i][n1][c1][n2][c2]/total_prob[i]
                         except:
                             oppo_stats[n1][c1][n2][c2] = 0
+        self.oppo_stats = oppo_stats
         prob_accu = 0
         wc_accu = 0
         the_color = color_make_different(self.stage, self.cards)
@@ -1847,6 +1839,37 @@ class PostflopDecisionMaker():#{{{
 
     def fast_fold(self):
         pass
+
+    def slow_row_indicator(self):
+        if self.stage == 1:
+            wcts = self.flop_wcts
+        elif self.stage == 2:
+            wcts = self.turn_wcts
+        else:
+            wcts = self.river_wcts
+        the_color = color_make_different(self.stage, self.cards)
+        mn1, mc1 = min(self.cards[:2])
+        mn2, mc2 = max(self.cards[:2])
+        if mc1 not in the_color:
+            mc1 = 0
+        if mc2 not in the_color:
+            mc2 = 0
+        prob_accumulation = 0
+        result = 0
+        for n1,c1,n2,c2,p in nodes_of_tree(self.oppo_stats, 4):
+            try:
+                wc = wcts[n1][c1][n2][c2][mn1][mc1][mn2][mc2][0]
+                if wc > 0.45:
+                    result += -0*p*(wc-0.45)
+                elif wc < 0.05:
+                    result += -0*p*(0.05-wc)
+                else:
+                    result += 1*p*min([wc-0.05, 0.45-wc])
+                prob_accumulation += p
+            except:
+                pass
+        result /= prob_accumulation
+        return result
 
     def get_value_flop(self, oppo_stats):# Suppose there are only two players left.
         bet = 0.8#{{{

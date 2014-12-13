@@ -151,16 +151,18 @@ class ScreenScraper():
         player_name = [u'deoxy1909', '', '', '', '', '']#}}}
         if self.source == 'ps':
             fail = 0#{{{
-            while not (game_number and button in range(6)):
+            while not (game_number and (button in range(6))):
                 game_number = self.get_game_number()
                 button = self.get_button()
                 if fail:
                     self.update()
 #               print 'stucking at getting game number and button', game_number, button
                 fail += 1
-                if fail > 250:
+                if fail > 200:
                     return 'sit out'
-                if fail > 150:
+                if fail > 100:
+                    if not game_number:
+                        return 'sit out'
                     if self.has_fold(1) and self.has_fold(2) and self.has_fold(3)\
                             and self.has_fold(4) and self.has_fold(5):
                         return 'get back'
