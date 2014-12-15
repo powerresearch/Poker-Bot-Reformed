@@ -688,7 +688,7 @@ class PostflopDecisionMaker():#{{{
                 if action_name in ['reraise', 'call reraise']\
                         and action_name not in self.dummy_action_ep[n1][cc1][n2][cc2]\
                         and 'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
-                    stats_change = 0.5
+                    stats_change = 0.15
                 elif action_name == 'check' and\
                         'check raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 0.5
@@ -712,7 +712,7 @@ class PostflopDecisionMaker():#{{{
                     stats_change = 0.15
                 elif action_name == 'check' and\
                         'check raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
-                    stats_change = 0.7
+                    stats_change = 0.5
                 elif action_name == 'call bet' and\
                         'raise' in self.dummy_action_ep[n1][cc1][n2][cc2]:
                     stats_change = 0.7
@@ -1375,7 +1375,7 @@ class PostflopDecisionMaker():#{{{
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['check'] = 1
-            if w50 > 0.35 or w100 > 0.55 or w25 > 0.2:
+            if w50 > 0.35 or w100 > 0.65 or w25 > 0.2:
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
@@ -1495,11 +1495,11 @@ class PostflopDecisionMaker():#{{{
             if w100 > 0.6:
                 dummy_action_lp[n1][c1][n2][c2]['call raise'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['call raise'] = 1
-            if w100 > 0.65 or w100 < 0.15:
+            if w100 > 0.65:
                 dummy_action_ep[n1][c1][n2][c2]['bet'] = 1
-            if w100 > 0.6 or w100 < 0.15:
-                dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
             if w100 > 0.4:
+                dummy_action_lp[n1][c1][n2][c2]['bet'] = 1
+            if w100 > 0.5:
                 dummy_action_ep[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_lp[n1][c1][n2][c2]['call bet'] = 1
                 dummy_action_ep[n1][c1][n2][c2]['check call'] = 1
@@ -1605,10 +1605,11 @@ class PostflopDecisionMaker():#{{{
             v = vdt[action]\
                 +(action=='bet' and self.last_better==0)*0\
                 +(action=='bet' and self.last_mover==0)*0\
-                -(action=='bet' and self.last_mover!=0)*0.2\
+                -(action=='bet' and self.last_mover!=0)*0.25\
+                -(action=='bet' and self.last_better!=0)*0.15\
                 +(action=='call' and my_outs >= 8)*0.3\
-                -(action=='call' and self.last_mover==0)*0.1\
-                -(action=='call' and self.last_mover!=0)*0.2\
+                -(action=='call' and self.last_mover==0 and my_outs < 8)*0.1\
+                -(action=='call' and self.last_mover!=0 and my_outs < 8)*0.2\
                 -(action=='check call' and self.last_mover!=0)*0.2\
                 -(action=='raise')*0.2\
                 -(action=='raise' and 'call' in vdt and vdt['call'] < 0.5)*1
@@ -1622,9 +1623,9 @@ class PostflopDecisionMaker():#{{{
             elif best_move in ['check', 'check call', 'check fold']:
                 self.controller.call()
             elif best_move in ['bet', 'bet fold', 'bet call']:
-                self.controller.rais(self.pot*0.85)
+                self.controller.rais(self.pot*0.8)
             elif best_move in ['raise', 'raise fold', 'raise call']:
-                self.controller.rais(self.pot*0.85 + max(self.betting)*1.8)
+                self.controller.rais(self.pot*0.8 + max(self.betting)*1.7)
             elif best_move == 'call':
                 self.controller.call()
         change_terminal_color()#}}}
@@ -1697,7 +1698,6 @@ class PostflopDecisionMaker():#{{{
                 wc_accu += self.turn_wcts[mn1][mc1][mn2][mc2][n1][c1][n2][c2][0]*p
                 prob_accu += p
             except:
-                print mn1,mc1,mn2,mc2,n1,c1,n2,c2
                 pass
         print 'My Win Chance:', wc_accu / prob_accu
         print 'Ratio:', (max(self.betting)-self.betting[0])\
@@ -1711,12 +1711,12 @@ class PostflopDecisionMaker():#{{{
                     best_move = 'check'
                 print action, vdt[action]
                 v = vdt[action]\
-                    -(action=='bet')*0.35\
-                    +(action=='bet' and self.last_better==0)*0\
+                    -(action=='bet')*0.15\
+                    +(action=='bet' and self.last_better==0)*0.05\
                     +(action=='bet' and self.last_mover==0)*0\
-                    +(action=='call' and my_outs >= 8)*0.2\
+                    +(action=='call' and my_outs >= 8)*0.25\
                     -(action=='call' and self.last_mover!=0)*0.05\
-                    -(action=='raise')*0.5
+                    -(action=='raise')*0.3
                 if v > best_value:
                     best_move = action
                     best_value = v
@@ -1801,7 +1801,6 @@ class PostflopDecisionMaker():#{{{
                 wc_accu += self.river_wcts[mn1][mc1][mn2][mc2][n1][c1][n2][c2][0]*p
                 prob_accu += p
             except:
-                print mn1,mc1,mn2,mc2,n1,c1,n2,c2
                 pass
         print 'My Win Chance:', wc_accu / prob_accu
         print 'Ratio:', (max(self.betting)-self.betting[0])\

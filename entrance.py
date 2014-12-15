@@ -27,7 +27,15 @@ if sys.argv[1] == 'ps':
         shift = get_shift(im) 
     c = Controller(1, shift)
     while True:
+        shift_stuck = 0
+        last_shift = shift
         while not shift:
+            if shift_stuck > 100:
+                c = Controller(1, last_shift)
+                c.sit_out()
+                shift_stuck = 0
+                continue
+            shift_stuck += 1
             im = pyscreenshot.grab()
             shift = get_shift(im, shift[0], shift[1]) 
         c = Controller(1, shift)
