@@ -27,17 +27,17 @@ if sys.argv[1] == 'ps':
         shift = get_shift(im) 
     c = Controller(1, shift)
     while True:
-        shift_stuck = 0
-        last_shift = shift
-        while not shift:
-            if shift_stuck > 100:
-                c = Controller(1, last_shift)
-                c.sit_out()
-                shift_stuck = 0
-                continue
-            shift_stuck += 1
-            im = pyscreenshot.grab()
-            shift = get_shift(im, shift[0], shift[1]) 
+#        shift_stuck = 0
+#        last_shift = shift
+#        while not shift:
+#            if shift_stuck > 100:
+#                c = Controller(1, last_shift)
+#                c.sit_out()
+#                shift_stuck = 0
+#                continue
+#            shift_stuck += 1
+#            im = pyscreenshot.grab()
+#            shift = get_shift(im, shift[0], shift[1]) 
         c = Controller(1, shift)
 #        if time.time() - starting_time > session_length:
 #            print 'Rest for a while', rest_length
@@ -62,11 +62,11 @@ if sys.argv[1] == 'ps':
             game_number = 0
             stuck_count = 0
             continue
-        if stuck_count > 20:
-            c.fold()
-            last_game_number = 1
-            game_number = 0
-            continue
+#        if stuck_count > 20:
+#            c.fold()
+#            last_game_number = 1
+#            game_number = 0
+#            continue
 #       if stuck_count > 10:
 #           im = pyscreenshot.grab()
 #           im.save('stuckingshots/'+str(stuck_count)+'.png')
@@ -76,7 +76,10 @@ if sys.argv[1] == 'ps':
             print 'Getting Name Figure' 
             get_name_figure()
             print 'Updating Database...\n\n\n\n'
-            game_driver.data_manager.update()
+            try:
+                game_driver.data_manager.update()
+            except:
+                pass
             game_driver.count_game()
 elif sys.argv[1] == 'makedata':
     c = 0

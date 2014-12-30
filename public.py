@@ -695,7 +695,7 @@ def del_stdout_line(n):
         #}}}
 
 def change_terminal_color(color=''):
-    color_map = {'black':'30', 'red':'31;1', 'green':'32;1', 'yellow;1':'33',\
+    color_map = {'black':'30', 'red':'31;1', 'green':'32;1', 'yellow':'33;1',\
             'blue':'34;1', 'magenta':'35;1', 'cyan':'36;1', 'white':'37;1', '':'0'}
     print '\x1b['+color_map[color]+'m'
 

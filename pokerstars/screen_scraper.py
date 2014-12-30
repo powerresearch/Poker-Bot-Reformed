@@ -166,6 +166,9 @@ class ScreenScraper():
                     if self.has_fold(1) and self.has_fold(2) and self.has_fold(3)\
                             and self.has_fold(4) and self.has_fold(5):
                         return 'get back'
+                if fail > 10:
+                    if self.get_stack(0) == []:
+                        return 'sit out'
             fail = 0
             for i in xrange(6):
                 fail = 0

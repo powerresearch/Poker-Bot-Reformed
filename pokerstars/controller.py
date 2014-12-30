@@ -126,8 +126,9 @@ class Controller():
         if time.time() - last_control < 1.5:
             return
         amount = round(amount/SB)*SB
-        if self.game_driver.stack[0] == 0 or amount / self.game_driver.stack[0] > 0.8:
-            amount = int(self.game_driver.stack[0]) + 1
+        if self.game_driver.stack[0] == 0 or amount / self.game_driver.stack[0] > 0.6:
+            if self.game_driver.stage != 3:
+                amount = int(self.game_driver.stack[0]) + 1
         oppo = -1
         for i in xrange(1, 6):
             if self.game_driver.active[i] == 1:
@@ -135,9 +136,9 @@ class Controller():
                     oppo = -1
                     break
                 oppo = i
-        if oppo != -1 and self.game_driver.stack[oppo] > 0 and amount / self.game_driver.stack[oppo] > 0.8:
-            amount = int(self.game_driver.stack[0]) + 1
-        print self.game_driver.stack[oppo]
+        if oppo != -1 and self.game_driver.stack[oppo] > 0 and amount / self.game_driver.stack[oppo] > 0.75:
+            if self.game_driver.stage != 3:
+                amount = int(self.game_driver.stack[0]) + 1
         m = pymouse.PyMouse()
         k = pykeyboard.PyKeyboard()
         lxp = label_position[0]

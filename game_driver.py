@@ -12,7 +12,7 @@ from pokerstars.screen_scraper import ScreenScraper
 from pokerstars.move_catcher import MoveCatcher
 from pokerstars.controller import Controller
 from database.data_manager import DataManager
-from stats.stats_handler2 import StatsHandler
+from stats.stats_handler3 import StatsHandler
 from strategy.decision_maker2 import PreflopDecisionMaker
 from strategy.decision_maker2 import PostflopDecisionMaker
 
@@ -24,39 +24,43 @@ class GameDriver():
         self.source         = game_record
         self.controller     = Controller(self, shift)
         init_values = self.screen_scraper.get_init_values()
-        while init_values in ['sit out', 'get back']:
+        self.new_game_indicator = 0
+        if init_values in ['sit out', 'get back']:
             if init_values == 'sit out':
                 self.controller.sit_out()
             else:
                 self.controller.get_back()
-            init_values = self.screen_scraper.get_init_values()
-        self.stack          = init_values['stack'] 
-        self.game_number    = init_values['game_number']
-        self.cards          = init_values['cards'] 
-        self.button         = init_values['button']
-        self.player_name = init_values['player_name']
-        if self.source != 'ps':
-            self.seat       = init_values['seat']
-        self.steal_position = self.button == 0 or self.button == 1
-        self.active         = [1, 1, 1, 1, 1, 1]
-        self.data_manager   = DataManager(self.button)
-        self.data_manager.load_data(self.player_name, self.button)
-        self.stats_handler  = StatsHandler(self)
-        self.decision_maker = PreflopDecisionMaker(self)
-        self.betting        = [0, 0, 0, 0, 0, 0]
-        self.pot            = SB+BB
-        self.last_better    = -1
-        self.all_limper     = -1
-        self.stage          = 0
-        self.bet_round      = 1
-        self.people_play    = 1
-        self.move_catcher   = MoveCatcher(0, self)
-        self.postflop_status = ['', '', '', '', '', '']
-        self.power_rank     = [0, 0, 0, 0]
-        self.can_beat_table = [0, 0, 0, 0]
-        self.board_wetness  = [0, 0, 0, 0]
-        self.fold           = 0
-        self.outs           = [0, 0, 0, 0]#}}}
+            self.new_game_indicator = 1
+        if self.new_game_indicator == 0:
+            self.stack          = init_values['stack'] 
+            self.game_number    = init_values['game_number']
+            self.cards          = init_values['cards'] 
+            self.button         = init_values['button']
+            self.player_name = init_values['player_name']
+            if self.source != 'ps':
+                self.seat       = init_values['seat']
+            self.steal_position = self.button == 0 or self.button == 1
+            self.active         = [1, 1, 1, 1, 1, 1]
+            self.data_manager   = DataManager(self.button)
+            if self.source != 'ps':
+                self.player_name = map(lambda x:unicode(x), self.player_name)
+            self.data_manager.load_data(self.player_name, self.button)
+            self.stats_handler  = StatsHandler(self)
+            self.decision_maker = PreflopDecisionMaker(self)
+            self.betting        = [0, 0, 0, 0, 0, 0]
+            self.pot            = SB+BB
+            self.last_better    = -1
+            self.all_limper     = -1
+            self.stage          = 0
+            self.bet_round      = 1
+            self.people_play    = 1
+            self.move_catcher   = MoveCatcher(0, self)
+            self.postflop_status = ['', '', '', '', '', '']
+            self.power_rank     = [0, 0, 0, 0]
+            self.can_beat_table = [0, 0, 0, 0]
+            self.board_wetness  = [0, 0, 0, 0]
+            self.fold           = 0
+            self.outs           = [0, 0, 0, 0]#}}}
 
     @classmethod
     def count_game(cls):
@@ -66,6 +70,8 @@ class GameDriver():
             cls.game_count = 1#}}}
 
     def game_stream(self, last_game):
+        if self.new_game_indicator == 1:
+            return 0
         print 'Game Number:', self.game_number
         if self.game_number == last_game:
             change_terminal_color('green')
@@ -187,7 +193,7 @@ class GameDriver():
                 for i in xrange(6):
                     if self.active[i] == 1 and self.betting[i] != a:
                         not_even = 1
-            if self.stage != 3 or not_even or a == 0:
+            if self.stage != 3 or not_even or a == 0 or (a < max(self.betting) and self.active[0] == 1):
                 self.decision_maker.make_decision()
                 time.sleep(0.5)
             return []
